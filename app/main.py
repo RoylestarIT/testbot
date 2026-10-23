@@ -25,7 +25,7 @@ async def on_startup(bot: Bot) -> None:
     _poller_task = asyncio.create_task(marketplace_poller_loop(bot))
 
 
-async def on_shutdown(_bot: Bot) -> None:
+async def on_shutdown(*_args: object, **_kwargs: object) -> None:
     global _poller_task
     if _poller_task is not None:
         _poller_task.cancel()
