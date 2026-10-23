@@ -3,19 +3,21 @@ from __future__ import annotations
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.ui import checklist_line, section
 from app.db.models import MarketplaceAccount, Review, ReviewStatus, User
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.services.plans import count_user_api_accounts
 
 
-async def build_onboarding_checklist(session: AsyncSession, user: User) -> str:
-    terms = user.terms_accepted_at is not None
-    api_count = await count_user_api_accounts(session, user.id)
-    cabinet = api_count > 0
+async def build_onboarding_nudge(session: AsyncSession, user: User) -> str:
+    """Короткая подсказка только по незавершённым шагам (без длинного чеклиста)."""
+    pending: list[str] = []
+
+    if await count_user_api_accounts(session, user.id) == 0:
+        pending.append("подключить кабинет WB или Ozon")
+
     tones = await ToneProfileRepository(session).list_by_user_id(user.id)
-    tone_ok = len(tones) > 0
-    onboarding_done = user.onboarding_completed_at is not None
+    if not tones:
+        pending.append("настроить tone of voice")
 
     first_reply_stmt = (
         select(func.count(Review.id))
@@ -26,18 +28,22 @@ async def build_onboarding_checklist(session: AsyncSession, user: User) -> str:
             Review.status.in_((ReviewStatus.PROCESSED, ReviewStatus.PUBLISHED)),
         )
     )
-    replied = int((await session.scalar(first_reply_stmt)) or 0) > 0
+    if int((await session.scalar(first_reply_stmt)) or 0) == 0:
+        pending.append("ответить на первый отзыв")
 
-    if all([terms, cabinet, tone_ok, replied, onboarding_done]):
+    if user.onboarding_completed_at is None and len(pending) > 1:
+        pending.append("пройти «Быстрый старт»")
+
+    if not pending:
         return ""
 
-    lines = [
-        section("Первые шаги"),
-        checklist_line(terms, "Условия приняты"),
-        checklist_line(cabinet, "Кабинет WB/Ozon"),
-        checklist_line(tone_ok, "Tone of voice"),
-        checklist_line(replied, "Первый ответ"),
-        checklist_line(onboarding_done, "Быстрый старт"),
-        "",
-    ]
-    return "\n".join(lines)
+    if len(pending) == 1:
+        return f"💡 Осталось: {pending[0]}."
+    shown = ", ".join(pending[:2])
+    extra = f" (+{len(pending) - 2})" if len(pending) > 2 else ""
+    return f"💡 Дальше: {shown}{extra}."
+
+
+async def build_onboarding_checklist(session: AsyncSession, user: User) -> str:
+    """Сводка больше не использует длинный чеклист — см. build_onboarding_nudge."""
+    return await build_onboarding_nudge(session, user)

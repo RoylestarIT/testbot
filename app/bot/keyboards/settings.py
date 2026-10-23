@@ -6,16 +6,16 @@ from app.db.models import Marketplace, MarketplaceAccount, ToneProfile
 def settings_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Кабинеты маркетплейсов", callback_data="settings:accounts")],
-            [InlineKeyboardButton(text="Tone of voice", callback_data="settings:tone")],
-            [InlineKeyboardButton(text="🔔 Уведомления", callback_data="settings:notifications")],
+            [InlineKeyboardButton(text="→  Кабинеты WB/Ozon", callback_data="settings:accounts")],
+            [InlineKeyboardButton(text="→  Tone of voice", callback_data="settings:tone")],
+            [InlineKeyboardButton(text="→  Уведомления", callback_data="settings:notifications")],
             [
                 InlineKeyboardButton(
-                    text="Авто-публикация ответов (PRO)",
+                    text="→  Авто-публикация (PRO)",
                     callback_data="pro:autopublish",
                 ),
             ],
-            [InlineKeyboardButton(text="← Главное меню", callback_data="menu:main")],
+            [InlineKeyboardButton(text="←  Сводка", callback_data="menu:main")],
         ]
     )
 

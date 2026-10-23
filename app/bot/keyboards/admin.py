@@ -4,13 +4,13 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 def admin_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="📊 Статистика", callback_data="admin:stats")],
-            [InlineKeyboardButton(text="⏳ Pending-заявки", callback_data="admin:pending:0")],
-            [InlineKeyboardButton(text="👤 Найти пользователя", callback_data="admin:find_user")],
-            [InlineKeyboardButton(text="🎁 Выдать подписку", callback_data="admin:grant")],
-            [InlineKeyboardButton(text="📢 Рассылка", callback_data="admin:broadcast")],
-            [InlineKeyboardButton(text="🎟 Промокоды", callback_data="admin:promo")],
-            [InlineKeyboardButton(text="← Главное меню", callback_data="menu:main")],
+            [InlineKeyboardButton(text="→  Статистика", callback_data="admin:stats")],
+            [InlineKeyboardButton(text="→  Pending", callback_data="admin:pending:0")],
+            [InlineKeyboardButton(text="→  Пользователь", callback_data="admin:find_user")],
+            [InlineKeyboardButton(text="→  Выдать тариф", callback_data="admin:grant")],
+            [InlineKeyboardButton(text="→  Рассылка", callback_data="admin:broadcast")],
+            [InlineKeyboardButton(text="→  Промокоды", callback_data="admin:promo")],
+            [InlineKeyboardButton(text="←  Сводка", callback_data="menu:main")],
         ]
     )
 

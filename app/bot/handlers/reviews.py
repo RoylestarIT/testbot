@@ -42,9 +42,9 @@ async def _tone_input(session, user_id: int, tone_key: str):
 
 
 def _format_variants_message(variants: list[str], selected_index: int, remaining: int | None) -> str:
-    from app.bot.ui import DIVIDER, brand_title, muted, quote, section
+    from app.bot.ui import muted, quote
 
-    lines = [brand_title("Варианты ответа", tagline="Выберите номер или отредактируйте текст")]
+    lines = ["<b>Варианты ответа</b>", muted("Нажмите цифру или «Править»"), ""]
     for index, text in enumerate(variants, start=1):
         if index - 1 == selected_index:
             lines.append(f"● <b>Вариант {index}</b>")
@@ -53,9 +53,7 @@ def _format_variants_message(variants: list[str], selected_index: int, remaining
             short = text[:240] + ("…" if len(text) > 240 else "")
             lines.append(muted(f"{index}. {short}"))
     if remaining is not None:
-        lines.append(section("Лимит Free"))
-        lines.append(f"  {remaining} / 5 генераций сегодня")
-    lines.append(DIVIDER)
+        lines.append(muted(f"Генераций сегодня: {remaining} / 5"))
     return "\n".join(lines)
 
 

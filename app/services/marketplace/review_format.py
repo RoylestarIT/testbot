@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.bot.ui import DIVIDER, muted, quote, review_stars, section
+from app.bot.ui import muted, quote, review_stars
 from app.db.models import Marketplace, MarketplaceAccount, Review
 
 
@@ -32,37 +32,33 @@ def format_review_card(
     mp = "—"
     marketplace = account.marketplace if account else None
     if account is not None:
-        mp = "Wildberries" if account.marketplace == Marketplace.WB else "Ozon"
-    rating = review.rating if review.rating is not None else 0
+        mp = "WB" if account.marketplace == Marketplace.WB else "Ozon"
+    rating = review.rating if review.rating is not None else None
     shop = account.shop_name if account and account.shop_name else mp
     product = _product_hint(review.raw_json, marketplace)
 
-    stars = review_stars(rating if isinstance(rating, int) else 0)
-    rating_line = f"{stars}  <b>{rating}/5</b>" if isinstance(review.rating, int) else muted("Без оценки")
-
-    if can_publish_via_api:
-        channel = "PRO · publish из бота доступен"
+    if isinstance(rating, int):
+        stars = review_stars(rating)
+        head = f"<b>{shop}</b>  ·  {stars}  ({rating}/5)"
     else:
-        channel = "Lite · ответ через «Скопировать»"
+        head = f"<b>{shop}</b>"
+
+    publish = "можно отправить из бота" if can_publish_via_api else "скопируйте ответ в кабинет"
 
     text = (review.text or "—").strip()
-    if len(text) > 800:
-        text = text[:800] + "…"
+    if len(text) > 700:
+        text = text[:700] + "…"
 
     lines = [
-        f"✦ <b>Отзыв</b>  ·  {shop}",
-        DIVIDER,
-        section("Оценка"),
-        f"  {rating_line}",
+        head,
+        muted(f"{mp} · {publish}"),
     ]
-    if isinstance(review.rating, int) and review.rating <= 3:
-        lines.append(f"  {muted('Негатив — ответьте внимательно')}")
-    lines.append(section("Товар"))
-    lines.append(f"  {product or muted('—')}")
-    lines.append(section("Канал"))
-    lines.append(f"  {channel}")
-    lines.append(section("Текст покупателя"))
+    if product:
+        lines.append(muted(product))
+    lines.append("")
     lines.append(quote(text))
     lines.append("")
-    lines.append(muted("Выберите тон ответа или ⚡ быстрый шаблон:"))
+    lines.append(muted("Выберите тон или ⚡ шаблон:"))
+    if isinstance(rating, int) and rating <= 3:
+        lines.insert(2, "⚠️ Низкая оценка — проверьте ответ перед отправкой")
     return "\n".join(lines)

@@ -116,12 +116,11 @@ async def describe_access_tier(
     user: User,
     subscription: Subscription | None,
 ) -> str:
-    from app.bot.ui import tier_badge_free, tier_badge_lite, tier_badge_pro, tier_badge_trial
-
     if subscription and subscription.status == SubscriptionStatus.ACTIVE:
-        badge = tier_badge_pro() if subscription.plan == SubscriptionPlan.PRO else tier_badge_lite()
-        return f"{badge}  ·  оплачен до {subscription.expires_at.strftime('%d.%m.%Y') if subscription.expires_at else '—'}"
+        name = plan_label(subscription.plan)
+        until = subscription.expires_at.strftime("%d.%m.%Y") if subscription.expires_at else "—"
+        return f"{name} до {until}"
     if await is_trial_pro_active(user):
         until = user.trial_pro_until.strftime("%d.%m.%Y") if user.trial_pro_until else "—"
-        return f"{tier_badge_trial()}  ·  до {until}"
-    return tier_badge_free()
+        return f"Trial PRO до {until}"
+    return "Free"
