@@ -76,7 +76,9 @@ python -m app.main
 - Клиенты: [`app/services/marketplace/wildberries.py`](app/services/marketplace/wildberries.py) (Feedbacks API), [`app/services/marketplace/ozon.py`](app/services/marketplace/ozon.py).
 - Подключение: **Настройки → + Wildberries / + Ozon** — ключ шифруется (`FERNET_KEY`), тестовый запрос «1 отзыв».
 - **Отзывы → Синхронизировать отзывы** — ручной импорт неотвеченных отзывов в БД.
-- Публикация: генерация → «Опубликовать на WB/Ozon» → подтверждение.
+- Публикация на API: **только PRO** → «Опубликовать на WB/Ozon» → подтверждение. Lite — копирование текста вручную.
+- **Авто-публикация (PRO)**: для 4–5★ — ответ без подтверждения; 1–3★ — только уведомление.
+- Ozon: официальный `POST /v1/review/list` (`status: UNPROCESSED`), пагинация `last_id`.
 - Фоновый poller: `POLL_INTERVAL_MINUTES` (по умолчанию 15), уведомление в Telegram о новых отзывах.
 
 ## Админ-команды
@@ -86,7 +88,8 @@ Telegram ID в `ADMIN_IDS`:
 - `/stats` — пользователи, подписки, отзывы
 - `/pending` — pending-платежи
 - `/approve <id>` / `/reject <id>` — QR-заявки
-- `/broadcast текст` — рассылка всем пользователям
+- `/broadcast preview Текст` — число получателей и предпросмотр
+- `/broadcast send Текст` — рассылка (с паузой 50 ms между сообщениями)
 
 ## Тесты
 
