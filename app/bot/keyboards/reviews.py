@@ -13,6 +13,18 @@ def reviews_menu_keyboard() -> InlineKeyboardMarkup:
                 ),
             ],
             [
+                InlineKeyboardButton(
+                    text="Синхронизировать отзывы",
+                    callback_data="review:sync",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Новые из маркетплейсов",
+                    callback_data="review:mp:list",
+                ),
+            ],
+            [
                 InlineKeyboardButton(text="← Главное меню", callback_data="menu:main"),
             ],
         ]

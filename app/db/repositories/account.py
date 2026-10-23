@@ -41,6 +41,11 @@ class AccountRepository:
         await self._session.refresh(account)
         return account
 
+    async def list_active_all(self) -> list[MarketplaceAccount]:
+        stmt = select(MarketplaceAccount).where(MarketplaceAccount.is_active.is_(True))
+        result = await self._session.execute(stmt.order_by(MarketplaceAccount.id))
+        return list(result.scalars().all())
+
     async def set_active(self, account_id: int, is_active: bool) -> MarketplaceAccount | None:
         account = await self.get_by_id(account_id)
         if account is None:

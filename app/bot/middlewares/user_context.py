@@ -7,7 +7,6 @@ from aiogram.types import CallbackQuery, Message, TelegramObject, Update
 from loguru import logger
 
 from app.core.config import get_settings
-from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 

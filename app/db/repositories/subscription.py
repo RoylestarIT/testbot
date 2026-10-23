@@ -21,6 +21,15 @@ class SubscriptionRepository:
         )
         return list(result.scalars().all())
 
+    async def list_pending(self, *, limit: int = 50) -> list[Subscription]:
+        result = await self._session.execute(
+            select(Subscription)
+            .where(Subscription.status == SubscriptionStatus.PENDING)
+            .order_by(Subscription.id.desc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
     async def get_active_for_user(self, user_id: int) -> Subscription | None:
         now = datetime.now(UTC)
         result = await self._session.execute(

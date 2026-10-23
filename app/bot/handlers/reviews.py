@@ -29,8 +29,8 @@ router = Router(name="reviews")
 
 REVIEWS_MENU_TEXT = (
     "<b>Отзывы</b>\n\n"
-    "Lite-режим: введите текст отзыва вручную — бот предложит варианты ответа. "
-    "Скопируйте понравившийся в кабинет маркетплейса."
+    "Lite: ручной ввод или отзывы из API после синхронизации. "
+    "Публикация на WB/Ozon — с подтверждением после генерации."
 )
 
 
@@ -164,6 +164,7 @@ async def menu_main(callback: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(F.data == "review:manual:start")
 async def manual_start(callback: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
+    await state.update_data(mp_flow=False)
     await state.set_state(ManualReviewStates.waiting_text)
     await callback.answer()
     if callback.message:

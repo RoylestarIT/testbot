@@ -123,6 +123,19 @@ async def create_qr_pending(
     )
 
 
+async def reject_qr_subscription(session: AsyncSession, subscription_id: int) -> Subscription | None:
+    repo = SubscriptionRepository(session)
+    subscription = await repo.get_by_id(subscription_id)
+    if subscription is None:
+        return None
+    if subscription.status != SubscriptionStatus.PENDING:
+        return None
+    subscription.status = SubscriptionStatus.EXPIRED
+    await session.flush()
+    await session.refresh(subscription)
+    return subscription
+
+
 async def approve_qr_subscription(session: AsyncSession, subscription_id: int) -> Subscription | None:
     repo = SubscriptionRepository(session)
     subscription = await repo.get_by_id(subscription_id)

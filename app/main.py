@@ -12,14 +12,27 @@ from app.bot.middlewares.user_context import UserContextMiddleware
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 from app.db.session import close_db, init_db
+from app.tasks.poller import marketplace_poller_loop
+
+_poller_task: asyncio.Task[None] | None = None
 
 
-async def on_startup() -> None:
+async def on_startup(bot: Bot) -> None:
+    global _poller_task
     await init_db()
     logger.info("Database initialized")
+    _poller_task = asyncio.create_task(marketplace_poller_loop(bot))
 
 
-async def on_shutdown() -> None:
+async def on_shutdown(_bot: Bot) -> None:
+    global _poller_task
+    if _poller_task is not None:
+        _poller_task.cancel()
+        try:
+            await _poller_task
+        except asyncio.CancelledError:
+            pass
+        _poller_task = None
     await close_db()
     logger.info("Database connection closed")
 
