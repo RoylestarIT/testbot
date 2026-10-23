@@ -3,6 +3,7 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.bot.copy import HELP_TEXT, TERMS_TEXT
+from app.bot.ui import BRAND, ICON
 from app.bot.handlers.dashboard import _edit_dashboard, _send_dashboard
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.core.config import get_settings
@@ -73,8 +74,8 @@ async def menu_more(callback: CallbackQuery) -> None:
     if callback.message:
         await safe_edit_message(
             callback.message,
-            "✨ <b>ReviewPilot</b>\n"
-            "<i>Co-pilot в Telegram: отзывы WB/Ozon под вашим контролем.</i>",
+            f"{ICON} <b>{BRAND}</b>\n"
+            "<i>Отзывы WB/Ozon под вашим контролем.</i>",
             reply_markup=main_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
         )
 

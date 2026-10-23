@@ -12,6 +12,7 @@ from app.core.config import Settings, get_settings
 from app.db.models import MarketplaceAccount, Review, ReviewStatus, User
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
+from app.bot.ui import BRAND, ICON
 from app.services.subscription import get_effective_subscription, plan_label
 
 
@@ -68,7 +69,7 @@ async def build_digest_text(session, user: User) -> str:
             sub_line += f" · истекает через {days_left} д."
 
     lines = [
-        "✨ <b>ReviewPilot</b> · утренний дайджест",
+        f"{ICON} <b>{BRAND}</b> · утренний дайджест",
         "",
         f"📬 Новых в очереди: <b>{new_count}</b>",
     ]

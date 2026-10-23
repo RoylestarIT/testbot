@@ -3,12 +3,17 @@ from __future__ import annotations
 import asyncio
 
 from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
+
+# Время в футере сводки — для селлеров РФ/РБ (совпадает с DIGEST ~9:00 Мinsk)
+UI_TIMEZONE = ZoneInfo("Europe/Minsk")
 
 from aiogram import Bot
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from loguru import logger
 
 from app.bot.keyboards.empty_states import poller_notify_keyboard
+from app.bot.ui import BRAND, ICON
 from app.core.config import Settings, get_settings
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.user import UserRepository
@@ -21,13 +26,20 @@ _last_poller_ok_at: datetime | None = None
 _last_poller_error: str | None = None
 
 
+def format_ui_time(when: datetime) -> str:
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=UTC)
+    local = when.astimezone(UI_TIMEZONE)
+    return local.strftime("%d.%m %H:%M")
+
+
 def get_poller_status_line() -> str:
     if _last_poller_ok_at is None:
         return "ожидание первого цикла"
-    ts = _last_poller_ok_at.strftime("%d.%m %H:%M")
+    ts = format_ui_time(_last_poller_ok_at)
     if _last_poller_error:
-        return f"{ts} UTC · ⚠️ была ошибка"
-    return f"{ts} UTC · ✅ OK"
+        return f"sync {ts} (Минск) · ⚠️ была ошибка"
+    return f"sync {ts} (Минск) · ✅ OK"
 
 
 async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = None) -> None:
@@ -77,13 +89,13 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
             if count <= 0:
                 continue
             notify_text = (
-                "✨ <b>ReviewPilot</b>\n"
+                f"{ICON} <b>{BRAND}</b>\n"
                 f"⚠️ Негативных отзывов (1–3★): <b>{count}</b>\n"
                 "<i>Рекомендуем ответить в первую очередь.</i>"
             )
         else:
             notify_text = (
-                "✨ <b>ReviewPilot</b>\n"
+                f"{ICON} <b>{BRAND}</b>\n"
                 f"📬 Новых отзывов: <b>{count}</b>\n"
                 "<i>Откройте очередь и ответьте в выбранном тоне.</i>"
             )

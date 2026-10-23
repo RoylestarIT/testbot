@@ -6,7 +6,7 @@ from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.bot.keyboards.menu import main_menu_keyboard
-from app.bot.ui import brand_title, muted, progress_bar
+from app.bot.ui import BRAND, ICON, brand_title, muted, progress_bar
 
 router = Router(name="onboarding")
 
@@ -72,7 +72,7 @@ async def onboarding_done(callback: CallbackQuery, db_user: DbUser) -> None:
     tg_id = callback.from_user.id if callback.from_user else 0
     if callback.message:
         await callback.message.edit_text(
-            "✨ <b>ReviewPilot</b>\n🎉 Настройка завершена.\n"
+            f"{ICON} <b>{BRAND}</b>\n🎉 Настройка завершена.\n"
             "<i>Отзывы в Telegram: 3 варианта, правка, негатив — только вы.</i>",
             reply_markup=main_menu_keyboard(show_admin=tg_id in get_settings().admin_ids),
         )

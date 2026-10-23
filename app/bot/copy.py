@@ -1,19 +1,17 @@
 """Тексты бота — единое место для тона и формулировок."""
 
-from app.bot.ui import brand_title, bullet, footer_hint, muted, quote, section
+from app.bot.ui import BRAND, brand_title, bullet, footer_hint, muted, quote, section
 
 # Позиционирование vs «большие платформы» (без названий конкурентов)
 DIFFERENTIATORS_TAGLINE = (
     "Co-pilot в Telegram: WB/Ozon, вы решаете, что увидит покупатель"
 )
 
-DIFFERENTIATORS_DASHBOARD_LINE = muted(
-    "⚡ Telegram · 3 варианта и правка · негатив не в автомат · ~$10 / ~$20 в мес"
-)
+DIFFERENTIATORS_DASHBOARD_LINE = muted("✋ Негатив — вручную · авто только 4–5★ (PRO)")
 
 
 def differentiators_section(*, compact: bool = False) -> str:
-    """Блок «Почему ReviewPilot» для welcome, help, подписки."""
+    """Блок «Почему мы» для welcome, help, подписки."""
     if compact:
         return (
             section("Почему мы", icon="⚡")
@@ -25,7 +23,7 @@ def differentiators_section(*, compact: bool = False) -> str:
             + bullet("💵 Подписка ~$10 / ~$20, не пакеты «за каждый ответ»")
         )
     return (
-        section("Почему ReviewPilot", icon="⚡")
+        section(f"Почему {BRAND}", icon="⚡")
         + "\n"
         + bullet("📱 Весь цикл в Telegram: sync → очередь → 3 варианта → publish или копия")
         + "\n"
@@ -52,8 +50,8 @@ WELCOME_TEXT = (
     + "\n"
     + bullet("🚀 PRO — publish из бота и авто-ответы 4–5★")
     + footer_hint(
-        "ReviewPilot не связан с маркетплейсами. "
-        "Мы не заменяем отдел поддержки — помогаем быстро ответить на отзывы под вашим контролем."
+        f"{BRAND} не связан с маркетплейсами. "
+        "Помогаем быстро ответить на отзывы WB/Ozon под вашим контролем."
     )
 )
 
@@ -141,7 +139,7 @@ NEGATIVE_PUBLISH_WARN = (
 
 PRO_PUBLISH_REQUIRED = (
     "🚀 <b>Publish в API</b> — тариф PRO (trial или квота).\n\n"
-    "ReviewPilot не публикует вслепую: на PRO в автомат уходят только <b>4–5★</b>, "
+    f"{BRAND} не публикует вслепую: на PRO в автомат уходят только <b>4–5★</b>, "
     "негатив — только после вашего подтверждения.\n\n"
     "📋 На Free и Lite — «Скопировать ответ» в кабинет."
 )

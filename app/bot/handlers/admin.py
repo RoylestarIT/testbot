@@ -21,6 +21,7 @@ from app.services.admin_audit import notify_admins
 from app.services.pro_access import admin_extend_trial
 from app.services.subscription import expire_active_subscriptions
 from app.bot.keyboards.menu import main_menu_keyboard
+from app.bot.ui import BRAND, ICON
 from app.bot.states.admin import AdminStates
 from app.core.config import get_settings
 from app.db.models import SubscriptionPlan
@@ -39,7 +40,7 @@ from app.services.subscription import (
 router = Router(name="admin")
 
 ADMIN_PANEL_TEXT = (
-    "✨ <b>ReviewPilot</b>\n🛠 <b>Админ-панель</b>\n\n"
+    f"{ICON} <b>{BRAND}</b>\n🛠 <b>Админ-панель</b>\n\n"
     "<i>Заявки, пользователи, рассылка и промокоды.</i>"
 )
 

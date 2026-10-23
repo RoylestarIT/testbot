@@ -3,6 +3,7 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.ui import brand_title, bullet, muted
+from app.tasks.poller import format_ui_time
 from app.constants import MANUAL_SHOP_NAME
 from app.db.models import Marketplace, SubscriptionPlan, User
 from app.db.repositories.account import AccountRepository
@@ -27,7 +28,7 @@ def _sync_line(account) -> str:
     else:
         status = "✅ OK"
     sync_at = (
-        account.last_sync_at.strftime("%d.%m %H:%M UTC")
+        f"{format_ui_time(account.last_sync_at)} (Минск)"
         if account.last_sync_at
         else "ещё не было"
     )
