@@ -9,7 +9,7 @@ from loguru import logger
 from openai import AsyncOpenAI
 
 from app.core.config import Settings, get_settings
-from app.services.reply_validation import find_reply_violation, is_valid_reply
+from app.services.reply_validation import find_reply_violation
 
 
 class LLMError(RuntimeError):

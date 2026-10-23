@@ -48,6 +48,14 @@ python -m app.main
 2. Должно прийти приветствие и inline-меню: **Отзывы**, **Настройки**, **Подписка**, **Помощь**.
 3. Кнопки «Помощь» и заглушки разделов отвечают текстом (без реальных интеграций).
 
+## LLM (генерация ответов)
+
+Сервис [`app/services/llm.py`](app/services/llm.py): `generate_replies(review_text, rating, tone_profile, count=3)`.
+
+Требуется `OPENAI_API_KEY` в `.env`; для DeepSeek и других провайдеров укажите `OPENAI_BASE_URL` и `OPENAI_MODEL`.
+
+Ответы проверяются валидатором [`app/services/reply_validation.py`](app/services/reply_validation.py) (без URL, контактов, запрещённых фраз).
+
 ## Тесты
 
 ```bash
