@@ -328,7 +328,12 @@ async def manual_edit_start(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(ManualReviewStates.waiting_edit_text)
     await callback.answer()
     if callback.message:
-        await callback.message.answer("✏️ Пришлите исправленный текст ответа.")
+        from app.bot.utils.callbacks import safe_edit_message
+
+        await safe_edit_message(
+            callback.message,
+            "✏️ Пришлите исправленный текст ответа.",
+        )
 
 
 @router.message(ManualReviewStates.waiting_edit_text, F.text)
@@ -592,7 +597,10 @@ async def publish_lite(callback: CallbackQuery, state: FSMContext) -> None:
             await session.commit()
 
     if callback.message:
-        await callback.message.answer(
+        from app.bot.utils.callbacks import safe_edit_message
+
+        await safe_edit_message(
+            callback.message,
             "<b>Lite — скопируйте в кабинет маркетплейса:</b>\n\n"
             f"<code>{text}</code>",
             reply_markup=reviews_menu_keyboard(),

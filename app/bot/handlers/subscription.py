@@ -15,7 +15,7 @@ from app.bot.keyboards.subscription import (
     subscription_menu_keyboard,
 )
 from app.core.config import get_settings
-from app.bot.utils.callbacks import answer_and_edit
+from app.bot.utils.callbacks import answer_and_edit, safe_edit_message
 from app.db.models import SubscriptionPlan, User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
@@ -351,7 +351,11 @@ async def crypto_create_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUs
         except CryptoPayError as exc:
             await callback.answer("Не удалось создать счёт", show_alert=True)
             if callback.message:
-                await callback.message.answer(f"Crypto Bot: {exc}")
+                await safe_edit_message(
+                    callback.message,
+                    f"Crypto Bot: {exc}",
+                    reply_markup=payment_methods_keyboard(),
+                )
             return
         subscription.external_payment_id = str(invoice.get("invoice_id", ""))
         await session.commit()
@@ -365,7 +369,8 @@ async def crypto_create_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUs
     usd = pricing.pro_usd if plan == SubscriptionPlan.PRO else pricing.lite_usd
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             f"🪙 <b>Оплата {plan_name}</b>\n\n"
             f"Сумма: <b>{pricing.format_usd_line(usd)}</b>\n"
             "<i>Оплата USDT, TON и др. в @CryptoBot</i>\n\n"
@@ -381,7 +386,9 @@ async def crypto_check_payment(callback: CallbackQuery, bot: Bot, db_user: DbUse
     pricing = await get_subscription_pricing()
     text = await _subscription_status_text(db_user)
     if callback.message:
-        await callback.message.answer(text, reply_markup=subscription_menu_keyboard(pricing))
+        await safe_edit_message(
+            callback.message, text, reply_markup=subscription_menu_keyboard(pricing)
+        )
 
 
 @router.callback_query(F.data == "sub:qr:menu")
@@ -401,12 +408,11 @@ async def qr_show_instructions(callback: CallbackQuery) -> None:
     plan = SubscriptionPlan.PRO if plan_key == "pro" else SubscriptionPlan.LITE
     settings = get_settings()
     pricing = await get_subscription_pricing()
-    await callback.answer()
-    if callback.message:
-        await callback.message.edit_text(
-            qr_instructions(settings, plan, pricing=pricing),
-            reply_markup=qr_paid_keyboard(plan_key),
-        )
+    await answer_and_edit(
+        callback,
+        qr_instructions(settings, plan, pricing=pricing),
+        reply_markup=qr_paid_keyboard(plan_key),
+    )
 
 
 @router.callback_query(F.data.in_({"sub:legal:lite", "sub:legal:pro"}))
@@ -438,7 +444,8 @@ async def legal_mark_paid(callback: CallbackQuery, bot: Bot, db_user: DbUser) ->
     pricing = await get_subscription_pricing()
     await callback.answer("Заявка отправлена")
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "✅ Заявка на оплату по счёту создана.\n\n"
             f"Номер: <code>{sub_id}</code>\n"
             "После проверки платежа администратор активирует подписку.",
@@ -460,7 +467,8 @@ async def qr_mark_paid(callback: CallbackQuery, bot: Bot, db_user: DbUser) -> No
     pricing = await get_subscription_pricing()
     await callback.answer("Заявка отправлена администратору")
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "✅ Заявка на оплату QR создана.\n\n"
             f"Номер заявки: <code>{sub_id}</code>\n"
             "После проверки перевода администратор активирует подписку.",

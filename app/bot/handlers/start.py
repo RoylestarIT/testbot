@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.bot.copy import DIFFERENTIATORS_DASHBOARD_LINE, HELP_TEXT, TERMS_TEXT, differentiators_section
+from app.bot.copy import HELP_TEXT, TERMS_TEXT
 from app.bot.ui import BRAND, ICON
 from app.bot.handlers.dashboard import _edit_dashboard, _send_dashboard
 from app.bot.keyboards.menu import main_menu_keyboard
@@ -62,8 +62,6 @@ async def onboarding_accept(callback: CallbackQuery, db_user: DbUser) -> None:
         await session.commit()
     await callback.answer("Спасибо!")
     if callback.message:
-        intro = differentiators_section(compact=True) + "\n\n" + DIFFERENTIATORS_DASHBOARD_LINE
-        await callback.message.edit_text(intro)
         await _edit_dashboard(callback.message, db_user)
 
 

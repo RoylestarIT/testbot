@@ -111,9 +111,12 @@ async def activate_trial(callback: CallbackQuery, db_user: DbUser) -> None:
     settings = get_settings()
     await callback.answer("Trial PRO активирован!")
     if callback.message and user and user.trial_pro_until:
-        await callback.message.answer(
+        await safe_edit_message(
+            callback.message,
             f"🎁 Trial PRO на <b>{settings.trial_pro_days}</b> дней до "
             f"<b>{user.trial_pro_until.strftime('%d.%m.%Y')}</b>.\n"
             f"Бесплатных publish: <b>{user.free_api_publishes_remaining}</b>",
-            reply_markup=main_menu_keyboard(show_admin=_show_admin(callback.from_user.id if callback.from_user else 0)),
+            reply_markup=main_menu_keyboard(
+                show_admin=_show_admin(callback.from_user.id if callback.from_user else 0)
+            ),
         )

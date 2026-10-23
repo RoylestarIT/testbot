@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from app.bot.copy import SETTINGS_INTRO as SETTINGS_TEXT
+from app.bot.utils.callbacks import safe_edit_message
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.settings import (
     account_detail_keyboard,
@@ -58,7 +59,9 @@ async def menu_settings(callback: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(SETTINGS_TEXT, reply_markup=settings_menu_keyboard())
+        await safe_edit_message(
+            callback.message, SETTINGS_TEXT, reply_markup=settings_menu_keyboard()
+        )
 
 
 @router.callback_query(F.data == "pro:autopublish")
@@ -68,7 +71,8 @@ async def pro_autopublish_menu(callback: CallbackQuery, db_user: DbUser) -> None
         accounts = await AccountRepository(session).list_by_user_id(db_user.id, active_only=True)
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "<b>Авто-публикация (PRO)</b>\n\n"
             "Для отзывов <b>4–5★</b> бот сгенерирует и опубликует ответ без подтверждения "
             "(1–3★ — только уведомление). Выберите кабинет:",
@@ -93,7 +97,8 @@ async def settings_accounts(callback: CallbackQuery, db_user: DbUser) -> None:
         )
     text = f"<b>Кабинеты маркетплейсов</b>\n\n{limit_line}"
     if callback.message:
-        await callback.message.edit_text(text, reply_markup=accounts_menu_keyboard(accounts))
+        await safe_edit_message(
+            callback.message,text, reply_markup=accounts_menu_keyboard(accounts))
 
 
 @router.callback_query(F.data == "settings:connect:wb")
@@ -107,7 +112,8 @@ async def connect_wb_start(callback: CallbackQuery, state: FSMContext, db_user: 
     await state.set_state(ConnectWbStates.waiting_api_key)
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "<b>Wildberries</b>\n\n"
             "Пришлите API-ключ категории «Вопросы и отзывы» одним сообщением.\n"
             "Ключ будет зашифрован и сохранён в БД.",
@@ -200,7 +206,8 @@ async def connect_ozon_start(callback: CallbackQuery, state: FSMContext, db_user
     await state.set_state(ConnectOzonStates.waiting_client_id)
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "<b>Ozon</b>\n\nПришлите <b>Client-Id</b> из кабинета продавца.",
         )
 
@@ -305,7 +312,8 @@ async def settings_account_detail(callback: CallbackQuery, db_user: DbUser) -> N
     key_status = "✅ ключ OK" if account.is_active and not account.last_sync_error else "⚠️ проверьте ключ"
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             f"<b>{name}</b>\nПлощадка: {mp}\n{key_status}"
             f"{sync_hint}",
             reply_markup=account_detail_keyboard(
@@ -335,7 +343,8 @@ async def settings_account_autopublish(callback: CallbackQuery, db_user: DbUser)
         await session.commit()
     await callback.answer("Сохранено")
     if callback.message and account is not None:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "<b>Авто-публикация (PRO)</b>\n\n"
             "4–5★ — авто-ответ; 1–3★ — только уведомление.",
             reply_markup=autopublish_accounts_keyboard(accounts),
@@ -360,7 +369,8 @@ async def settings_account_toggle(callback: CallbackQuery, db_user: DbUser) -> N
         name = account.shop_name or f"{mp} #{account.id}"
         async with session_factory() as session:
             is_pro = await is_pro_user(session, db_user.id)
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             f"<b>{name}</b>\nПлощадка: {mp}\nСтатус: {'активен' if account.is_active else 'отключён'}",
             reply_markup=account_detail_keyboard(
                 account.id,
@@ -389,7 +399,8 @@ async def settings_account_rotate_start(callback: CallbackQuery, state: FSMConte
         prompt = "<b>Ozon</b>\n\nПришлите новый <b>Client-Id</b>."
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(prompt)
+        await safe_edit_message(
+            callback.message,prompt)
 
 
 @router.message(RotateWbKeyStates.waiting_api_key, F.text)
@@ -493,7 +504,8 @@ async def settings_tone_list(callback: CallbackQuery, db_user: DbUser) -> None:
             "Lite/PRO — без лимита."
         )
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             f"<b>Tone of voice</b>\n\n{limit_line}",
             reply_markup=tone_menu_keyboard(profiles),
         )
@@ -510,7 +522,8 @@ async def settings_tone_add(callback: CallbackQuery, state: FSMContext, db_user:
     await state.set_state(ToneProfileStates.waiting_description)
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "Опишите желаемый тон ответов (1–3 предложения), например: "
             "«Вежливо, без канцелярита, с благодарностью за отзыв»."
         )
@@ -576,7 +589,8 @@ async def settings_tone_view(callback: CallbackQuery, db_user: DbUser) -> None:
     ex_text = "\n".join(f"• {item}" for item in examples) if examples else "—"
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             f"<b>Профиль #{profile.id}</b>\n\n{profile.description}\n\n<b>Примеры:</b>\n{ex_text}",
             reply_markup=tone_detail_keyboard(profile.id, profile.is_default),
         )
@@ -596,7 +610,8 @@ async def settings_tone_set_default(callback: CallbackQuery, db_user: DbUser) ->
     if callback.message:
         examples = profile.example_replies or []
         ex_text = "\n".join(f"• {item}" for item in examples) if examples else "—"
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             f"<b>Профиль #{profile.id}</b> ★\n\n{profile.description}\n\n<b>Примеры:</b>\n{ex_text}",
             reply_markup=tone_detail_keyboard(profile.id, True),
         )
@@ -615,7 +630,8 @@ async def settings_tone_edit_start(callback: CallbackQuery, state: FSMContext, d
     await state.set_state(ToneProfileStates.waiting_edit_description)
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             f"Новое описание tone для профиля #{profile_id}:\n\n"
             f"Текущее: {profile.description}"
         )
@@ -688,7 +704,8 @@ async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> No
         "«Напоминание об очереди» — если отзывы без ответа дольше 24 ч (~18:00 Минск)."
     )
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             text,
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
@@ -716,7 +733,8 @@ async def settings_notify_toggle_new(callback: CallbackQuery, db_user: DbUser) -
         user = await UserRepository(session).get_by_id(db_user.id)
     await callback.answer("Сохранено")
     if callback.message and user:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "🔔 <b>Уведомления</b>",
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
@@ -744,7 +762,8 @@ async def settings_notify_toggle_negative(callback: CallbackQuery, db_user: DbUs
         user = await UserRepository(session).get_by_id(db_user.id)
     await callback.answer("Сохранено")
     if callback.message and user:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "🔔 <b>Уведомления</b>",
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
@@ -772,7 +791,8 @@ async def settings_notify_toggle_digest(callback: CallbackQuery, db_user: DbUser
         user = await UserRepository(session).get_by_id(db_user.id)
     await callback.answer("Сохранено")
     if callback.message and user:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "🔔 <b>Уведомления</b>",
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
@@ -800,7 +820,8 @@ async def settings_notify_toggle_stale(callback: CallbackQuery, db_user: DbUser)
         user = await UserRepository(session).get_by_id(db_user.id)
     await callback.answer("Сохранено")
     if callback.message and user:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "🔔 <b>Уведомления</b>",
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
@@ -829,7 +850,7 @@ async def settings_account_sync(callback: CallbackQuery, db_user: DbUser) -> Non
             msg = f"⚠️ Sync не удался:\n{exc}"
     await callback.answer("Готово")
     if callback.message:
-        await callback.message.answer(msg, reply_markup=settings_menu_keyboard())
+        await safe_edit_message(callback.message, msg, reply_markup=settings_menu_keyboard())
 
 
 @router.callback_query(F.data == "settings:templates")
@@ -848,7 +869,8 @@ async def settings_templates_menu(callback: CallbackQuery, db_user: DbUser) -> N
         lines.append("<i>Пока пусто — добавьте первый шаблон.</i>")
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "\n".join(lines),
             reply_markup=templates_menu_keyboard(templates),
         )
@@ -859,7 +881,8 @@ async def settings_tpl_add_start(callback: CallbackQuery, state: FSMContext) -> 
     await state.set_state(ReplyTemplateStates.waiting_label)
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "📝 Новый шаблон\n\nПришлите <b>короткое название</b> кнопки (до 24 символов):"
         )
 
@@ -913,7 +936,8 @@ async def settings_tpl_delete(callback: CallbackQuery, db_user: DbUser) -> None:
         templates = list_templates(user)
     await callback.answer("Удалено")
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "📝 <b>Мои шаблоны</b>",
             reply_markup=templates_menu_keyboard(templates),
         )
@@ -929,7 +953,8 @@ async def settings_tone_delete(callback: CallbackQuery, db_user: DbUser) -> None
         await session.commit()
     await callback.answer("Удалено" if deleted else "Не найден")
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             "<b>Tone of voice</b>",
             reply_markup=tone_menu_keyboard(profiles),
         )

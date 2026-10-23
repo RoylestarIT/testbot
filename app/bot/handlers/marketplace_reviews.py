@@ -560,19 +560,17 @@ async def mp_copy_answer(callback: CallbackQuery, state: FSMContext, db_user: Db
             await _persist_selected_reply(session, rid, text, selected_index=selected)
             await ReviewRepository(session).update_status(rid, ReviewStatus.PROCESSED)
             await session.commit()
-    await callback.answer("Текст ниже — скопируйте")
+    await callback.answer("Скопируйте текст из сообщения")
     if callback.message:
-        await callback.message.answer(COPY_HINT.format(text=text))
         session_factory = get_session_factory()
         async with session_factory() as session:
             allowed, reason = await can_api_publish(session, db_user.id)
+        body = COPY_HINT.format(text=text)
         if not allowed and reason == "need_pro":
-            await callback.message.answer(
-                "💡 На PRO — публикация в WB/Ozon в один клик.",
-                reply_markup=_pro_upsell_keyboard(),
-            )
-        await callback.message.answer(
-            "✅ Готово.",
+            body += "\n\n💡 На PRO — публикация в WB/Ozon в один клик."
+        await safe_edit_message(
+            callback.message,
+            body,
             reply_markup=after_review_action_keyboard(has_next=has_next),
         )
     await state.clear()
@@ -691,7 +689,10 @@ async def mp_edit_start(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(MarketplaceReviewStates.waiting_edit_text)
     await callback.answer()
     if callback.message:
-        await callback.message.answer("✏️ Пришлите отредактированный текст ответа одним сообщением.")
+        await safe_edit_message(
+            callback.message,
+            "✏️ Пришлите отредактированный текст ответа одним сообщением.",
+        )
 
 
 @router.message(MarketplaceReviewStates.waiting_edit_text, F.text)
