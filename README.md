@@ -54,6 +54,14 @@ python -m app.main
 
 Лимит **Lite**: 5 генераций в день (1 генерация = 3 варианта). **PRO** — без лимита (активная подписка в БД).
 
+## Подписка и оплата
+
+- **Telegram Stars**: инвойсы Lite (~$10/мес) и PRO (~$30/мес) — `SUBSCRIPTION_*_STARS` в `.env`
+- **QR (Беларусь)**: заявка → админ `/approve <subscription_id>` (ваш Telegram ID в `ADMIN_IDS`)
+- Команда `/my_subscription` — статус тарифа
+
+Для Stars-инвойсов в BotFather должны быть включены платежи (Telegram Stars).
+
 ## LLM (генерация ответов)
 
 Сервис [`app/services/llm.py`](app/services/llm.py): `generate_replies(review_text, rating, tone_profile, count=3)`.
