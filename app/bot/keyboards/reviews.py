@@ -4,12 +4,29 @@ from app.db.models import ToneProfile
 from app.bot.keyboards.nav import nav_home_queue
 
 
+def reviews_queue_toolbar() -> list[InlineKeyboardButton]:
+    return [
+        InlineKeyboardButton(text="✍️ Ручной ответ", callback_data="review:manual:start"),
+        InlineKeyboardButton(text="📚 История", callback_data="review:history"),
+    ]
+
+
+def manual_entry_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Очередь отзывов", callback_data="review:mp:list")],
+            [InlineKeyboardButton(text="❌ Отмена", callback_data="review:cancel")],
+        ]
+    )
+
+
 def reviews_menu_keyboard() -> InlineKeyboardMarkup:
-    """Fallback после отмены ручного ввода — сразу рабочие кнопки, без лишнего экрана."""
+    """После отмены — обратно в раздел «Ответы на отзывы»."""
     return nav_home_queue(
         extra=[
+            [InlineKeyboardButton(text="📬 Очередь отзывов", callback_data="review:mp:list")],
+            reviews_queue_toolbar(),
             [
-                InlineKeyboardButton(text="✍️ Ручной ответ", callback_data="review:manual:start"),
                 InlineKeyboardButton(text="🔄 Sync", callback_data="review:sync"),
             ],
         ]

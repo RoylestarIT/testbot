@@ -31,8 +31,9 @@ def after_review_action_keyboard(*, has_next: bool = False) -> InlineKeyboardMar
         rows.append([InlineKeyboardButton(text="➡️ Следующий отзыв", callback_data="review:mp:next")])
     rows.append(
         [
+            InlineKeyboardButton(text="✍️ Ручной", callback_data="review:manual:start"),
             InlineKeyboardButton(text="📬 Очередь", callback_data="review:mp:list"),
-            InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard"),
         ]
     )
+    rows.append([InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")])
     return InlineKeyboardMarkup(inline_keyboard=rows)

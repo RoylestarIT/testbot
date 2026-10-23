@@ -6,14 +6,15 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 from loguru import logger
 
 from app.bot.keyboards.menu import main_menu_keyboard
+from app.bot.utils.callbacks import safe_edit_message
 from app.bot.keyboards.reviews import (
     history_filter_keyboard,
+    manual_entry_keyboard,
     rating_keyboard,
     reviews_menu_keyboard,
     tone_keyboard,
     variants_keyboard,
 )
-from app.bot.utils.callbacks import safe_edit_message
 from app.services.pro_access import can_api_publish
 from app.bot.states.marketplace_review import MarketplaceReviewStates
 from app.bot.states.review import ManualReviewStates
@@ -384,20 +385,22 @@ async def manual_start(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(ManualReviewStates.waiting_text)
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
+            "✍️ <b>Ручной ответ</b>\n\n"
+            "Отзыва нет в sync — вставьте текст сами.\n"
             "Пришлите <b>текст отзыва</b> одним сообщением.",
+            reply_markup=manual_entry_keyboard(),
         )
 
 
 @router.callback_query(F.data == "review:cancel")
-async def review_cancel(callback: CallbackQuery, state: FSMContext) -> None:
+async def review_cancel(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
     await state.clear()
     await callback.answer("Отменено")
-    if callback.message:
-        await callback.message.edit_text(
-            "Отменено. Откройте очередь или сводку:",
-            reply_markup=reviews_menu_keyboard(),
-        )
+    from app.bot.handlers.marketplace_reviews import list_mp_reviews
+
+    await list_mp_reviews(callback, state, db_user)
 
 
 @router.message(ManualReviewStates.waiting_text, F.text)

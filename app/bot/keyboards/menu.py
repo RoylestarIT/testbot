@@ -15,7 +15,6 @@ def main_menu_keyboard(*, show_admin: bool = False) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="💎 Подписка", callback_data="menu:subscription"),
         ],
         [
-            InlineKeyboardButton(text="✍️ Ручной ответ", callback_data="review:manual:start"),
             InlineKeyboardButton(text="📚 История", callback_data="review:history"),
         ],
         [

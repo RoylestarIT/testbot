@@ -13,8 +13,11 @@ def no_cabinets_keyboard() -> InlineKeyboardMarkup:
 
 
 def no_new_reviews_keyboard() -> InlineKeyboardMarkup:
+    from app.bot.keyboards.reviews import reviews_queue_toolbar
+
     return nav_home_queue(
         extra=[
+            reviews_queue_toolbar(),
             [
                 InlineKeyboardButton(text="🔄 Sync", callback_data="review:sync"),
                 InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu:settings"),
