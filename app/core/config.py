@@ -75,6 +75,14 @@ class Settings(BaseSettings):
         ),
         validation_alias="QR_PAYMENT_INSTRUCTIONS",
     )
+    legal_payment_instructions: str = Field(
+        default=(
+            "1. Напишите в поддержку название организации, УНП/ИНН и нужный тариф (Lite / PRO).\n"
+            "2. Мы выставим счёт на безналичную оплату (РФ / РБ).\n"
+            "3. После поступления средств активируем подписку на указанный срок."
+        ),
+        validation_alias="LEGAL_PAYMENT_INSTRUCTIONS",
+    )
 
     @field_validator("admin_ids", mode="before")
     @classmethod
