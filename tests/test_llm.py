@@ -26,6 +26,19 @@ def test_build_prompt_includes_tone_description() -> None:
     assert "Спасибо!" in user
 
 
+def test_build_prompt_includes_product_context() -> None:
+    _, user = build_prompt(
+        "Размер не подошёл",
+        3,
+        None,
+        2,
+        product_context="Название: Куртка; Артикул WB (nmId): 42",
+    )
+    assert "Товар:" in user
+    assert "Куртка" in user
+    assert "42" in user
+
+
 def test_parse_replies_json_plain_object() -> None:
     raw = json.dumps({"replies": ["A", "B", "C"]}, ensure_ascii=False)
     assert parse_replies_json(raw) == ["A", "B", "C"]

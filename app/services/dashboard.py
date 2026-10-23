@@ -5,7 +5,6 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.copy import DIFFERENTIATORS_DASHBOARD_LINE
 from app.bot.ui import dashboard_home, muted
 from app.constants import MANUAL_SHOP_NAME
 from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus, SubscriptionPlan, User
@@ -139,9 +138,6 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
                 f"{tone_n}/{FREE_MAX_TONE_PROFILES} tone"
             )
         )
-
-    details.append("")
-    details.append(DIFFERENTIATORS_DASHBOARD_LINE)
 
     footer_raw = get_poller_status_line().strip()
     footer = f"🔄 {footer_raw}" if footer_raw else None

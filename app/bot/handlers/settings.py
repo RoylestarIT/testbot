@@ -538,7 +538,8 @@ async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> No
         "🔔 <b>Уведомления</b>\n\n"
         "Push от фоновой синхронизации (poller).\n"
         "«Только негатив» — только 1–3★.\n"
-        "«Утренний дайджест» — сводка раз в день (~9:00 Минск, UTC+3)."
+        "«Утренний дайджест» — сводка раз в день (~9:00 Минск, UTC+3).\n"
+        "«Напоминание об очереди» — если отзывы без ответа дольше 24 ч (~18:00 Минск)."
     )
     if callback.message:
         await callback.message.edit_text(
@@ -547,6 +548,7 @@ async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> No
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
                 daily_digest=user.notify_daily_digest,
+                notify_stale=user.notify_stale_reviews,
             ),
         )
 
@@ -574,6 +576,7 @@ async def settings_notify_toggle_new(callback: CallbackQuery, db_user: DbUser) -
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
                 daily_digest=user.notify_daily_digest,
+                notify_stale=user.notify_stale_reviews,
             ),
         )
 
@@ -601,6 +604,7 @@ async def settings_notify_toggle_negative(callback: CallbackQuery, db_user: DbUs
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
                 daily_digest=user.notify_daily_digest,
+                notify_stale=user.notify_stale_reviews,
             ),
         )
 
@@ -628,6 +632,35 @@ async def settings_notify_toggle_digest(callback: CallbackQuery, db_user: DbUser
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
                 daily_digest=user.notify_daily_digest,
+                notify_stale=user.notify_stale_reviews,
+            ),
+        )
+
+
+@router.callback_query(F.data == "settings:notify:toggle_stale")
+async def settings_notify_toggle_stale(callback: CallbackQuery, db_user: DbUser) -> None:
+    from app.bot.keyboards.notifications import notifications_keyboard
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            return
+        await UserRepository(session).set_notification_prefs(
+            db_user.id,
+            notify_stale_reviews=not user.notify_stale_reviews,
+        )
+        await session.commit()
+        user = await UserRepository(session).get_by_id(db_user.id)
+    await callback.answer("Сохранено")
+    if callback.message and user:
+        await callback.message.edit_text(
+            "🔔 <b>Уведомления</b>",
+            reply_markup=notifications_keyboard(
+                notify_new=user.notify_new_reviews,
+                negative_only=user.notify_negative_only,
+                daily_digest=user.notify_daily_digest,
+                notify_stale=user.notify_stale_reviews,
             ),
         )
 

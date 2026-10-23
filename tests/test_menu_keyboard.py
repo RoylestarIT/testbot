@@ -23,3 +23,11 @@ def test_dashboard_keyboard_primary_queue() -> None:
     kb = dashboard_keyboard(show_trial=False, show_onboarding=False, show_admin=False)
     first = kb.inline_keyboard[0][0].text
     assert "Ответить" in first or "Очередь" in first
+
+
+def test_dashboard_keyboard_has_why_us() -> None:
+    kb = dashboard_keyboard(show_trial=False, show_onboarding=False, show_admin=False)
+    texts = [button.text for row in kb.inline_keyboard for button in row]
+    assert "ℹ️ Почему мы" in texts
+    callbacks = [button.callback_data for row in kb.inline_keyboard for button in row]
+    assert "menu:why_us" in callbacks

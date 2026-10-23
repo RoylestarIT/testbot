@@ -67,6 +67,8 @@ def build_prompt(
     rating: int | None,
     tone_profile: ToneProfileInput | None,
     count: int,
+    *,
+    product_context: str | None = None,
 ) -> tuple[str, str]:
     system = (
         "Ты — опытный менеджер маркетплейса (Wildberries/Ozon). "
@@ -75,10 +77,15 @@ def build_prompt(
         "Не обещай рост рейтинга и нереалистичные компенсации. "
         f"Верни ровно JSON без markdown: {{\"replies\": [\"...\", ...]}} — {count} различных варианта на русском."
     )
+    product_block = ""
+    if product_context and product_context.strip():
+        product_block = f"Товар:\n{product_context.strip()}\n\n"
+
     user = (
         f"{_format_tone_profile(tone_profile)}\n\n"
         f"{_rating_guidance(rating)}\n\n"
         f"Рейтинг: {rating if rating is not None else 'не указан'}\n"
+        f"{product_block}"
         f"Текст отзыва:\n{review_text.strip()}\n\n"
         f"Сгенерируй {count} варианта ответа."
     )
@@ -164,6 +171,7 @@ async def generate_replies(
     tone_profile: ToneProfileInput | None,
     count: int = 3,
     *,
+    product_context: str | None = None,
     client: AsyncOpenAI | None = None,
     settings: Settings | None = None,
 ) -> list[str]:
@@ -174,7 +182,13 @@ async def generate_replies(
 
     cfg = settings or get_settings()
     llm_client = client or _build_client(cfg)
-    system, user = build_prompt(review_text, rating, tone_profile, count)
+    system, user = build_prompt(
+        review_text,
+        rating,
+        tone_profile,
+        count,
+        product_context=product_context,
+    )
 
     try:
         response = await llm_client.chat.completions.create(

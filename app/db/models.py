@@ -85,6 +85,11 @@ class User(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    notify_stale_reviews: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    last_stale_reminder_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     reply_templates: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True)
 
     marketplace_accounts: Mapped[list["MarketplaceAccount"]] = relationship(

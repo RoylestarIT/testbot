@@ -1,26 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
-
 from app.bot.ui import muted, quote, review_stars
 from app.db.models import Marketplace, MarketplaceAccount, Review
-
-
-def _product_hint(raw: dict[str, Any] | None, marketplace: Marketplace | None) -> str | None:
-    if not raw:
-        return None
-    if marketplace == Marketplace.WB:
-        name = raw.get("productName") or raw.get("productDetails", {}).get("productName")
-        if isinstance(name, str) and name.strip():
-            return name.strip()[:120]
-        nm = raw.get("nmId") or raw.get("productDetails", {}).get("nmId")
-        if nm is not None:
-            return f"артикул {nm}"
-    if marketplace == Marketplace.OZON:
-        sku = raw.get("sku")
-        if sku is not None:
-            return f"SKU {sku}"
-    return None
+from app.services.marketplace.product_context import product_hint_short
 
 
 def format_review_card(
@@ -35,7 +17,7 @@ def format_review_card(
         mp = "🟣 WB" if account.marketplace == Marketplace.WB else "🔵 Ozon"
     rating = review.rating if review.rating is not None else None
     shop = account.shop_name if account and account.shop_name else mp
-    product = _product_hint(review.raw_json, marketplace)
+    product = product_hint_short(review.raw_json, marketplace)
 
     if isinstance(rating, int):
         stars = review_stars(rating)

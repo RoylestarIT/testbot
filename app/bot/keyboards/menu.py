@@ -54,8 +54,9 @@ def dashboard_keyboard(
             ],
             [
                 InlineKeyboardButton(text="📊 Подробнее", callback_data="menu:dashboard:details"),
-                InlineKeyboardButton(text="⋯ Ещё", callback_data="menu:more"),
+                InlineKeyboardButton(text="ℹ️ Почему мы", callback_data="menu:why_us"),
             ],
+            [InlineKeyboardButton(text="⋯ Ещё", callback_data="menu:more")],
         ]
     )
     if show_admin:

@@ -20,6 +20,7 @@ from app.bot.states.review import ManualReviewStates
 from app.core.config import get_settings
 from app.db.models import ReviewStatus, User as DbUser
 from app.db.repositories.account import AccountRepository
+from app.services.marketplace.product_context import product_context_for_llm
 from app.db.repositories.reply import ReplyRepository
 from app.db.repositories.review import ReviewRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
@@ -94,6 +95,18 @@ async def _next_variant_index(session, review_id: int) -> int:
     return max(item.variant_index for item in replies) + 1
 
 
+async def _llm_product_context(review_id: int) -> str | None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        review = await ReviewRepository(session).get_by_id(review_id)
+        if review is None:
+            return None
+        account = await AccountRepository(session).get_by_id(review.account_id)
+        if account is None:
+            return None
+        return product_context_for_llm(review.raw_json, account.marketplace)
+
+
 async def _generate_and_persist(
     *,
     user_id: int,
@@ -116,6 +129,7 @@ async def _generate_and_persist(
     )
 
     settings = get_settings()
+    product_context = await _llm_product_context(review_id)
 
     async def _call_llm() -> list[str]:
         return await generate_replies(
@@ -123,6 +137,7 @@ async def _generate_and_persist(
             rating,
             tone,
             count=3,
+            product_context=product_context,
             settings=settings,
         )
 

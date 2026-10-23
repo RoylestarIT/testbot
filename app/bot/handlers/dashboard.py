@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
+from app.bot.copy import differentiators_section
 from app.bot.keyboards.menu import dashboard_keyboard, main_menu_keyboard
 from app.bot.utils.callbacks import safe_edit_message
 from app.core.config import get_settings
@@ -64,6 +65,19 @@ async def menu_dashboard(callback: CallbackQuery, db_user: DbUser) -> None:
     await callback.answer()
     if callback.message:
         await _edit_dashboard(callback.message, db_user)
+
+
+@router.callback_query(F.data == "menu:why_us")
+async def menu_why_us(callback: CallbackQuery) -> None:
+    await callback.answer()
+    text = differentiators_section(compact=False)
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Сводка", callback_data="menu:dashboard")],
+        ]
+    )
+    if callback.message:
+        await safe_edit_message(callback.message, text, reply_markup=kb)
 
 
 @router.callback_query(F.data == "menu:dashboard:details")

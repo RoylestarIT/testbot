@@ -1,7 +1,7 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import MarketplaceAccount, Review, ReviewStatus
@@ -85,6 +85,22 @@ class ReviewRepository:
         stmt = stmt.order_by(Review.created_at.desc()).limit(limit)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+    async def count_stale_new_for_user(self, user_id: int, *, older_than_hours: int) -> int:
+        now = datetime.now(UTC)
+        cutoff = now - timedelta(hours=older_than_hours)
+        stmt = (
+            select(func.count(Review.id))
+            .select_from(Review)
+            .join(MarketplaceAccount, Review.account_id == MarketplaceAccount.id)
+            .where(
+                MarketplaceAccount.user_id == user_id,
+                Review.status == ReviewStatus.NEW,
+                Review.created_at <= cutoff,
+                or_(Review.snoozed_until.is_(None), Review.snoozed_until <= now),
+            )
+        )
+        return int((await self._session.scalar(stmt)) or 0)
 
     async def list_new_for_user(self, user_id: int, *, limit: int = 30) -> list[Review]:
         now = datetime.now(UTC)

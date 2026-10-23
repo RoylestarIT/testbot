@@ -19,12 +19,14 @@ from app.services.marketplace.http_pool import close_marketplace_http_clients
 from app.services.llm_queue import start_llm_workers, stop_llm_workers
 from app.tasks.crypto_pay_poller import crypto_pay_poller_loop
 from app.tasks.daily_digest import daily_digest_loop
+from app.tasks.stale_review_reminder import stale_review_reminder_loop
 from app.tasks.poller import marketplace_poller_loop
 from app.tasks.subscription_reminder import subscription_reminder_loop
 
 _poller_task: asyncio.Task[None] | None = None
 _reminder_task: asyncio.Task[None] | None = None
 _digest_task: asyncio.Task[None] | None = None
+_stale_reminder_task: asyncio.Task[None] | None = None
 _crypto_poller_task: asyncio.Task[None] | None = None
 _health_runner: web.AppRunner | None = None
 
@@ -43,7 +45,7 @@ async def _register_bot_commands(bot: Bot) -> None:
 
 
 async def on_startup(bot: Bot) -> None:
-    global _poller_task, _reminder_task, _digest_task, _crypto_poller_task, _health_runner
+    global _poller_task, _reminder_task, _digest_task, _stale_reminder_task, _crypto_poller_task, _health_runner
     settings = get_settings()
     await init_db()
     logger.info("Database initialized")
@@ -61,15 +63,16 @@ async def on_startup(bot: Bot) -> None:
     _poller_task = asyncio.create_task(marketplace_poller_loop(bot))
     _reminder_task = asyncio.create_task(subscription_reminder_loop(bot))
     _digest_task = asyncio.create_task(daily_digest_loop(bot))
+    _stale_reminder_task = asyncio.create_task(stale_review_reminder_loop(bot))
     _crypto_poller_task = asyncio.create_task(crypto_pay_poller_loop(bot))
     if settings.health_port > 0:
         _health_runner = await start_health_server(settings.webhook_host, settings.health_port, bot=bot)
 
 
 async def on_shutdown(*_args: object, **_kwargs: object) -> None:
-    global _poller_task, _reminder_task, _digest_task, _crypto_poller_task, _health_runner
+    global _poller_task, _reminder_task, _digest_task, _stale_reminder_task, _crypto_poller_task, _health_runner
     await stop_llm_workers()
-    for task in (_poller_task, _reminder_task, _digest_task, _crypto_poller_task):
+    for task in (_poller_task, _reminder_task, _digest_task, _stale_reminder_task, _crypto_poller_task):
         if task is not None:
             task.cancel()
             try:
@@ -79,6 +82,7 @@ async def on_shutdown(*_args: object, **_kwargs: object) -> None:
     _poller_task = None
     _reminder_task = None
     _digest_task = None
+    _stale_reminder_task = None
     _crypto_poller_task = None
     if _health_runner is not None:
         await _health_runner.cleanup()

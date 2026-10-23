@@ -9,6 +9,7 @@ from app.db.repositories.reply import ReplyRepository
 from app.services.generation_limit import is_pro_user
 from app.services.llm import LLMError, generate_replies
 from app.services.marketplace.base import MarketplaceAPIError
+from app.services.marketplace.product_context import product_context_for_llm
 from app.services.marketplace.publish_service import publish_reply_to_marketplace
 from app.services.tone_resolver import resolve_tone_input
 
@@ -33,11 +34,13 @@ async def try_auto_publish_review(
     settings = settings or get_settings()
     tone = await resolve_tone_input(session, account.user_id, "default")
     try:
+        product_context = product_context_for_llm(review.raw_json, account.marketplace)
         variants = await generate_replies(
             review.text or "",
             review.rating or 5,
             tone,
             count=1,
+            product_context=product_context,
             settings=settings,
         )
     except LLMError as exc:
