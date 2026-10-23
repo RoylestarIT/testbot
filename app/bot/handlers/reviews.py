@@ -164,7 +164,6 @@ async def menu_main(callback: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(F.data == "review:manual:start")
 async def manual_start(callback: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
-    await state.update_data(mp_flow=False)
     await state.set_state(ManualReviewStates.waiting_text)
     await callback.answer()
     if callback.message:

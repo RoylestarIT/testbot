@@ -46,7 +46,8 @@ python -m app.main
 
 1. Откройте бота в Telegram и отправьте `/start`.
 2. Должно прийти приветствие и inline-меню: **Отзывы**, **Настройки**, **Подписка**, **Помощь**.
-3. Кнопки «Помощь» и заглушки разделов отвечают текстом (без реальных интеграций).
+3. **Настройки** — подключение WB/Ozon API, профили tone of voice.
+4. **Отзывы** — синхронизация с маркетплейсами и публикация ответа после подтверждения.
 
 ## Lite: ручной ввод отзыва
 
@@ -69,6 +70,23 @@ python -m app.main
 Требуется `OPENAI_API_KEY` в `.env`; для DeepSeek и других провайдеров укажите `OPENAI_BASE_URL` и `OPENAI_MODEL`.
 
 Ответы проверяются валидатором [`app/services/reply_validation.py`](app/services/reply_validation.py) (без URL, контактов, запрещённых фраз).
+
+## Маркетплейсы (WB / Ozon)
+
+- Клиенты: [`app/services/marketplace/wildberries.py`](app/services/marketplace/wildberries.py) (Feedbacks API), [`app/services/marketplace/ozon.py`](app/services/marketplace/ozon.py).
+- Подключение: **Настройки → + Wildberries / + Ozon** — ключ шифруется (`FERNET_KEY`), тестовый запрос «1 отзыв».
+- **Отзывы → Синхронизировать отзывы** — ручной импорт неотвеченных отзывов в БД.
+- Публикация: генерация → «Опубликовать на WB/Ozon» → подтверждение.
+- Фоновый poller: `POLL_INTERVAL_MINUTES` (по умолчанию 15), уведомление в Telegram о новых отзывах.
+
+## Админ-команды
+
+Telegram ID в `ADMIN_IDS`:
+
+- `/stats` — пользователи, подписки, отзывы
+- `/pending` — pending-платежи
+- `/approve <id>` / `/reject <id>` — QR-заявки
+- `/broadcast текст` — рассылка всем пользователям
 
 ## Тесты
 
