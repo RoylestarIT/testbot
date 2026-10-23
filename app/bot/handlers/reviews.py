@@ -5,7 +5,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from loguru import logger
 
-from app.bot.copy import REVIEWS_MENU_TEXT
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.reviews import (
     history_filter_keyboard,

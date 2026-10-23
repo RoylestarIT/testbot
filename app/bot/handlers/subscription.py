@@ -4,6 +4,7 @@ from aiogram.types import CallbackQuery, Message, PreCheckoutQuery
 
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.subscription import (
+    crypto_pay_keyboard,
     qr_paid_keyboard,
     qr_plan_keyboard,
     subscription_menu_keyboard,
@@ -14,7 +15,14 @@ from app.db.models import SubscriptionPlan, User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.services.generation_limit import remaining_generations_today
+from app.services.payment.crypto_pay import (
+    CryptoPayError,
+    create_subscription_invoice,
+    crypto_amount_for_plan,
+    crypto_pay_enabled,
+)
 from app.services.payment.manual_qr import qr_instructions
+from app.services.payment.payment_options import card_payments_enabled, stars_payments_enabled
 from app.services.payment.telegram_stars import (
     invoice_currency,
     invoice_description,
@@ -29,10 +37,12 @@ from app.services.payment.telegram_stars import (
 from app.services.plans import LITE_VS_PRO_SHORT, PLANS_COMPARISON_TEXT, describe_access_tier
 from app.services.subscription import (
     activate_from_telegram_invoice,
+    create_crypto_pending,
     create_qr_pending,
     format_subscription_summary,
     get_effective_subscription,
 )
+from app.tasks.crypto_pay_poller import process_crypto_pending_once
 
 router = Router(name="subscription")
 
@@ -40,16 +50,24 @@ def _subscription_menu_text() -> str:
     from app.bot.ui import brand_title, footer_hint, kv, muted, section
 
     settings = get_settings()
-    pay = payment_mode_label(settings)
+    methods: list[str] = []
+    if stars_payments_enabled(settings):
+        methods.append("Telegram Stars")
+    elif card_payments_enabled(settings):
+        methods.append(payment_mode_label(settings))
+    if crypto_pay_enabled(settings):
+        methods.append("Crypto Bot (USDT/TON…)")
+    methods.append("перевод РФ/РБ")
+    pay_line = ", ".join(methods)
     return (
         brand_title("Подписка", tagline="Free · Lite · PRO", icon="💎")
         + section("Оплата", icon="💳")
-        + f"\n  {kv('Способ', pay)}"
+        + f"\n  {kv('Способы', pay_line)}"
         + f"\n  {muted(LITE_VS_PRO_SHORT)}"
-        + section("QR (РБ)", icon="🇧🇾")
+        + section("Перевод", icon="🏦")
         + "\n"
-        + muted("Заявка → подтверждение администратором.")
-        + footer_hint("«Сравнение тарифов» — полная таблица возможностей.")
+        + muted("РФ или РБ — заявка, подтверждение администратором.")
+        + footer_hint("🪙 Crypto Bot — автоматически после оплаты счёта.")
     )
 
 
@@ -120,6 +138,12 @@ async def subscription_compare(callback: CallbackQuery) -> None:
 async def send_stars_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUser) -> None:
     plan = SubscriptionPlan.PRO if callback.data.endswith(":pro") else SubscriptionPlan.LITE
     settings = get_settings()
+    if not stars_payments_enabled(settings) and not card_payments_enabled(settings):
+        await callback.answer(
+            "Оплата картой/Stars не настроена. Используйте 🪙 Crypto Bot или перевод.",
+            show_alert=True,
+        )
+        return
     await callback.answer()
     if not callback.message:
         return
@@ -189,12 +213,63 @@ async def successful_payment_handler(message: Message, db_user: DbUser) -> None:
     )
 
 
+@router.callback_query(F.data.in_({"sub:crypto:lite", "sub:crypto:pro"}))
+async def crypto_create_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUser) -> None:
+    settings = get_settings()
+    if not crypto_pay_enabled(settings):
+        await callback.answer("Crypto Bot не настроен", show_alert=True)
+        return
+    plan = SubscriptionPlan.PRO if callback.data.endswith(":pro") else SubscriptionPlan.LITE
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        subscription = await create_crypto_pending(session, user_id=db_user.id, plan=plan)
+        await session.flush()
+        try:
+            invoice = await create_subscription_invoice(
+                settings,
+                subscription_id=subscription.id,
+                user_id=db_user.id,
+                plan=plan,
+            )
+        except CryptoPayError as exc:
+            await callback.answer("Не удалось создать счёт", show_alert=True)
+            if callback.message:
+                await callback.message.answer(f"Crypto Bot: {exc}")
+            return
+        subscription.external_payment_id = str(invoice.get("invoice_id", ""))
+        await session.commit()
+
+    pay_url = invoice.get("bot_invoice_url") or invoice.get("pay_url") or invoice.get("mini_app_invoice_url")
+    if not pay_url:
+        await callback.answer("Нет ссылки на оплату", show_alert=True)
+        return
+    plan_name = "PRO" if plan == SubscriptionPlan.PRO else "Lite"
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            f"🪙 <b>Оплата {plan_name}</b>\n\n"
+            f"Сумма: <b>${crypto_amount_for_plan(settings, plan)}</b> (можно оплатить USDT, TON и др.)\n"
+            "Нажмите кнопку ниже — откроется @CryptoBot.\n"
+            "После оплаты доступ включится автоматически (до 2 минут).",
+            reply_markup=crypto_pay_keyboard(str(pay_url)),
+        )
+
+
+@router.callback_query(F.data == "sub:crypto:check")
+async def crypto_check_payment(callback: CallbackQuery, bot: Bot, db_user: DbUser) -> None:
+    await callback.answer("Проверяю…")
+    await process_crypto_pending_once(bot)
+    text = await _subscription_status_text(db_user)
+    if callback.message:
+        await callback.message.answer(text, reply_markup=subscription_menu_keyboard())
+
+
 @router.callback_query(F.data == "sub:qr:menu")
 async def qr_plan_menu(callback: CallbackQuery) -> None:
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(
-            "Выберите тариф для оплаты по QR (Беларусь):",
+            "Выберите тариф для оплаты переводом (РФ / РБ):",
             reply_markup=qr_plan_keyboard(),
         )
 

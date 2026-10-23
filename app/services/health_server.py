@@ -26,9 +26,13 @@ async def _health_handler(_request: web.Request) -> web.Response:
     return web.json_response(payload, status=status)
 
 
-async def start_health_server(host: str, port: int) -> web.AppRunner:
+async def start_health_server(host: str, port: int, *, bot: object | None = None) -> web.AppRunner:
     app = web.Application()
     app.router.add_get("/health", _health_handler)
+    if bot is not None:
+        from app.services.payment.crypto_webhook import register_crypto_webhook_routes
+
+        register_crypto_webhook_routes(app, bot=bot)  # type: ignore[arg-type]
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, host, port)

@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     )
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
     payment_provider_token: str = Field(default="", validation_alias="PAYMENT_PROVIDER_TOKEN")
+    payment_enable_stars: bool = Field(default=False, validation_alias="PAYMENT_ENABLE_STARS")
+    crypto_pay_api_token: str = Field(default="", validation_alias="CRYPTO_PAY_API_TOKEN")
+    crypto_pay_testnet: bool = Field(default=False, validation_alias="CRYPTO_PAY_TESTNET")
+    crypto_lite_amount_usd: str = Field(default="10", validation_alias="CRYPTO_LITE_AMOUNT_USD")
+    crypto_pro_amount_usd: str = Field(default="30", validation_alias="CRYPTO_PRO_AMOUNT_USD")
+    crypto_pay_webhook_path: str = Field(default="/cryptopay/webhook", validation_alias="CRYPTO_PAY_WEBHOOK_PATH")
     payment_currency: str = Field(default="RUB", validation_alias="PAYMENT_CURRENCY")
     subscription_lite_price_minor: int = Field(
         default=100000,

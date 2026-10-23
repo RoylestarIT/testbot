@@ -50,6 +50,18 @@ python3 -m app.main
 
 Подробно: **Подписка → Сравнение тарифов** в боте.
 
+### Crypto Bot (без Stars / без ИП)
+
+```env
+CRYPTO_PAY_API_TOKEN=...   # @CryptoBot → Crypto Pay → Create App
+PAYMENT_ENABLE_STARS=false
+CRYPTO_LITE_AMOUNT_USD=10
+CRYPTO_PRO_AMOUNT_USD=30
+```
+
+В @CryptoBot включите **Webhooks** на `https://ВАШ_ДОМЕН:8081/cryptopay/webhook` (или путь из `CRYPTO_PAY_WEBHOOK_PATH`).  
+Без публичного webhook оплата всё равно подтвердится через фоновый poller (~90 с) или кнопку «Проверить оплату».
+
 ## Основные команды
 
 - `/start` — сводка (дашборд), чеклист onboarding

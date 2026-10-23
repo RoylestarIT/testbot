@@ -48,6 +48,7 @@ class PaymentMethod(str, enum.Enum):
     STARS = "stars"
     TELEGRAM = "telegram"
     QR = "qr"
+    CRYPTO = "crypto"
 
 
 class User(Base):

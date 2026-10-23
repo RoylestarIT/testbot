@@ -160,15 +160,62 @@ async def reject_qr_subscription(session: AsyncSession, subscription_id: int) ->
 
 
 async def approve_qr_subscription(session: AsyncSession, subscription_id: int) -> Subscription | None:
+    return await approve_pending_subscription(session, subscription_id)
+
+
+async def create_crypto_pending(
+    session: AsyncSession,
+    *,
+    user_id: int,
+    plan: SubscriptionPlan,
+) -> Subscription:
+    repo = SubscriptionRepository(session)
+    for existing in await repo.list_by_user_id(user_id):
+        if (
+            existing.status == SubscriptionStatus.PENDING
+            and existing.payment_method == PaymentMethod.CRYPTO
+            and existing.plan == plan
+        ):
+            return existing
+    return await repo.create(
+        user_id=user_id,
+        plan=plan,
+        status=SubscriptionStatus.PENDING,
+        payment_method=PaymentMethod.CRYPTO,
+    )
+
+
+async def approve_pending_subscription(session: AsyncSession, subscription_id: int) -> Subscription | None:
     repo = SubscriptionRepository(session)
     subscription = await repo.get_by_id(subscription_id)
     if subscription is None:
         return None
     if subscription.status != SubscriptionStatus.PENDING:
         return None
-    if subscription.payment_method != PaymentMethod.QR:
+    if subscription.payment_method not in (PaymentMethod.QR, PaymentMethod.CRYPTO):
         return None
     return await activate_subscription(session, subscription)
+
+
+async def activate_from_crypto_invoice(
+    session: AsyncSession,
+    *,
+    subscription_id: int,
+    invoice_id: str,
+) -> Subscription | None:
+    repo = SubscriptionRepository(session)
+    subscription = await repo.get_by_id(subscription_id)
+    if subscription is None:
+        return None
+    if subscription.status != SubscriptionStatus.PENDING:
+        return None
+    if subscription.payment_method != PaymentMethod.CRYPTO:
+        return None
+    return await activate_subscription(
+        session,
+        subscription,
+        external_payment_id=invoice_id,
+    )
 
 
 def format_subscription_summary(
