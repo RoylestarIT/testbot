@@ -6,33 +6,11 @@ from app.db.models import ToneProfile
 def reviews_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="Ответить на отзыв",
-                    callback_data="review:manual:start",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Синхронизировать отзывы",
-                    callback_data="review:sync",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Новые из маркетплейсов",
-                    callback_data="review:mp:list",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="История ответов",
-                    callback_data="review:history",
-                ),
-            ],
-            [
-                InlineKeyboardButton(text="← Главное меню", callback_data="menu:main"),
-            ],
+            [InlineKeyboardButton(text="→  Ручной ответ", callback_data="review:manual:start")],
+            [InlineKeyboardButton(text="→  Синхронизация", callback_data="review:sync")],
+            [InlineKeyboardButton(text="→  Очередь WB/Ozon", callback_data="review:mp:list")],
+            [InlineKeyboardButton(text="→  История", callback_data="review:history")],
+            [InlineKeyboardButton(text="←  Сводка", callback_data="menu:main")],
         ]
     )
 
@@ -48,7 +26,7 @@ def rating_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="⭐ 4", callback_data="review:rating:4"),
             InlineKeyboardButton(text="⭐ 5", callback_data="review:rating:5"),
         ],
-        [InlineKeyboardButton(text="Отмена", callback_data="review:cancel")],
+        [InlineKeyboardButton(text="←  Отмена", callback_data="review:cancel")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -57,24 +35,24 @@ def tone_keyboard(profiles: list[ToneProfile]) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     if not profiles:
         rows.append(
-            [InlineKeyboardButton(text="➕ Создать tone-профиль", callback_data="settings:tone:add")]
+            [InlineKeyboardButton(text="→  Создать tone", callback_data="settings:tone:add")]
         )
     for profile in profiles:
         label = profile.description[:40] if profile.description else f"Профиль #{profile.id}"
         rows.append(
             [InlineKeyboardButton(text=label, callback_data=f"review:tone:{profile.id}")]
         )
-    rows.append([InlineKeyboardButton(text="Тон по умолчанию", callback_data="review:tone:default")])
+    rows.append([InlineKeyboardButton(text="→  Стандартный тон", callback_data="review:tone:default")])
     rows.extend(
         [
             [
-                InlineKeyboardButton(text="🙏 Благодарность", callback_data="review:tone:preset:grateful"),
-                InlineKeyboardButton(text="💬 Извинение", callback_data="review:tone:preset:apology"),
+                InlineKeyboardButton(text="Благодарность", callback_data="review:tone:preset:grateful"),
+                InlineKeyboardButton(text="Извинение", callback_data="review:tone:preset:apology"),
             ],
-            [InlineKeyboardButton(text="📎 Нейтрально", callback_data="review:tone:preset:neutral")],
+            [InlineKeyboardButton(text="Нейтрально", callback_data="review:tone:preset:neutral")],
         ]
     )
-    rows.append([InlineKeyboardButton(text="Отмена", callback_data="review:cancel")])
+    rows.append([InlineKeyboardButton(text="←  Отмена", callback_data="review:cancel")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -90,7 +68,7 @@ def variants_keyboard(
 ) -> InlineKeyboardMarkup:
     pick_buttons: list[InlineKeyboardButton] = []
     for index in range(variant_count):
-        prefix = "✅ " if index == selected_index else ""
+        prefix = "● " if index == selected_index else ""
         pick_buttons.append(
             InlineKeyboardButton(
                 text=f"{prefix}{index + 1}",
@@ -113,26 +91,26 @@ def variants_keyboard(
     copy_cb = "review:mp:copy" if mp_mode else "review:publish"
     edit_cb = "review:mp:edit" if mp_mode else "review:edit"
     action_row = [
-        InlineKeyboardButton(text="📋 Скопировать ответ", callback_data=copy_cb),
-        InlineKeyboardButton(text="✏️ Править", callback_data=edit_cb),
+        InlineKeyboardButton(text="→  Копировать", callback_data=copy_cb),
+        InlineKeyboardButton(text="→  Править", callback_data=edit_cb),
     ]
     if can_publish and review_id is not None:
         action_row.append(
             InlineKeyboardButton(
-                text="🚀 В маркетплейс",
+                text="→  Publish",
                 callback_data=f"review:mp:publish:{review_id}",
             )
         )
     rows.append(action_row)
     rows.append(
         [
-            InlineKeyboardButton(text="Ещё варианты", callback_data="review:more"),
-            InlineKeyboardButton(text="Изменить тон", callback_data="review:change_tone"),
+            InlineKeyboardButton(text="↻  Ещё", callback_data="review:more"),
+            InlineKeyboardButton(text="↻  Тон", callback_data="review:change_tone"),
         ]
     )
     if has_next_in_queue:
-        rows.append([InlineKeyboardButton(text="➡️ Следующий отзыв", callback_data="review:mp:next")])
-    rows.append([InlineKeyboardButton(text="← Главное меню", callback_data="menu:main")])
+        rows.append([InlineKeyboardButton(text="→  Следующий", callback_data="review:mp:next")])
+    rows.append([InlineKeyboardButton(text="←  Сводка", callback_data="menu:main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 

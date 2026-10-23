@@ -73,7 +73,7 @@ async def menu_full(callback: CallbackQuery) -> None:
     if callback.message:
         await safe_edit_message(
             callback.message,
-            "Выберите раздел:",
+            "✦ <b>ReviewPilot</b>\n<i>Выберите раздел:</i>",
             reply_markup=main_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
         )
 

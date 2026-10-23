@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.bot.ui import DIVIDER, muted, quote, review_stars, section
 from app.db.models import Marketplace, MarketplaceAccount, Review
 
 
@@ -14,7 +15,7 @@ def _product_hint(raw: dict[str, Any] | None, marketplace: Marketplace | None) -
             return name.strip()[:120]
         nm = raw.get("nmId") or raw.get("productDetails", {}).get("nmId")
         if nm is not None:
-            return f"артикул WB {nm}"
+            return f"артикул {nm}"
     if marketplace == Marketplace.OZON:
         sku = raw.get("sku")
         if sku is not None:
@@ -32,27 +33,36 @@ def format_review_card(
     marketplace = account.marketplace if account else None
     if account is not None:
         mp = "Wildberries" if account.marketplace == Marketplace.WB else "Ozon"
-    rating = review.rating if review.rating is not None else "?"
-    stars_line = f"⭐ Оценка: <b>{rating}/5</b>"
-    if isinstance(review.rating, int) and review.rating <= 3:
-        stars_line += "\n⚠️ <i>Негативный отзыв — ответьте особенно внимательно.</i>"
+    rating = review.rating if review.rating is not None else 0
     shop = account.shop_name if account and account.shop_name else mp
     product = _product_hint(review.raw_json, marketplace)
-    product_line = f"\n🛍 {product}" if product else ""
+
+    stars = review_stars(rating if isinstance(rating, int) else 0)
+    rating_line = f"{stars}  <b>{rating}/5</b>" if isinstance(review.rating, int) else muted("Без оценки")
+
+    if can_publish_via_api:
+        channel = "PRO · publish из бота доступен"
+    else:
+        channel = "Lite · ответ через «Скопировать»"
+
     text = (review.text or "—").strip()
     if len(text) > 800:
         text = text[:800] + "…"
-    if can_publish_via_api:
-        publish_line = "📌 Отправка в маркетплейс из бота: <b>доступна</b> (PRO / trial / квота)\n"
-    else:
-        publish_line = (
-            "📌 Отправка в API: <b>нужен PRO</b> · сейчас — «Скопировать ответ»\n"
-        )
-    return (
-        f"📄 <b>Отзыв</b> · {shop}\n"
-        f"{stars_line}{product_line}\n"
-        f"Площадка: {mp}\n"
-        f"{publish_line}\n"
-        f"{text}\n\n"
-        "Выберите <b>тон ответа</b> (или быстрый пресет ниже):"
-    )
+
+    lines = [
+        f"✦ <b>Отзыв</b>  ·  {shop}",
+        DIVIDER,
+        section("Оценка"),
+        f"  {rating_line}",
+    ]
+    if isinstance(review.rating, int) and review.rating <= 3:
+        lines.append(f"  {muted('Негатив — ответьте внимательно')}")
+    lines.append(section("Товар"))
+    lines.append(f"  {product or muted('—')}")
+    lines.append(section("Канал"))
+    lines.append(f"  {channel}")
+    lines.append(section("Текст покупателя"))
+    lines.append(quote(text))
+    lines.append("")
+    lines.append(muted("Выберите тон ответа или ⚡ быстрый шаблон:"))
+    return "\n".join(lines)

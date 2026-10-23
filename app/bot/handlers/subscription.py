@@ -37,15 +37,19 @@ from app.services.subscription import (
 router = Router(name="subscription")
 
 def _subscription_menu_text() -> str:
+    from app.bot.ui import brand_title, footer_hint, kv, muted, section
+
     settings = get_settings()
     pay = payment_mode_label(settings)
     return (
-        "💎 <b>Подписка ReviewPilot</b>\n\n"
-        f"Способ оплаты: <b>{pay}</b>\n"
-        f"<i>{LITE_VS_PRO_SHORT}</i>\n\n"
-        "🇧🇾 Оплата по QR — заявка, подтверждение админом.\n"
-        "🆓 Без оплаты: до <b>5</b> генераций в день.\n\n"
-        "Нажмите «Сравнение тарифов» для полной таблицы."
+        brand_title("Подписка", tagline="Free · Lite · PRO")
+        + section("Оплата")
+        + f"\n  {kv('Способ', pay)}"
+        + f"\n  {muted(LITE_VS_PRO_SHORT)}"
+        + section("QR (РБ)")
+        + "\n"
+        + muted("Заявка → подтверждение администратором.")
+        + footer_hint("«Сравнение тарифов» — полная таблица возможностей.")
     )
 
 

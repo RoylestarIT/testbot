@@ -7,33 +7,39 @@ from app.db.models import Marketplace, Subscription, SubscriptionPlan, Subscript
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.services.pro_access import has_pro_access, is_trial_pro_active
+from app.bot.ui import brand_title, bullet, footer_hint, muted, quote, section
 from app.services.subscription import get_effective_subscription, plan_label
 
 FREE_MAX_MARKETPLACE_ACCOUNTS = 1
 FREE_MAX_TONE_PROFILES = 1
 
 PLANS_COMPARISON_TEXT = (
-    "📊 <b>Сравнение тарифов</b>\n\n"
-    "<b>Бесплатно</b> — попробовать без оплаты\n"
-    "• до <b>5</b> генераций ответов в день\n"
-    f"• <b>{FREE_MAX_MARKETPLACE_ACCOUNTS}</b> кабинет WB/Ozon\n"
-    f"• <b>{FREE_MAX_TONE_PROFILES}</b> профиль tone of voice\n"
-    "• синхронизация отзывов\n"
-    "• ответ: <b>скопировать</b> в кабинет вручную\n"
-    "• без отправки в API маркетплейса\n\n"
-    "✨ <b>Lite</b> (~$10/мес)\n"
-    "• <b>без лимита</b> генераций\n"
-    "• <b>несколько</b> кабинетов и tone-профилей\n"
-    "• публикация только <b>копированием</b> (не из бота)\n\n"
-    "🚀 <b>PRO</b> (~$30/мес)\n"
-    "• без лимита генераций\n"
-    "• <b>отправка ответа</b> в WB/Ozon из бота\n"
-    "• <b>авто-ответы</b> на отзывы 4–5★ (в настройках)\n"
-    "• приоритет для новых PRO-функций\n\n"
-    "🎁 <b>Trial PRO</b> — один раз на аккаунт, как PRO на срок trial "
-    "(кнопка в «Сводке», если доступна).\n\n"
-    "<i>Без PRO: иногда доступны несколько бесплатных publish в API — "
-    "смотрите «Сводку».</i>"
+    brand_title("Тарифы", tagline="Free · Lite · PRO")
+    + section("Free")
+    + "\n"
+    + bullet("5 генераций в день")
+    + "\n"
+    + bullet(f"{FREE_MAX_MARKETPLACE_ACCOUNTS} кабинет · {FREE_MAX_TONE_PROFILES} tone")
+    + "\n"
+    + bullet("ответ — копирование в кабинет")
+    + section("Lite ~$10/мес")
+    + "\n"
+    + bullet("безлимит генераций")
+    + "\n"
+    + bullet("несколько кабинетов и tone")
+    + "\n"
+    + bullet("без publish в API")
+    + section("PRO ~$30/мес")
+    + "\n"
+    + bullet("безлимит генераций")
+    + "\n"
+    + bullet("publish в WB/Ozon из бота")
+    + "\n"
+    + bullet("авто-ответы 4–5★")
+    + section("Trial PRO")
+    + "\n"
+    + quote("Один раз на аккаунт — возможности PRO на срок trial (кнопка в сводке).")
+    + footer_hint("Бесплатные publish в API — см. счётчик в сводке.")
 )
 
 LITE_VS_PRO_SHORT = (
@@ -110,11 +116,12 @@ async def describe_access_tier(
     user: User,
     subscription: Subscription | None,
 ) -> str:
+    from app.bot.ui import tier_badge_free, tier_badge_lite, tier_badge_pro, tier_badge_trial
+
     if subscription and subscription.status == SubscriptionStatus.ACTIVE:
-        if subscription.plan == SubscriptionPlan.PRO:
-            return f"💎 Тариф: <b>{plan_label(subscription.plan)}</b> (оплачен)"
-        return f"✨ Тариф: <b>{plan_label(subscription.plan)}</b> (оплачен)"
+        badge = tier_badge_pro() if subscription.plan == SubscriptionPlan.PRO else tier_badge_lite()
+        return f"{badge}  ·  оплачен до {subscription.expires_at.strftime('%d.%m.%Y') if subscription.expires_at else '—'}"
     if await is_trial_pro_active(user):
         until = user.trial_pro_until.strftime("%d.%m.%Y") if user.trial_pro_until else "—"
-        return f"🎁 Trial PRO до <b>{until}</b>"
-    return "🆓 Режим: <b>бесплатный</b> (Lite без оплаты)"
+        return f"{tier_badge_trial()}  ·  до {until}"
+    return tier_badge_free()

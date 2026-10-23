@@ -24,10 +24,13 @@ async def menu_support(callback: CallbackQuery) -> None:
     settings = get_settings()
     await callback.answer()
     contact = f"@{settings.support_username.lstrip('@')}" if settings.support_username else "администратору проекта"
+    from app.bot.ui import brand_title, muted, section
+
     text = (
-        "🆘 <b>Поддержка</b>\n\n"
-        "Опишите проблему: WB/Ozon API, оплата, генерация ответов.\n"
-        f"Контакт: <b>{contact}</b>"
+        brand_title("Поддержка", tagline="Поможем с API, оплатой и генерацией")
+        + section("Контакт")
+        + f"\n  <b>{contact}</b>\n"
+        + muted("Опишите проблему одним сообщением в личку.")
     )
     if callback.message:
         await callback.message.edit_text(text, reply_markup=support_keyboard())

@@ -23,11 +23,11 @@ _last_poller_error: str | None = None
 
 def get_poller_status_line() -> str:
     if _last_poller_ok_at is None:
-        return "🔄 Poller: ещё не было успешного цикла\n"
+        return "Фоновая синхронизация: ожидание первого цикла"
     ts = _last_poller_ok_at.strftime("%d.%m %H:%M")
     if _last_poller_error:
-        return f"🔄 Poller: OK {ts} UTC · ⚠️ прошлая ошибка\n"
-    return f"🔄 Poller: OK {ts} UTC\n"
+        return f"Синхронизация {ts} UTC · была ошибка"
+    return f"Синхронизация {ts} UTC · OK"
 
 
 async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = None) -> None:
@@ -77,13 +77,15 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
             if count <= 0:
                 continue
             notify_text = (
-                f"⚠️ ReviewPilot: негативных отзывов (1–3★) — <b>{count}</b>.\n"
-                "Ответьте внимательно."
+                "✦ <b>ReviewPilot</b>\n"
+                f"Негативных отзывов (1–3★): <b>{count}</b>\n"
+                "<i>Рекомендуем ответить в первую очередь.</i>"
             )
         else:
             notify_text = (
-                f"📩 ReviewPilot: новых отзывов — <b>{count}</b>.\n"
-                "Откройте «Новые из маркетплейсов»."
+                "✦ <b>ReviewPilot</b>\n"
+                f"Новых отзывов: <b>{count}</b>\n"
+                "<i>Откройте очередь и ответьте в своём tone.</i>"
             )
         try:
             await bot.send_message(user.tg_id, notify_text, reply_markup=poller_notify_keyboard())

@@ -20,6 +20,7 @@ from app.services.plans import (
 )
 from app.services.subscription import get_effective_subscription
 from app.services.onboarding_checklist import build_onboarding_checklist
+from app.bot.ui import brand_title, footer_hint, kv, muted, section
 from app.tasks.poller import get_poller_status_line
 
 
@@ -60,63 +61,62 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
 
     subscription = await get_effective_subscription(session, user.id)
     remaining = await remaining_generations_today(session, user.id)
-    plan_line = await describe_access_tier(session, user, subscription)
+    tier_line = await describe_access_tier(session, user, subscription)
+    access_extra: list[str] = []
     if remaining is not None:
-        plan_line += f"\nГенераций сегодня: <b>{remaining}</b> / 5"
-    elif (
-        subscription
-        and subscription.status.value == "active"
-        and subscription.plan == SubscriptionPlan.LITE
-    ):
-        plan_line += "\nPublish в API: <b>нет</b> (только копирование)"
+        access_extra.append(kv("Генераций сегодня", f"{remaining} / 5"))
+    elif subscription and subscription.status.value == "active" and subscription.plan == SubscriptionPlan.LITE:
+        access_extra.append(f"  Publish  {muted('копирование')}")
     elif await is_trial_pro_active(user) or (
-        subscription
-        and subscription.status.value == "active"
-        and subscription.plan == SubscriptionPlan.PRO
+        subscription and subscription.status.value == "active" and subscription.plan == SubscriptionPlan.PRO
     ):
-        plan_line += "\nPublish в API: <b>да</b>"
+        access_extra.append(f"  Publish  <b>в API</b>")
+
+    review_lines = [kv("Новые", str(new_count))]
+    if snoozed_count:
+        review_lines.append(kv("Отложено", str(snoozed_count)))
+    review_lines.append(kv("Publish-квота", str(user.free_api_publishes_remaining)))
 
     if not api_accounts:
-        cabinets = "⚠️ Кабинеты WB/Ozon: <b>не подключены</b>"
+        cabinet_block = section("Кабинеты") + f"\n  {muted('Не подключены')}"
     else:
-        parts: list[str] = []
+        cab_rows: list[str] = [section("Кабинеты")]
         for acc in api_accounts:
             mp = "WB" if acc.marketplace == Marketplace.WB else "Ozon"
             name = acc.shop_name or f"{mp} #{acc.id}"
-            sync = (
-                acc.last_sync_at.strftime("%d.%m %H:%M")
-                if acc.last_sync_at
-                else "ещё не было"
-            )
-            st = "✅" if acc.is_active else "⏸"
-            parts.append(f"{st} {name} · sync {sync} UTC")
-        cabinets = "🏪 Кабинеты:\n" + "\n".join(f"  • {p}" for p in parts)
-
-    onboarding_hint = ""
-    if user.onboarding_completed_at is None and not api_accounts:
-        onboarding_hint = "\n\n👉 Нажмите <b>«Начать настройку»</b> — проведём за 3 шага."
+            sync = acc.last_sync_at.strftime("%d.%m %H:%M") if acc.last_sync_at else "—"
+            dot = "🟢" if acc.is_active else "⚪"
+            cab_rows.append(f"  {dot} {name}  ·  {muted(f'sync {sync}')}")
+        cabinet_block = "\n".join(cab_rows)
 
     limits_hint = ""
     if not await has_lite_or_higher(session, user.id):
         acc_n = await count_user_api_accounts(session, user.id)
         tone_n = await count_user_tone_profiles(session, user.id)
-        limits_hint = (
-            f"\n🔒 Бесплатно: кабинеты <b>{acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS}</b>, "
-            f"tone <b>{tone_n}/{FREE_MAX_TONE_PROFILES}</b> · Lite/PRO снимают лимиты"
+        limits_hint = footer_hint(
+            f"Free: кабинеты {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS}, "
+            f"tone {tone_n}/{FREE_MAX_TONE_PROFILES} · апгрейд в «Подписка»"
         )
 
-    checklist = await build_onboarding_checklist(session, user)
+    onboarding_hint = ""
+    if user.onboarding_completed_at is None and not api_accounts:
+        onboarding_hint = f"\n{muted('Подсказка: «Начать настройку» — 3 шага до первого ответа.')}"
 
-    return (
-        "🏠 <b>Сводка ReviewPilot</b>\n\n"
-        f"{checklist}"
-        f"{plan_line}\n"
-        f"📬 Новых отзывов: <b>{new_count}</b>"
-        + (f" · отложено: {snoozed_count}" if snoozed_count else "")
+    checklist = await build_onboarding_checklist(session, user)
+    poller = get_poller_status_line().strip()
+
+    body = (
+        brand_title("Сводка", tagline="Ваши отзывы и кабинеты")
+        + f"\n{checklist}"
+        + section("Доступ")
+        + f"\n  {tier_line}"
+        + ("\n" + "\n".join(access_extra) if access_extra else "")
+        + section("Отзывы")
         + "\n"
-        f"🎟 Бесплатных publish в API: <b>{user.free_api_publishes_remaining}</b>\n"
-        f"{cabinets}\n"
-        f"{get_poller_status_line()}"
-        f"{limits_hint}"
-        f"{onboarding_hint}"
+        + "\n".join(review_lines)
+        + f"\n{cabinet_block}"
+        + (f"\n  {muted(poller)}" if poller else "")
+        + limits_hint
+        + onboarding_hint
     )
+    return body

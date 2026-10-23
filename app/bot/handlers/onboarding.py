@@ -6,22 +6,26 @@ from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.bot.keyboards.menu import main_menu_keyboard
+from app.bot.ui import brand_title, muted, progress_bar
 
 router = Router(name="onboarding")
 
 STEPS = [
-    (
-        "1/3 · <b>Кабинет маркетплейса</b>\n\n"
-        "Откройте «Настройки» → подключите WB или Ozon (API-ключ)."
-    ),
-    (
-        "2/3 · <b>Синхронизация</b>\n\n"
-        "«Отзывы» → «Синхронизировать отзывы» — подтянем новые отзывы в бот."
-    ),
-    (
-        "3/3 · <b>Первый ответ</b>\n\n"
-        "«Новые из маркетплейсов» или ручной ввод → выберите тон → получите варианты."
-    ),
+    brand_title("Шаг 1 из 3", tagline="Кабинет маркетплейса")
+    + "\n"
+    + progress_bar(1, 3)
+    + "\n\n"
+    + muted("Настройки → подключите WB или Ozon (API-ключ)."),
+    brand_title("Шаг 2 из 3", tagline="Синхронизация")
+    + "\n"
+    + progress_bar(2, 3)
+    + "\n\n"
+    + muted("Отзывы → синхронизация — подтянем новые отзывы в очередь."),
+    brand_title("Шаг 3 из 3", tagline="Первый ответ")
+    + "\n"
+    + progress_bar(3, 3)
+    + "\n\n"
+    + muted("Очередь WB/Ozon или ручной ввод → тон → варианты ответа."),
 ]
 
 
@@ -46,10 +50,7 @@ def _step_keyboard(step: int) -> InlineKeyboardMarkup:
 async def onboarding_start(callback: CallbackQuery) -> None:
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
-            "🚀 <b>Быстрый старт</b>\n\n" + STEPS[0],
-            reply_markup=_step_keyboard(0),
-        )
+        await callback.message.edit_text(STEPS[0], reply_markup=_step_keyboard(0))
 
 
 @router.callback_query(F.data.startswith("onboarding:step:"))
@@ -58,10 +59,7 @@ async def onboarding_step(callback: CallbackQuery) -> None:
     step = max(0, min(step, 2))
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
-            f"🚀 <b>Быстрый старт</b>\n\n{STEPS[step]}",
-            reply_markup=_step_keyboard(step),
-        )
+        await callback.message.edit_text(STEPS[step], reply_markup=_step_keyboard(step))
 
 
 @router.callback_query(F.data == "onboarding:done")
@@ -74,6 +72,6 @@ async def onboarding_done(callback: CallbackQuery, db_user: DbUser) -> None:
     tg_id = callback.from_user.id if callback.from_user else 0
     if callback.message:
         await callback.message.edit_text(
-            "✅ Настройка завершена. Удачных продаж!",
+            "✦ <b>ReviewPilot</b>\nНастройка завершена.\n<i>Удачных продаж на маркетплейсах.</i>",
             reply_markup=main_menu_keyboard(show_admin=tg_id in get_settings().admin_ids),
         )

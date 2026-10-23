@@ -20,7 +20,7 @@ def test_review_card_shows_pro_badge_when_no_api_publish() -> None:
         is_active=True,
     )
     body = format_review_card(review, account, can_publish_via_api=False)
-    assert "нужен PRO" in body
+    assert "Скопировать" in body or "Lite" in body
 
 
 def test_review_card_shows_publish_available() -> None:
@@ -40,4 +40,4 @@ def test_review_card_shows_publish_available() -> None:
         is_active=True,
     )
     body = format_review_card(review, account, can_publish_via_api=True)
-    assert "доступна" in body
+    assert "publish" in body.lower()
