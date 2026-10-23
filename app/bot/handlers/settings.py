@@ -538,7 +538,7 @@ async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> No
         "🔔 <b>Уведомления</b>\n\n"
         "Push от фоновой синхронизации (poller).\n"
         "«Только негатив» — только 1–3★.\n"
-        "«Утренний дайджест» — сводка раз в день (~9:00 Мinsk, UTC+3)."
+        "«Утренний дайджест» — сводка раз в день (~9:00 Минск, UTC+3)."
     )
     if callback.message:
         await callback.message.edit_text(

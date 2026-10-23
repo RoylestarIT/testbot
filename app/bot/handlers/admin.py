@@ -557,7 +557,7 @@ async def grant_subscription_cmd(message: Message, command: CommandObject, bot: 
         return
     parts = (command.args or "").split()
     if len(parts) != 2 or not parts[0].isdigit():
-        await message.answer("Или используйте кнопку «Выдать подписку» в /admin")
+        await message.answer("Или используйте кнопку «Выдать тариф» в /admin")
         return
     plan = SubscriptionPlan.PRO if parts[1].lower() == "pro" else SubscriptionPlan.LITE
     msg, _ = await _execute_grant(bot, int(parts[0]), plan)

@@ -15,7 +15,7 @@ async def redeem_promo_code(session: AsyncSession, user_id: int, raw_code: str) 
     repo = PromoCodeRepository(session)
     promo = await repo.get_by_code(code)
     if promo is None or not promo.is_active:
-        return False, "Промокод не найден или неактивен."
+        return False, "Промокод не найден или не активен."
     if promo.redemption_count >= promo.max_redemptions:
         return False, "Лимит активаций промокода исчерпан."
     if await repo.user_redeemed(user_id, promo.id):

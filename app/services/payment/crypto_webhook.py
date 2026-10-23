@@ -66,7 +66,7 @@ async def handle_crypto_webhook(request: web.Request) -> web.Response:
                 user.tg_id,
                 f"✅ Оплата Crypto Bot принята!\n\n"
                 f"Тариф: <b>{plan_name}</b>\n"
-                f"Активна до: <b>{expires}</b>",
+                f"Действует до: <b>{expires}</b>",
             )
         except Exception:
             pass

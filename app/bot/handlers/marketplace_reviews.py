@@ -528,7 +528,10 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
     async with session_factory() as session:
         allowed, _ = await can_api_publish(session, db_user.id)
         if not allowed:
-            await callback.answer("Нет quota для publish", show_alert=True)
+            await callback.answer(
+                "Закончилась бесплатная квота на публикацию в API. Оформите PRO или Trial.",
+                show_alert=True,
+            )
             return
 
     await callback.answer("Публикую…")

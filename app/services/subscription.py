@@ -26,7 +26,7 @@ def status_label(status: SubscriptionStatus) -> str:
     mapping = {
         SubscriptionStatus.ACTIVE: "активна",
         SubscriptionStatus.PENDING: "ожидает подтверждения",
-        SubscriptionStatus.EXPIRED: "истекла",
+        SubscriptionStatus.EXPIRED: "истёкла",
     }
     return mapping.get(status, status.value)
 
@@ -133,7 +133,7 @@ async def grant_subscription_by_tg_id(
 
     user = await UserRepository(session).get_by_tg_id(tg_id)
     if user is None:
-        return None, "Пользователь не найден — пусть отправит /start боту."
+        return None, "Пользователь не найден. Попросите его отправить /start боту."
     repo = SubscriptionRepository(session)
     subscription = await repo.create(
         user_id=user.id,
@@ -237,7 +237,7 @@ def format_subscription_summary(
                 f"Генераций сегодня: <b>{generations_remaining if generations_remaining is not None else '—'}</b> из 5",
                 "Publish в WB/Ozon из бота: <b>только PRO</b> (или trial / бесплатная квота)",
                 "",
-                "Лимиты бесплатно: 1 кабинет WB/Ozon, 1 tone-профиль.\n"
+                "Лимиты бесплатного тарифа: 1 кабинет WB/Ozon, 1 tone-профиль.\n"
                 "Оформите Lite или PRO — кнопка «Сравнение тарифов».",
             ]
         )

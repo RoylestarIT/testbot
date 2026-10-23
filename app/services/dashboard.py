@@ -94,7 +94,7 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
         hint = "👇 Кнопка «Очередь отзывов»"
     else:
         focus = "📭  Новых отзывов нет"
-        hint = "🔄 Нажмите «Синхронизация»"
+        hint = "🔄 Нажмите «Sync» на сводке"
 
     mini = await build_mini_stats_line(session, user.id)
     details: list[str] = []

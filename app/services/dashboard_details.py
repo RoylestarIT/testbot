@@ -74,7 +74,7 @@ async def build_dashboard_details(session: AsyncSession, user: User) -> str:
     elif subscription and subscription.status.value == "active":
         if subscription.plan == SubscriptionPlan.LITE:
             lines.append("")
-            lines.append(muted("✨ Lite — безлимит генераций, publish только копированием."))
+            lines.append(muted("✨ Lite — генерации без лимита, publish только копированием."))
         elif subscription.plan == SubscriptionPlan.PRO:
             lines.append("")
             lines.append(muted("💎 PRO — publish в API и авто-ответы 4–5★."))

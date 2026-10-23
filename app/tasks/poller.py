@@ -85,7 +85,7 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
             notify_text = (
                 "✨ <b>ReviewPilot</b>\n"
                 f"📬 Новых отзывов: <b>{count}</b>\n"
-                "<i>Откройте очередь и ответьте в своём tone.</i>"
+                "<i>Откройте очередь и ответьте в выбранном тоне.</i>"
             )
         try:
             await bot.send_message(user.tg_id, notify_text, reply_markup=poller_notify_keyboard())

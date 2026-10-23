@@ -19,7 +19,7 @@ async def _notify_paid(bot: Bot, tg_id: int, plan_name: str, expires: str) -> No
             tg_id,
             f"✅ Оплата Crypto Bot принята!\n\n"
             f"Тариф: <b>{plan_name}</b>\n"
-            f"Активна до: <b>{expires}</b>",
+            f"Действует до: <b>{expires}</b>",
         )
     except Exception:
         logger.warning("Failed to notify tg_id={} about crypto payment", tg_id)

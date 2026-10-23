@@ -201,7 +201,7 @@ async def successful_payment_handler(message: Message, db_user: DbUser) -> None:
         return
     plan, user_id = parsed
     if user_id != db_user.id:
-        await message.answer("Ошибка привязки платежа.")
+        await message.answer("Ошибка привязки платёжа.")
         return
 
     charge_id = payment.telegram_payment_charge_id
@@ -223,7 +223,7 @@ async def successful_payment_handler(message: Message, db_user: DbUser) -> None:
     await message.answer(
         f"✅ Оплата принята ({payment_mode_label(settings)})!\n\n"
         f"Тариф: <b>{plan_name}</b>\n"
-        f"Активна до: <b>{expires}</b>\n\n"
+        f"Действует до: <b>{expires}</b>\n\n"
         "Спасибо за подписку!",
         reply_markup=main_menu_keyboard(),
     )

@@ -24,7 +24,7 @@ class ToneProfileInput:
 
 def _build_client(settings: Settings) -> AsyncOpenAI:
     if not settings.openai_api_key.strip():
-        raise LLMError("OPENAI_API_KEY is not configured")
+        raise LLMError("Ключ OpenAI не настроен (OPENAI_API_KEY).")
     return AsyncOpenAI(
         api_key=settings.openai_api_key,
         base_url=settings.openai_base_url,
@@ -187,16 +187,16 @@ async def generate_replies(
             temperature=0.7,
         )
     except Exception as exc:
-        raise LLMError("LLM request failed") from exc
+        raise LLMError("Запрос к модели не удался. Попробуйте позже.") from exc
 
     message = response.choices[0].message.content if response.choices else None
     if not message:
-        raise LLMError("LLM returned empty message")
+        raise LLMError("Модель вернула пустой ответ.")
 
     raw_replies = parse_replies_json(message, expected_count=count)
     valid_replies = filter_valid_replies(raw_replies)
 
     if not valid_replies:
-        raise LLMError("All LLM reply variants failed validation")
+        raise LLMError("Все варианты ответа не прошли проверку безопасности.")
 
     return valid_replies[:count]

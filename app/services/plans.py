@@ -24,14 +24,14 @@ PLANS_COMPARISON_TEXT = (
     + bullet("📋 ответ — копирование в кабинет")
     + section("Lite ~$10/мес", icon="✨")
     + "\n"
-    + bullet("♾️ безлимит генераций")
+    + bullet("♾️ генерации без лимита")
     + "\n"
     + bullet("🏪 несколько кабинетов и tone")
     + "\n"
     + bullet("📋 без publish в API")
     + section("PRO ~$20/мес", icon="🚀")
     + "\n"
-    + bullet("♾️ безлимит генераций")
+    + bullet("♾️ генерации без лимита")
     + "\n"
     + bullet("🚀 publish в WB/Ozon из бота")
     + "\n"
