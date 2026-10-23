@@ -62,6 +62,10 @@ class User(Base):
         nullable=False,
     )
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     marketplace_accounts: Mapped[list["MarketplaceAccount"]] = relationship(
         back_populates="user",

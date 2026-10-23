@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from loguru import logger
 
+from app.bot.copy import REVIEWS_MENU_TEXT
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.reviews import (
     rating_keyboard,
@@ -25,12 +26,6 @@ from app.services.tone_resolver import resolve_tone_input
 from app.services.manual_review import get_or_create_manual_account, new_manual_external_id
 
 router = Router(name="reviews")
-
-REVIEWS_MENU_TEXT = (
-    "<b>Отзывы</b>\n\n"
-    "Lite: ручной ввод или отзывы из API после синхронизации. "
-    "Публикация на WB/Ozon — с подтверждением после генерации."
-)
 
 
 async def _tone_input(session, user_id: int, tone_key: str):
@@ -126,6 +121,25 @@ async def _generate_and_persist(
     return review_id, variants
 
 
+@router.callback_query(F.data == "review:history")
+async def review_history(callback: CallbackQuery, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        reviews = await ReviewRepository(session).list_by_user(db_user.id)
+    await callback.answer()
+    if not reviews:
+        text = "📚 История пуста — здесь появятся обработанные и опубликованные ответы."
+    else:
+        lines = ["📚 <b>История</b> (последние)", ""]
+        for item in reviews:
+            status = "🟢 опубликован" if item.status == ReviewStatus.PUBLISHED else "✔️ обработан"
+            preview = (item.text or "—")[:50].replace("\n", " ")
+            lines.append(f"{status} · ⭐{item.rating or '?'} · {preview}")
+        text = "\n".join(lines)
+    if callback.message:
+        await callback.message.edit_text(text, reply_markup=reviews_menu_keyboard())
+
+
 @router.callback_query(F.data == "menu:reviews")
 async def menu_reviews(callback: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
@@ -139,9 +153,12 @@ async def menu_main(callback: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     await callback.answer()
     if callback.message:
-        from app.bot.handlers.start import WELCOME_TEXT
+        from app.bot.copy import WELCOME_TEXT
 
-        await callback.message.edit_text(WELCOME_TEXT, reply_markup=main_menu_keyboard())
+        await callback.message.edit_text(
+            f"{WELCOME_TEXT}\n\nВыберите раздел в меню:",
+            reply_markup=main_menu_keyboard(),
+        )
 
 
 @router.callback_query(F.data == "review:manual:start")

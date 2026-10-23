@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +28,14 @@ class UserRepository:
         self._session.add(user)
         await self._session.flush()
         await self._session.refresh(user)
+        return user
+
+    async def accept_terms(self, user_id: int) -> User | None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            return None
+        user.terms_accepted_at = datetime.now(UTC)
+        await self._session.flush()
         return user
 
     async def get_or_create(

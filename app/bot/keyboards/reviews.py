@@ -25,6 +25,12 @@ def reviews_menu_keyboard() -> InlineKeyboardMarkup:
                 ),
             ],
             [
+                InlineKeyboardButton(
+                    text="История ответов",
+                    callback_data="review:history",
+                ),
+            ],
+            [
                 InlineKeyboardButton(text="← Главное меню", callback_data="menu:main"),
             ],
         ]
@@ -55,6 +61,15 @@ def tone_keyboard(profiles: list[ToneProfile]) -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text=label, callback_data=f"review:tone:{profile.id}")]
         )
     rows.append([InlineKeyboardButton(text="Тон по умолчанию", callback_data="review:tone:default")])
+    rows.extend(
+        [
+            [
+                InlineKeyboardButton(text="🙏 Благодарность", callback_data="review:tone:preset:grateful"),
+                InlineKeyboardButton(text="💬 Извинение", callback_data="review:tone:preset:apology"),
+            ],
+            [InlineKeyboardButton(text="📎 Нейтрально", callback_data="review:tone:preset:neutral")],
+        ]
+    )
     rows.append([InlineKeyboardButton(text="Отмена", callback_data="review:cancel")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 

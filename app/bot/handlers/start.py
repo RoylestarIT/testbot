@@ -1,31 +1,51 @@
 from aiogram import F, Router
 from aiogram.filters import CommandStart
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
+from app.bot.copy import HELP_TEXT, TERMS_TEXT, WELCOME_TEXT
 from app.bot.keyboards.menu import main_menu_keyboard
+from app.db.models import User as DbUser
+from app.db.repositories.user import UserRepository
+from app.db.session import get_session_factory
 
 router = Router(name="start")
 
-WELCOME_TEXT = (
-    "<b>ReviewPilot</b> — помощник селлера для ответов на отзывы "
-    "Wildberries и Ozon.\n\n"
-    "• <b>Lite (FREE)</b> — бот предлагает варианты ответа, вы публикуете сами.\n"
-    "• <b>PRO</b> — отправка ответа через Seller API по кнопке «Отправить».\n\n"
-    "Мы не аффилированы с маркетплейсами и не обещаем рост рейтинга.\n"
-    "Выберите раздел в меню:"
-)
 
-HELP_TEXT = (
-    "<b>Помощь</b>\n\n"
-    "• <b>Отзывы</b> — ручной ввод и генерация ответов (Lite).\n"
-    "• <b>Настройки</b> — ключи API и tone of voice (скоро).\n"
-    "• <b>Подписка</b> — Lite / PRO, Stars и QR (РБ).\n\n"
-    "Команды: /start — меню, /my_subscription — статус подписки."
-)
+def _terms_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Принимаю", callback_data="onboarding:accept")],
+        ]
+    )
+
+
+def _needs_terms(db_user: DbUser) -> bool:
+    return db_user.terms_accepted_at is None
+
 
 @router.message(CommandStart())
-async def cmd_start(message: Message) -> None:
-    await message.answer(WELCOME_TEXT, reply_markup=main_menu_keyboard())
+async def cmd_start(message: Message, db_user: DbUser) -> None:
+    if _needs_terms(db_user):
+        await message.answer(TERMS_TEXT, reply_markup=_terms_keyboard())
+        return
+    await message.answer(
+        f"{WELCOME_TEXT}\n\nВыберите раздел в меню:",
+        reply_markup=main_menu_keyboard(),
+    )
+
+
+@router.callback_query(F.data == "onboarding:accept")
+async def onboarding_accept(callback: CallbackQuery, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        await UserRepository(session).accept_terms(db_user.id)
+        await session.commit()
+    await callback.answer("Спасибо!")
+    if callback.message:
+        await callback.message.edit_text(
+            f"{WELCOME_TEXT}\n\nВыберите раздел в меню:",
+            reply_markup=main_menu_keyboard(),
+        )
 
 
 @router.callback_query(F.data == "menu:help")
@@ -33,5 +53,3 @@ async def menu_help(callback: CallbackQuery) -> None:
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(HELP_TEXT, reply_markup=main_menu_keyboard())
-
-

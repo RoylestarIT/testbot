@@ -25,10 +25,7 @@ from app.services.marketplace.base import MarketplaceAPIError
 
 router = Router(name="settings")
 
-SETTINGS_TEXT = (
-    "<b>Настройки</b>\n\n"
-    "Подключите API маркетплейсов, настройте tone of voice и (PRO) авто-публикацию."
-)
+from app.bot.copy import SETTINGS_INTRO as SETTINGS_TEXT
 
 
 @router.callback_query(F.data == "menu:settings")

@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Review, ReviewStatus
+from app.db.models import MarketplaceAccount, Review, ReviewStatus
 
 
 class ReviewRepository:
@@ -60,6 +60,26 @@ class ReviewRepository:
         await self._session.flush()
         await self._session.refresh(review)
         return review
+
+    async def list_by_user(
+        self,
+        user_id: int,
+        *,
+        statuses: tuple[ReviewStatus, ...] = (ReviewStatus.PROCESSED, ReviewStatus.PUBLISHED),
+        limit: int = 15,
+    ) -> list[Review]:
+        stmt = (
+            select(Review)
+            .join(MarketplaceAccount, Review.account_id == MarketplaceAccount.id)
+            .where(
+                MarketplaceAccount.user_id == user_id,
+                Review.status.in_(statuses),
+            )
+            .order_by(Review.created_at.desc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
 
     async def update_status(self, review_id: int, status: ReviewStatus) -> Review | None:
         review = await self.get_by_id(review_id)
