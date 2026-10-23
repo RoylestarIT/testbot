@@ -176,17 +176,21 @@ def format_subscription_summary(
     subscription: Subscription | None,
     *,
     generations_remaining: int | None = None,
+    access_tier_line: str | None = None,
 ) -> str:
-    lines = ["<b>Ваша подписка</b>", f"Telegram ID: <code>{user.tg_id}</code>", ""]
+    lines = ["<b>Ваш доступ</b>", f"Telegram ID: <code>{user.tg_id}</code>", ""]
+    if access_tier_line:
+        lines.append(access_tier_line)
+        lines.append("")
 
     if subscription is None:
         lines.extend(
             [
-                "Тариф: <b>Lite (бесплатный)</b>",
-                f"Лимит: {generations_remaining if generations_remaining is not None else '—'} "
-                "генераций сегодня (из 5).",
+                "Оплаченная подписка: <b>нет</b>",
+                f"Генераций сегодня: <b>{generations_remaining if generations_remaining is not None else '—'}</b> из 5",
+                "Publish в WB/Ozon из бота: <b>только PRO</b> (или trial / бесплатная квота)",
                 "",
-                "Оформите Lite или PRO в разделе «Подписка».",
+                "Оформите Lite или PRO — кнопка «Сравнение тарифов».",
             ]
         )
         return "\n".join(lines)
@@ -198,17 +202,22 @@ def format_subscription_summary(
     )
     lines.extend(
         [
-            f"Тариф: <b>{plan_label(subscription.plan)}</b>",
+            f"Подписка: <b>{plan_label(subscription.plan)}</b>",
             f"Статус: {status_label(subscription.status)}",
             f"Оплата: {subscription.payment_method.value if subscription.payment_method else '—'}",
             f"Действует до: {expires}",
         ]
     )
 
-    if subscription.status == SubscriptionStatus.ACTIVE and subscription.plan == SubscriptionPlan.PRO:
-        lines.append("Генерации: <b>без лимита</b>")
+    if subscription.status == SubscriptionStatus.ACTIVE:
+        if subscription.plan == SubscriptionPlan.PRO:
+            lines.append("Генерации: <b>без лимита</b>")
+            lines.append("Publish в API + авто-ответы 4–5★: <b>да</b>")
+        else:
+            lines.append("Генерации: <b>без лимита</b>")
+            lines.append("Publish в API: <b>нет</b> — используйте «Скопировать ответ»")
     elif generations_remaining is not None:
-        lines.append(f"Генераций сегодня осталось: <b>{generations_remaining}</b>")
+        lines.append(f"Генераций сегодня (бесплатно): <b>{generations_remaining}</b> из 5")
 
     if subscription.status == SubscriptionStatus.PENDING:
         lines.append("")

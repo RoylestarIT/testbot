@@ -6,11 +6,12 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import MANUAL_SHOP_NAME
-from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus, User
+from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus, SubscriptionPlan, User
 from app.db.repositories.account import AccountRepository
 from app.services.generation_limit import remaining_generations_today
 from app.services.pro_access import has_paid_pro, is_trial_pro_active
-from app.services.subscription import get_effective_subscription, plan_label
+from app.services.plans import describe_access_tier
+from app.services.subscription import get_effective_subscription
 from app.tasks.poller import get_poller_status_line
 
 
@@ -51,14 +52,21 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
 
     subscription = await get_effective_subscription(session, user.id)
     remaining = await remaining_generations_today(session, user.id)
-
-    if subscription and subscription.status.value == "active":
-        plan_line = f"💎 Тариф: <b>{plan_label(subscription.plan)}</b> (оплачен)"
-    elif await is_trial_pro_active(user):
-        until = user.trial_pro_until.strftime("%d.%m.%Y") if user.trial_pro_until else "—"
-        plan_line = f"🎁 Trial PRO до <b>{until}</b>"
-    else:
-        plan_line = f"✨ Lite · генераций сегодня: <b>{remaining}</b> / 5"
+    plan_line = await describe_access_tier(session, user, subscription)
+    if remaining is not None:
+        plan_line += f"\nГенераций сегодня: <b>{remaining}</b> / 5"
+    elif (
+        subscription
+        and subscription.status.value == "active"
+        and subscription.plan == SubscriptionPlan.LITE
+    ):
+        plan_line += "\nPublish в API: <b>нет</b> (только копирование)"
+    elif await is_trial_pro_active(user) or (
+        subscription
+        and subscription.status.value == "active"
+        and subscription.plan == SubscriptionPlan.PRO
+    ):
+        plan_line += "\nPublish в API: <b>да</b>"
 
     if not api_accounts:
         cabinets = "⚠️ Кабинеты WB/Ozon: <b>не подключены</b>"

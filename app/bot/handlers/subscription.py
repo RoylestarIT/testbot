@@ -11,6 +11,7 @@ from app.bot.keyboards.subscription import (
 from app.core.config import get_settings
 from app.bot.utils.callbacks import answer_and_edit
 from app.db.models import SubscriptionPlan, User as DbUser
+from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.services.generation_limit import remaining_generations_today
 from app.services.payment.manual_qr import qr_instructions
@@ -25,6 +26,7 @@ from app.services.payment.telegram_stars import (
     payment_method_for_invoice,
     payment_mode_label,
 )
+from app.services.plans import LITE_VS_PRO_SHORT, PLANS_COMPARISON_TEXT, describe_access_tier
 from app.services.subscription import (
     activate_from_telegram_invoice,
     create_qr_pending,
@@ -39,20 +41,27 @@ def _subscription_menu_text() -> str:
     pay = payment_mode_label(settings)
     return (
         "💎 <b>Подписка ReviewPilot</b>\n\n"
-        f"Способ оплаты: <b>{pay}</b>\n\n"
-        "✨ <b>Lite</b> (~$10/мес) — генерации ответов, копирование в кабинет.\n"
-        "🚀 <b>PRO</b> (~$30/мес) — публикация в WB/Ozon, авто-ответы 4–5★.\n\n"
+        f"Способ оплаты: <b>{pay}</b>\n"
+        f"<i>{LITE_VS_PRO_SHORT}</i>\n\n"
         "🇧🇾 Оплата по QR — заявка, подтверждение админом.\n"
-        "🆓 Бесплатно: до <b>5</b> генераций в день."
+        "🆓 Без оплаты: до <b>5</b> генераций в день.\n\n"
+        "Нажмите «Сравнение тарифов» для полной таблицы."
     )
 
 
 async def _subscription_status_text(db_user: DbUser) -> str:
     session_factory = get_session_factory()
     async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
         subscription = await get_effective_subscription(session, db_user.id)
         remaining = await remaining_generations_today(session, db_user.id)
-    return format_subscription_summary(db_user, subscription, generations_remaining=remaining)
+        tier_line = await describe_access_tier(session, user, subscription) if user else None
+    return format_subscription_summary(
+        db_user,
+        subscription,
+        generations_remaining=remaining,
+        access_tier_line=tier_line,
+    )
 
 
 async def _notify_admins_qr(bot: Bot, *, subscription_id: int, db_user: DbUser, plan: SubscriptionPlan) -> None:
@@ -96,6 +105,11 @@ async def menu_subscription(callback: CallbackQuery, db_user: DbUser) -> None:
 async def subscription_status(callback: CallbackQuery, db_user: DbUser) -> None:
     text = await _subscription_status_text(db_user)
     await answer_and_edit(callback, text, reply_markup=subscription_menu_keyboard())
+
+
+@router.callback_query(F.data == "sub:compare")
+async def subscription_compare(callback: CallbackQuery) -> None:
+    await answer_and_edit(callback, PLANS_COMPARISON_TEXT, reply_markup=subscription_menu_keyboard())
 
 
 @router.callback_query(F.data.in_({"sub:stars:lite", "sub:stars:pro"}))

@@ -36,8 +36,9 @@ class ProSubscriptionMiddleware(BaseMiddleware):
 
         if not allowed:
             await event.answer(
-                "Эта функция доступна только с подпиской PRO. "
-                "Оформите её в разделе «Подписка».",
+                "Только тариф PRO (авто-публикация). "
+                "Lite и бесплатный режим — генерация и копирование. "
+                "«Подписка» → Сравнение тарифов.",
                 show_alert=True,
             )
             return None

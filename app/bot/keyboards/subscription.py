@@ -17,15 +17,18 @@ def subscription_menu_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=f"Lite — {pay} ($10/мес)",
+                    text=f"Lite — ∞ генераций · {pay}",
                     callback_data="sub:stars:lite",
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text=f"PRO — {pay} ($30/мес)",
+                    text=f"PRO — publish + авто · {pay}",
                     callback_data="sub:stars:pro",
                 ),
+            ],
+            [
+                InlineKeyboardButton(text="📊 Сравнение тарифов", callback_data="sub:compare"),
             ],
             [
                 InlineKeyboardButton(text="Оплатить по QR (РБ)", callback_data="sub:qr:menu"),

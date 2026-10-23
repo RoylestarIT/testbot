@@ -4,14 +4,16 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import GeneratedReply, MarketplaceAccount, Review
-from app.services.pro_access import has_pro_access
+from app.services.plans import has_unlimited_generations
 
 FREE_DAILY_GENERATIONS = 5
 VARIANTS_PER_GENERATION = 3
 
 
 async def is_pro_user(session: AsyncSession, user_id: int) -> bool:
-    """PRO-возможности: оплаченный PRO или активный trial."""
+    """PRO-возможности: оплаченный PRO или активный trial (не платный Lite)."""
+    from app.services.pro_access import has_pro_access
+
     return await has_pro_access(session, user_id)
 
 
@@ -40,19 +42,19 @@ async def generations_used_today(session: AsyncSession, user_id: int) -> int:
 
 
 async def can_generate(session: AsyncSession, user_id: int) -> tuple[bool, str | None]:
-    if await is_pro_user(session, user_id):
+    if await has_unlimited_generations(session, user_id):
         return True, None
     used = await generations_used_today(session, user_id)
     if used >= FREE_DAILY_GENERATIONS:
         return False, (
-            f"Лимит Lite: {FREE_DAILY_GENERATIONS} генераций в день исчерпан. "
-            "Оформите PRO в разделе «Подписка» или попробуйте завтра."
+            f"Лимит бесплатного режима: {FREE_DAILY_GENERATIONS} генераций в день исчерпан. "
+            "Оформите Lite (без лимита генераций) или PRO в «Подписка», либо попробуйте завтра."
         )
     return True, None
 
 
 async def remaining_generations_today(session: AsyncSession, user_id: int) -> int | None:
-    if await is_pro_user(session, user_id):
+    if await has_unlimited_generations(session, user_id):
         return None
     used = await generations_used_today(session, user_id)
     return max(FREE_DAILY_GENERATIONS - used, 0)
