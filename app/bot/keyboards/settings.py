@@ -1,24 +1,24 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from app.bot.keyboards.nav import nav_home_queue
 from app.db.models import Marketplace, MarketplaceAccount, ToneProfile
 
 
 def settings_menu_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🏪  Кабинеты WB/Ozon", callback_data="settings:accounts")],
-            [InlineKeyboardButton(text="🎨  Tone of voice", callback_data="settings:tone")],
-            [InlineKeyboardButton(text="🔔  Уведомления", callback_data="settings:notifications")],
-            [InlineKeyboardButton(text="📝  Мои шаблоны", callback_data="settings:templates")],
-            [
-                InlineKeyboardButton(
-                    text="🚀  Авто-публикация (PRO)",
-                    callback_data="pro:autopublish",
-                ),
-            ],
-            [InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:main")],
-        ]
-    )
+    rows: list[list[InlineKeyboardButton]] = [
+        [InlineKeyboardButton(text="🏪  Кабинеты WB/Ozon", callback_data="settings:accounts")],
+        [InlineKeyboardButton(text="🎨  Tone of voice", callback_data="settings:tone")],
+        [InlineKeyboardButton(text="🔔  Уведомления", callback_data="settings:notifications")],
+        [InlineKeyboardButton(text="📝  Мои шаблоны", callback_data="settings:templates")],
+        [
+            InlineKeyboardButton(
+                text="🚀  Авто-публикация (PRO)",
+                callback_data="pro:autopublish",
+            ),
+        ],
+    ]
+    rows.extend(nav_home_queue().inline_keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def accounts_menu_keyboard(accounts: list[MarketplaceAccount]) -> InlineKeyboardMarkup:
@@ -119,9 +119,9 @@ def sync_accounts_keyboard(accounts: list[MarketplaceAccount]) -> InlineKeyboard
     rows.extend(
         [
             [InlineKeyboardButton(text="🔄 Все кабинеты", callback_data="review:sync:all")],
-            [InlineKeyboardButton(text="💬 Отзывы", callback_data="menu:reviews")],
         ]
     )
+    rows.extend(nav_home_queue().inline_keyboard)
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 

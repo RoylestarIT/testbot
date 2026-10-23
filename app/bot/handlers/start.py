@@ -64,8 +64,8 @@ async def onboarding_accept(callback: CallbackQuery, db_user: DbUser) -> None:
         await _edit_dashboard(callback.message, db_user)
 
 
-@router.callback_query(F.data == "menu:full")
-async def menu_full(callback: CallbackQuery) -> None:
+@router.callback_query(F.data.in_({"menu:full", "menu:more"}))
+async def menu_more(callback: CallbackQuery) -> None:
     from app.bot.utils.callbacks import safe_edit_message
 
     tg_id = callback.from_user.id if callback.from_user else 0
@@ -73,7 +73,7 @@ async def menu_full(callback: CallbackQuery) -> None:
     if callback.message:
         await safe_edit_message(
             callback.message,
-            "✨ <b>ReviewPilot</b>\n<i>👇 Выберите раздел:</i>",
+            "✨ <b>ReviewPilot</b>\n<i>Ручной ввод, поддержка и прочее:</i>",
             reply_markup=main_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
         )
 

@@ -27,6 +27,7 @@ from app.bot.handlers.reviews import (
     _generate_and_persist,
     _tone_input,
 )
+from app.bot.keyboards.nav import after_review_action_keyboard, nav_home_queue
 from app.bot.keyboards.reviews import reviews_menu_keyboard, tone_keyboard, variants_keyboard
 from app.bot.keyboards.settings import sync_accounts_keyboard
 from app.bot.states.marketplace_review import MarketplaceReviewStates
@@ -46,6 +47,16 @@ from app.services.bulk_quick_reply import apply_bulk_template, list_bulk_eligibl
 from app.services.marketplace.sync_service import sync_account_reviews
 
 router = Router(name="marketplace_reviews")
+
+
+async def _queue_has_next(state: FSMContext, review_id: int | None) -> bool:
+    if review_id is None:
+        return False
+    data = await state.get_data()
+    queue = [int(x) for x in (data.get("mp_queue") or [])]
+    if review_id not in queue:
+        return False
+    return queue.index(int(review_id)) < len(queue) - 1
 
 
 def _mp_reviews_keyboard(reviews: list, *, bulk_count: int = 0) -> InlineKeyboardMarkup:
@@ -70,7 +81,7 @@ def _mp_reviews_keyboard(reviews: list, *, bulk_count: int = 0) -> InlineKeyboar
                 )
             ]
         )
-    rows.append([InlineKeyboardButton(text="💬 Отзывы", callback_data="menu:reviews")])
+    rows.extend(nav_home_queue().inline_keyboard)
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -99,7 +110,7 @@ async def _mp_variants_keyboard(
     base = await _build_variants_keyboard(session, db_user, state, len(variants), selected)
     rows = base.inline_keyboard[:-1]
     rows.append([InlineKeyboardButton(text="⏰ Отложить", callback_data=f"review:mp:snooze:{review_id}")])
-    rows.append([InlineKeyboardButton(text="📬 Новые отзывы", callback_data="review:mp:list")])
+    rows.extend(nav_home_queue().inline_keyboard)
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -147,7 +158,10 @@ async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: l
     if errors:
         lines.append("\nОшибки:\n" + "\n".join(f"• {e}" for e in errors[:5]))
     if callback.message:
-        await callback.message.edit_text("\n".join(lines), reply_markup=reviews_menu_keyboard())
+        await callback.message.edit_text(
+            "\n".join(lines),
+            reply_markup=nav_home_queue(),
+        )
 
 
 @router.callback_query(F.data == "review:sync")
@@ -250,7 +264,7 @@ async def mp_bulk_run(callback: CallbackQuery, db_user: DbUser) -> None:
         await callback.message.edit_text(
             f"✅ Обработано отзывов: <b>{count}</b>.\n"
             "Откройте кабинет и вставьте тот же текст или ответьте из очереди по одному.",
-            reply_markup=reviews_menu_keyboard(),
+            reply_markup=nav_home_queue(),
         )
 
 
@@ -445,10 +459,12 @@ async def mp_copy_answer(callback: CallbackQuery, state: FSMContext, db_user: Db
         await callback.answer("Нет текста", show_alert=True)
         return
     text = variants[selected]
-    if review_id is not None:
+    rid = int(review_id) if review_id is not None else None
+    has_next = await _queue_has_next(state, rid)
+    if rid is not None:
         session_factory = get_session_factory()
         async with session_factory() as session:
-            await ReviewRepository(session).update_status(int(review_id), ReviewStatus.PROCESSED)
+            await ReviewRepository(session).update_status(rid, ReviewStatus.PROCESSED)
             await session.commit()
     await callback.answer("Текст ниже — скопируйте")
     if callback.message:
@@ -461,7 +477,10 @@ async def mp_copy_answer(callback: CallbackQuery, state: FSMContext, db_user: Db
                 "💡 На PRO — публикация в WB/Ozon в один клик.",
                 reply_markup=_pro_upsell_keyboard(),
             )
-        await callback.message.answer("Готово.", reply_markup=reviews_menu_keyboard())
+        await callback.message.answer(
+            "✅ Готово.",
+            reply_markup=after_review_action_keyboard(has_next=has_next),
+        )
     await state.clear()
 
 
@@ -528,14 +547,18 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
         if callback.message:
             await callback.message.edit_text(
                 f"Не удалось опубликовать:\n\n{exc}",
-                reply_markup=reviews_menu_keyboard(),
+                reply_markup=nav_home_queue(),
             )
         await state.clear()
         return
 
+    has_next = await _queue_has_next(state, int(review_id))
     await state.clear()
     if callback.message:
-        await callback.message.edit_text(PUBLISH_SUCCESS, reply_markup=reviews_menu_keyboard())
+        await callback.message.edit_text(
+            PUBLISH_SUCCESS,
+            reply_markup=after_review_action_keyboard(has_next=has_next),
+        )
 
 
 @router.callback_query(F.data == "review:mp:cancel_publish")
@@ -663,5 +686,5 @@ async def mp_snooze(callback: CallbackQuery, db_user: DbUser) -> None:
     if callback.message:
         await callback.message.edit_text(
             f"⏰ Отзыв #{review_id} отложен до {until.strftime('%d.%m %H:%M')} UTC.",
-            reply_markup=reviews_menu_keyboard(),
+            reply_markup=nav_home_queue(),
         )

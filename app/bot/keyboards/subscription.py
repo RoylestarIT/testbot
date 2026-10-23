@@ -37,7 +37,7 @@ def subscription_menu_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="👤  Мой доступ", callback_data="sub:status"),
             ],
             [
-                InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:main"),
+                InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:dashboard"),
             ],
         ]
     )

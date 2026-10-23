@@ -341,11 +341,12 @@ async def manual_edit_apply(message: Message, state: FSMContext, db_user: DbUser
 
 
 @router.callback_query(F.data == "menu:reviews")
-async def menu_reviews(callback: CallbackQuery, state: FSMContext) -> None:
+async def menu_reviews(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    """Сразу в очередь — без промежуточного экрана «Отзывы»."""
+    from app.bot.handlers.marketplace_reviews import list_mp_reviews
+
     await state.clear()
-    await callback.answer()
-    if callback.message:
-        await callback.message.edit_text(REVIEWS_MENU_TEXT, reply_markup=reviews_menu_keyboard())
+    await list_mp_reviews(callback, state, db_user)
 
 
 @router.callback_query(F.data == "menu:main")
@@ -374,7 +375,10 @@ async def review_cancel(callback: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     await callback.answer("Отменено")
     if callback.message:
-        await callback.message.edit_text(REVIEWS_MENU_TEXT, reply_markup=reviews_menu_keyboard())
+        await callback.message.edit_text(
+            "Отменено. Откройте очередь или сводку:",
+            reply_markup=reviews_menu_keyboard(),
+        )
 
 
 @router.message(ManualReviewStates.waiting_text, F.text)

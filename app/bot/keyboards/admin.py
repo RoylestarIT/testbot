@@ -10,7 +10,7 @@ def admin_menu_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="🎁  Выдать тариф", callback_data="admin:grant")],
             [InlineKeyboardButton(text="📣  Рассылка", callback_data="admin:broadcast")],
             [InlineKeyboardButton(text="🎟  Промокоды", callback_data="admin:promo")],
-            [InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:main")],
+            [InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:dashboard")],
         ]
     )
 
