@@ -4,10 +4,20 @@ import asyncio
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandObject
+from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from app.bot.keyboards.admin import admin_menu_keyboard, pending_subscription_keyboard
+from app.bot.keyboards.admin import (
+    admin_back_keyboard,
+    admin_menu_keyboard,
+    broadcast_cancel_keyboard,
+    broadcast_preview_keyboard,
+    grant_cancel_keyboard,
+    grant_plan_keyboard,
+    pending_detail_keyboard,
+)
 from app.bot.keyboards.menu import main_menu_keyboard
+from app.bot.states.admin import AdminStates
 from app.core.config import get_settings
 from app.db.models import SubscriptionPlan
 from app.db.repositories.subscription import SubscriptionRepository
@@ -24,24 +34,99 @@ from app.services.subscription import (
 router = Router(name="admin")
 
 ADMIN_PANEL_TEXT = (
-    "🛠 <b>Админ-панель ReviewPilot</b>\n\n"
-    "Управление подписками и рассылками. Обычные пользователи этого меню не видят."
-)
-
-ADMIN_HELP = (
-    "<b>Команды администратора</b>\n\n"
-    "/admin — это меню\n"
-    "/pending — заявки на оплату\n"
-    "/approve &lt;id&gt; — подтвердить QR\n"
-    "/reject &lt;id&gt; — отклонить QR\n"
-    "/grant &lt;tg_id&gt; lite|pro — выдать подписку вручную\n"
-    "/stats — статистика\n"
-    "/broadcast preview … / send … — рассылка"
+    "🛠 <b>Админ-панель</b>\n\n"
+    "Все действия — через кнопки ниже.\n"
+    "QR-заявки также приходят вам сообщением при оплате."
 )
 
 
 def _is_admin(telegram_id: int) -> bool:
     return telegram_id in get_settings().admin_ids
+
+
+async def _count_users() -> int:
+    from sqlalchemy import func, select
+
+    from app.db.models import User
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        result = await session.scalar(select(func.count()).select_from(User))
+        return int(result or 0)
+
+
+async def _list_all_user_tg_ids() -> list[int]:
+    from sqlalchemy import select
+
+    from app.db.models import User
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        result = await session.execute(select(User.tg_id))
+        return [int(row[0]) for row in result.all()]
+
+
+async def _render_pending_message(index: int) -> tuple[str, int | None, int]:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        pending = await SubscriptionRepository(session).list_pending()
+        total = len(pending)
+        if total == 0:
+            return "⏳ <b>Pending</b>\n\nЗаявок нет.", None, 0
+        index = max(0, min(index, total - 1))
+        sub = pending[index]
+        user = await UserRepository(session).get_by_id(sub.user_id)
+    tg = user.tg_id if user else "?"
+    uname = f"@{user.username}" if user and user.username else "—"
+    text = (
+        f"⏳ <b>Заявка {index + 1} из {total}</b>\n\n"
+        f"Subscription ID: <code>{sub.id}</code>\n"
+        f"Telegram ID: <code>{tg}</code>\n"
+        f"Username: {uname}\n"
+        f"Тариф: <b>{plan_label(sub.plan)}</b>\n"
+        f"Оплата: {sub.payment_method.value if sub.payment_method else '—'}"
+    )
+    return text, sub.id, total
+
+
+async def _execute_grant(bot: Bot, tg_id: int, plan: SubscriptionPlan) -> tuple[str, bool]:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        subscription, err = await grant_subscription_by_tg_id(session, tg_id=tg_id, plan=plan)
+        if subscription is None:
+            return err or "Не удалось выдать подписку.", False
+        await session.commit()
+
+    msg = (
+        f"✅ Выдан <b>{plan_label(plan)}</b> пользователю <code>{tg_id}</code>\n"
+        f"Subscription #{subscription.id}"
+    )
+    notify_ok = True
+    try:
+        expires = subscription.expires_at.strftime("%d.%m.%Y") if subscription.expires_at else "—"
+        await bot.send_message(
+            tg_id,
+            f"🎁 Вам активирован тариф <b>{plan_label(plan)}</b>.\nДействует до: <b>{expires}</b>",
+        )
+    except Exception:
+        notify_ok = False
+    if not notify_ok:
+        msg += "\n\n⚠️ Не удалось уведомить пользователя в Telegram."
+    return msg, True
+
+
+async def _execute_broadcast(bot: Bot, text: str) -> str:
+    tg_ids = await _list_all_user_tg_ids()
+    sent = 0
+    failed = 0
+    for tg_id in tg_ids:
+        try:
+            await bot.send_message(tg_id, text)
+            sent += 1
+        except Exception:
+            failed += 1
+        await asyncio.sleep(0.05)
+    return f"📢 Рассылка завершена.\nДоставлено: <b>{sent}</b>, ошибок: <b>{failed}</b>."
 
 
 @router.message(Command("admin"))
@@ -53,13 +138,19 @@ async def cmd_admin(message: Message) -> None:
 
 
 @router.callback_query(F.data == "menu:admin")
-async def menu_admin(callback: CallbackQuery) -> None:
+async def menu_admin(callback: CallbackQuery, state: FSMContext) -> None:
     if callback.from_user is None or not _is_admin(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True)
         return
+    await state.clear()
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(ADMIN_PANEL_TEXT, reply_markup=admin_menu_keyboard())
+
+
+@router.callback_query(F.data == "admin:noop")
+async def admin_noop(callback: CallbackQuery) -> None:
+    await callback.answer()
 
 
 @router.callback_query(F.data == "admin:stats")
@@ -72,50 +163,25 @@ async def admin_stats_callback(callback: CallbackQuery) -> None:
         text = await build_stats_message(session)
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(text, reply_markup=admin_menu_keyboard())
+        await callback.message.edit_text(text, reply_markup=admin_back_keyboard())
 
 
-@router.callback_query(F.data == "admin:help")
-async def admin_help_callback(callback: CallbackQuery) -> None:
-    if callback.from_user is None or not _is_admin(callback.from_user.id):
-        await callback.answer("Нет доступа", show_alert=True)
-        return
-    await callback.answer()
-    if callback.message:
-        await callback.message.edit_text(ADMIN_HELP, reply_markup=admin_menu_keyboard())
-
-
-@router.callback_query(F.data == "admin:pending")
+@router.callback_query(F.data.startswith("admin:pending:"))
 async def admin_pending_callback(callback: CallbackQuery) -> None:
     if callback.from_user is None or not _is_admin(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True)
         return
-    session_factory = get_session_factory()
-    async with session_factory() as session:
-        pending = await SubscriptionRepository(session).list_pending()
+    index = int(callback.data.split(":")[-1])
+    text, sub_id, total = await _render_pending_message(index)
     await callback.answer()
     if callback.message:
-        if not pending:
+        if sub_id is None:
+            await callback.message.edit_text(text, reply_markup=admin_menu_keyboard())
+        else:
             await callback.message.edit_text(
-                "⏳ <b>Pending</b>\n\nЗаявок нет.",
-                reply_markup=admin_menu_keyboard(),
+                text,
+                reply_markup=pending_detail_keyboard(sub_id, index, total),
             )
-            return
-        sub = pending[0]
-        async with session_factory() as session:
-            user = await UserRepository(session).get_by_id(sub.user_id)
-        tg = user.tg_id if user else "?"
-        text = (
-            f"⏳ <b>Pending</b> (1/{len(pending)})\n\n"
-            f"ID: <code>{sub.id}</code>\n"
-            f"User tg_id: <code>{tg}</code>\n"
-            f"План: <b>{plan_label(sub.plan)}</b>\n"
-            f"Метод: {sub.payment_method.value if sub.payment_method else '—'}"
-        )
-        await callback.message.edit_text(
-            text,
-            reply_markup=pending_subscription_keyboard(sub.id),
-        )
 
 
 @router.callback_query(F.data.startswith("admin:approve:"))
@@ -132,21 +198,28 @@ async def admin_approve_callback(callback: CallbackQuery, bot: Bot) -> None:
             return
         user = await UserRepository(session).get_by_id(subscription.user_id)
         await session.commit()
-    await callback.answer("Активировано")
-    if callback.message:
-        await callback.message.edit_text(
-            f"✅ Подписка #{subscription_id} активирована ({plan_label(subscription.plan)}).",
-            reply_markup=admin_menu_keyboard(),
-        )
+    await callback.answer("Подтверждено")
     if user is not None:
         expires = subscription.expires_at.strftime("%d.%m.%Y") if subscription.expires_at else "—"
         try:
             await bot.send_message(
                 user.tg_id,
-                f"✅ Подписка активирована!\n\nТариф: <b>{plan_label(subscription.plan)}</b>\nДо: <b>{expires}</b>",
+                f"✅ Оплата подтверждена!\n\nТариф: <b>{plan_label(subscription.plan)}</b>\nДо: <b>{expires}</b>",
             )
         except Exception:
             pass
+    text, sub_id, total = await _render_pending_message(0)
+    if callback.message:
+        if sub_id is None:
+            await callback.message.edit_text(
+                f"✅ Заявка #{subscription_id} активирована.\n\n{text}",
+                reply_markup=admin_menu_keyboard(),
+            )
+        else:
+            await callback.message.edit_text(
+                f"✅ Заявка #{subscription_id} активирована.\n\n{text}",
+                reply_markup=pending_detail_keyboard(sub_id, 0, total),
+            )
 
 
 @router.callback_query(F.data.startswith("admin:reject:"))
@@ -164,211 +237,203 @@ async def admin_reject_callback(callback: CallbackQuery, bot: Bot) -> None:
         user = await UserRepository(session).get_by_id(subscription.user_id)
         await session.commit()
     await callback.answer("Отклонено")
-    if callback.message:
-        await callback.message.edit_text(
-            f"❌ Заявка #{subscription_id} отклонена.",
-            reply_markup=admin_menu_keyboard(),
-        )
     if user is not None:
         try:
             await bot.send_message(user.tg_id, "Заявка на оплату не подтверждена.")
         except Exception:
             pass
+    text, sub_id, total = await _render_pending_message(0)
+    if callback.message:
+        if sub_id is None:
+            await callback.message.edit_text(
+                f"❌ Заявка #{subscription_id} отклонена.\n\n{text}",
+                reply_markup=admin_menu_keyboard(),
+            )
+        else:
+            await callback.message.edit_text(
+                f"❌ Заявка #{subscription_id} отклонена.\n\n{text}",
+                reply_markup=pending_detail_keyboard(sub_id, 0, total),
+            )
+
+
+@router.callback_query(F.data == "admin:grant")
+async def admin_grant_start(callback: CallbackQuery, state: FSMContext) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await state.set_state(AdminStates.waiting_grant_tg_id)
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            "🎁 <b>Выдача подписки</b>\n\n"
+            "Пришлите <b>Telegram ID</b> пользователя (число).\n"
+            "Пользователь должен хотя бы раз нажать /start в боте.",
+            reply_markup=grant_cancel_keyboard(),
+        )
+
+
+@router.callback_query(F.data == "admin:grant:cancel")
+async def admin_grant_cancel(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await callback.answer("Отменено")
+    if callback.message:
+        await callback.message.edit_text(ADMIN_PANEL_TEXT, reply_markup=admin_menu_keyboard())
+
+
+@router.message(AdminStates.waiting_grant_tg_id, F.text)
+async def admin_grant_tg_id(message: Message, state: FSMContext) -> None:
+    if message.from_user is None or not _is_admin(message.from_user.id):
+        return
+    raw = (message.text or "").strip()
+    if not raw.isdigit():
+        await message.answer("Нужен числовой Telegram ID.", reply_markup=grant_cancel_keyboard())
+        return
+    await state.update_data(grant_tg_id=int(raw))
+    await state.set_state(AdminStates.waiting_grant_tg_id)  # stay until plan picked
+    await message.answer(
+        f"Пользователь: <code>{raw}</code>\n\nВыберите тариф:",
+        reply_markup=grant_plan_keyboard(),
+    )
+
+
+@router.callback_query(F.data.startswith("admin:grant:plan:"))
+async def admin_grant_plan(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    plan_raw = callback.data.split(":")[-1]
+    plan = SubscriptionPlan.PRO if plan_raw == "pro" else SubscriptionPlan.LITE
+    data = await state.get_data()
+    tg_id = data.get("grant_tg_id")
+    if tg_id is None:
+        await state.clear()
+        await callback.answer("Начните заново", show_alert=True)
+        return
+    await callback.answer("Выдаю…")
+    msg, _ = await _execute_grant(bot, int(tg_id), plan)
+    await state.clear()
+    if callback.message:
+        await callback.message.edit_text(msg, reply_markup=admin_menu_keyboard())
+
+
+@router.callback_query(F.data == "admin:broadcast")
+async def admin_broadcast_start(callback: CallbackQuery, state: FSMContext) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await state.set_state(AdminStates.waiting_broadcast_text)
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            "📢 <b>Рассылка</b>\n\nПришлите текст одним сообщением (HTML как в боте).",
+            reply_markup=broadcast_cancel_keyboard(),
+        )
+
+
+@router.callback_query(F.data == "admin:broadcast:cancel")
+async def admin_broadcast_cancel(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await callback.answer("Отменено")
+    if callback.message:
+        await callback.message.edit_text(ADMIN_PANEL_TEXT, reply_markup=admin_menu_keyboard())
+
+
+@router.message(AdminStates.waiting_broadcast_text, F.text)
+async def admin_broadcast_preview(message: Message, state: FSMContext) -> None:
+    if message.from_user is None or not _is_admin(message.from_user.id):
+        return
+    text = (message.text or "").strip()
+    if len(text) < 2:
+        await message.answer("Текст слишком короткий.")
+        return
+    await state.update_data(broadcast_text=text)
+    count = await _count_users()
+    await message.answer(
+        f"📢 <b>Предпросмотр</b>\n\n"
+        f"Получателей: <b>{count}</b>\n\n"
+        f"{text}",
+        reply_markup=broadcast_preview_keyboard(),
+    )
+
+
+@router.callback_query(F.data == "admin:broadcast:send")
+async def admin_broadcast_send(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    data = await state.get_data()
+    text = data.get("broadcast_text")
+    if not text:
+        await callback.answer("Текст утерян", show_alert=True)
+        await state.clear()
+        return
+    await callback.answer("Отправляю…")
+    result = await _execute_broadcast(bot, str(text))
+    await state.clear()
+    if callback.message:
+        await callback.message.edit_text(result, reply_markup=admin_menu_keyboard())
+
+
+# --- Команды оставлены как запасной вариант ---
 
 
 @router.message(Command("grant"))
-async def grant_subscription(message: Message, command: CommandObject, bot: Bot) -> None:
+async def grant_subscription_cmd(message: Message, command: CommandObject, bot: Bot) -> None:
     if message.from_user is None or not _is_admin(message.from_user.id):
         await message.answer("Команда доступна только администраторам.")
         return
     parts = (command.args or "").split()
     if len(parts) != 2 or not parts[0].isdigit():
-        await message.answer("Использование: /grant <telegram_user_id> lite|pro")
+        await message.answer("Или используйте кнопку «Выдать подписку» в /admin")
         return
-    tg_id = int(parts[0])
-    plan_raw = parts[1].lower()
-    plan = SubscriptionPlan.PRO if plan_raw == "pro" else SubscriptionPlan.LITE
-
-    session_factory = get_session_factory()
-    async with session_factory() as session:
-        subscription, err = await grant_subscription_by_tg_id(session, tg_id=tg_id, plan=plan)
-        if subscription is None:
-            await message.answer(err or "Не удалось выдать подписку.")
-            return
-        await session.commit()
-
-    await message.answer(
-        f"✅ Выдана подписка {plan_label(plan)} пользователю <code>{tg_id}</code> "
-        f"(subscription #{subscription.id})."
-    )
-    try:
-        expires = subscription.expires_at.strftime("%d.%m.%Y") if subscription.expires_at else "—"
-        await bot.send_message(
-            tg_id,
-            f"🎁 Вам активирован тариф <b>{plan_label(plan)}</b> администратором.\nДействует до: <b>{expires}</b>",
-        )
-    except Exception:
-        await message.answer("Подписка в БД создана, но не удалось написать пользователю в Telegram.")
+    plan = SubscriptionPlan.PRO if parts[1].lower() == "pro" else SubscriptionPlan.LITE
+    msg, _ = await _execute_grant(bot, int(parts[0]), plan)
+    await message.answer(msg, reply_markup=admin_menu_keyboard())
 
 
 @router.message(Command("approve"))
-async def approve_subscription(message: Message, command: CommandObject, bot: Bot) -> None:
+async def approve_subscription_cmd(message: Message, command: CommandObject, bot: Bot) -> None:
     if message.from_user is None or not _is_admin(message.from_user.id):
-        await message.answer("Команда доступна только администраторам.")
         return
-
     if not command.args or not command.args.strip().isdigit():
-        await message.answer("Использование: /approve <subscription_id>")
+        await message.answer("Используйте Pending в /admin")
         return
-
     subscription_id = int(command.args.strip())
     session_factory = get_session_factory()
     async with session_factory() as session:
         subscription = await approve_qr_subscription(session, subscription_id)
         if subscription is None:
-            await message.answer("Заявка не найдена или уже обработана (ожидается pending + QR).")
+            await message.answer("Заявка не найдена.")
             return
         user = await UserRepository(session).get_by_id(subscription.user_id)
         await session.commit()
-
-    await message.answer(
-        f"✅ Подписка #{subscription_id} активирована ({plan_label(subscription.plan)})."
-    )
-
-    if user is not None:
-        expires = (
-            subscription.expires_at.strftime("%d.%m.%Y")
-            if subscription.expires_at
-            else "—"
-        )
+    await message.answer(f"✅ #{subscription_id} активирована.", reply_markup=admin_menu_keyboard())
+    if user is not None and subscription.expires_at:
         try:
             await bot.send_message(
                 user.tg_id,
-                f"✅ Ваша оплата по QR подтверждена!\n\n"
-                f"Тариф: <b>{plan_label(subscription.plan)}</b>\n"
-                f"Активна до: <b>{expires}</b>",
-            )
-        except Exception:
-            await message.answer("Подписка активирована, но не удалось уведомить пользователя в Telegram.")
-
-
-@router.message(Command("reject"))
-async def reject_subscription(message: Message, command: CommandObject, bot: Bot) -> None:
-    if message.from_user is None or not _is_admin(message.from_user.id):
-        await message.answer("Команда доступна только администраторам.")
-        return
-    if not command.args or not command.args.strip().isdigit():
-        await message.answer("Использование: /reject <subscription_id>")
-        return
-
-    subscription_id = int(command.args.strip())
-    session_factory = get_session_factory()
-    async with session_factory() as session:
-        subscription = await reject_qr_subscription(session, subscription_id)
-        if subscription is None:
-            await message.answer("Заявка не найдена или уже не в статусе pending.")
-            return
-        user = await UserRepository(session).get_by_id(subscription.user_id)
-        await session.commit()
-
-    await message.answer(f"❌ Заявка #{subscription_id} отклонена.")
-    if user is not None:
-        try:
-            await bot.send_message(
-                user.tg_id,
-                "Оплата по QR не подтверждена. Если вы уже платили — напишите в поддержку.",
+                f"✅ Подписка активна до {subscription.expires_at.strftime('%d.%m.%Y')}",
             )
         except Exception:
             pass
 
 
 @router.message(Command("stats"))
-async def admin_stats(message: Message) -> None:
+async def admin_stats_cmd(message: Message) -> None:
     if message.from_user is None or not _is_admin(message.from_user.id):
-        await message.answer("Команда доступна только администраторам.")
         return
     session_factory = get_session_factory()
     async with session_factory() as session:
         text = await build_stats_message(session)
-    await message.answer(text)
+    await message.answer(text, reply_markup=admin_menu_keyboard())
 
 
 @router.message(Command("pending"))
-async def admin_pending(message: Message) -> None:
+async def admin_pending_cmd(message: Message) -> None:
     if message.from_user is None or not _is_admin(message.from_user.id):
-        await message.answer("Команда доступна только администраторам.")
         return
-    session_factory = get_session_factory()
-    async with session_factory() as session:
-        pending = await SubscriptionRepository(session).list_pending()
-        lines = ["<b>Pending-платежи</b>", ""]
-        if not pending:
-            lines.append("Нет заявок в ожидании.")
-        else:
-            for sub in pending:
-                user = await UserRepository(session).get_by_id(sub.user_id)
-                tg = user.tg_id if user else "?"
-                method = sub.payment_method.value if sub.payment_method else "—"
-                lines.append(
-                    f"#{sub.id} user={tg} plan={sub.plan.value} method={method}"
-                )
-    await message.answer("\n".join(lines))
-
-
-@router.message(Command("broadcast"))
-async def admin_broadcast(message: Message, command: CommandObject, bot: Bot) -> None:
-    if message.from_user is None or not _is_admin(message.from_user.id):
-        await message.answer("Команда доступна только администраторам.")
-        return
-    if not command.args or not command.args.strip():
-        await message.answer(
-            "Использование:\n"
-            "/broadcast preview Текст — показать число получателей\n"
-            "/broadcast send Текст — отправить всем"
-        )
-        return
-
-    raw = command.args.strip()
-    if raw.startswith("preview "):
-        mode = "preview"
-        text = raw.removeprefix("preview ").strip()
-    elif raw.startswith("send "):
-        mode = "send"
-        text = raw.removeprefix("send ").strip()
+    text, sub_id, total = await _render_pending_message(0)
+    if sub_id is None:
+        await message.answer(text, reply_markup=admin_menu_keyboard())
     else:
-        await message.answer("Укажите режим: preview или send (см. /broadcast).")
-        return
-
-    if not text:
-        await message.answer("Пустой текст рассылки.")
-        return
-
-    session_factory = get_session_factory()
-    async with session_factory() as session:
-        from sqlalchemy import select
-
-        from app.db.models import User
-
-        result = await session.execute(select(User))
-        users = list(result.scalars().all())
-
-    if mode == "preview":
-        await message.answer(
-            f"<b>Предпросмотр рассылки</b>\n\n"
-            f"Получателей: <b>{len(users)}</b>\n\n"
-            f"{text}\n\n"
-            "Для отправки: /broadcast send …"
-        )
-        return
-
-    sent = 0
-    failed = 0
-    for user in users:
-        try:
-            await bot.send_message(user.tg_id, text)
-            sent += 1
-        except Exception:
-            failed += 1
-        await asyncio.sleep(0.05)
-
-    await message.answer(f"Рассылка завершена. Доставлено: {sent}, ошибок: {failed}.")
+        await message.answer(text, reply_markup=pending_detail_keyboard(sub_id, 0, total))
