@@ -19,12 +19,9 @@ HELP_TEXT = (
     "<b>Помощь</b>\n\n"
     "• <b>Отзывы</b> — ручной ввод и генерация ответов (Lite).\n"
     "• <b>Настройки</b> — ключи API и tone of voice (скоро).\n"
-    "• <b>Подписка</b> — Lite и PRO (скоро).\n\n"
-    "Команда /start — вернуться в главное меню."
+    "• <b>Подписка</b> — Lite / PRO, Stars и QR (РБ).\n\n"
+    "Команды: /start — меню, /my_subscription — статус подписки."
 )
-
-STUB_TEXT = "Раздел в разработке. Скоро будет доступен."
-
 
 @router.message(CommandStart())
 async def cmd_start(message: Message) -> None:
@@ -38,11 +35,3 @@ async def menu_help(callback: CallbackQuery) -> None:
         await callback.message.edit_text(HELP_TEXT, reply_markup=main_menu_keyboard())
 
 
-@router.callback_query(F.data.in_({"menu:settings", "menu:subscription"}))
-async def menu_stub(callback: CallbackQuery) -> None:
-    await callback.answer()
-    if callback.message:
-        await callback.message.edit_text(
-            f"{STUB_TEXT}\n\n{WELCOME_TEXT}",
-            reply_markup=main_menu_keyboard(),
-        )

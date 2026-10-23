@@ -30,6 +30,18 @@ class Settings(BaseSettings):
         validation_alias="ADMIN_IDS",
     )
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
+    subscription_lite_stars: int = Field(default=750, validation_alias="SUBSCRIPTION_LITE_STARS")
+    subscription_pro_stars: int = Field(default=2250, validation_alias="SUBSCRIPTION_PRO_STARS")
+    subscription_lite_usd_label: str = Field(default="10", validation_alias="SUBSCRIPTION_LITE_USD")
+    subscription_pro_usd_label: str = Field(default="30", validation_alias="SUBSCRIPTION_PRO_USD")
+    qr_payment_instructions: str = Field(
+        default=(
+            "1. Отсканируйте QR-код вашего банка (ERIP / перевод по номеру телефона — реквизиты уточняйте у поддержки).\n"
+            "2. В комментарии укажите ваш Telegram @username или ID.\n"
+            "3. Сохраните чек об оплате."
+        ),
+        validation_alias="QR_PAYMENT_INSTRUCTIONS",
+    )
 
     @field_validator("admin_ids", mode="before")
     @classmethod

@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import PaymentMethod, Subscription, SubscriptionPlan, SubscriptionStatus
@@ -22,11 +22,15 @@ class SubscriptionRepository:
         return list(result.scalars().all())
 
     async def get_active_for_user(self, user_id: int) -> Subscription | None:
+        now = datetime.now(UTC)
         result = await self._session.execute(
-            select(Subscription).where(
+            select(Subscription)
+            .where(
                 Subscription.user_id == user_id,
                 Subscription.status == SubscriptionStatus.ACTIVE,
+                or_(Subscription.expires_at.is_(None), Subscription.expires_at > now),
             )
+            .order_by(Subscription.id.desc())
         )
         return result.scalar_one_or_none()
 

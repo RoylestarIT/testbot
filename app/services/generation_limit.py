@@ -48,7 +48,7 @@ async def can_generate(session: AsyncSession, user_id: int) -> tuple[bool, str |
     if used >= FREE_DAILY_GENERATIONS:
         return False, (
             f"Лимит Lite: {FREE_DAILY_GENERATIONS} генераций в день исчерпан. "
-            "Оформите PRO в разделе «Подписка» (скоро) или попробуйте завтра."
+            "Оформите PRO в разделе «Подписка» или попробуйте завтра."
         )
     return True, None
 
