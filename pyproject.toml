@@ -1,0 +1,10 @@
+[project]
+name = "reviewpilot"
+version = "0.1.0"
+description = "Telegram bot for marketplace sellers to reply to reviews"
+readme = "README.md"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
