@@ -48,6 +48,15 @@ async def on_startup(bot: Bot) -> None:
     await init_db()
     logger.info("Database initialized")
     start_llm_workers(concurrency=settings.llm_queue_workers)
+    if settings.crypto_pay_api_token.strip():
+        try:
+            from app.services.payment.crypto_pay import _api_request
+
+            me = await _api_request(settings, "getMe")
+            name = me.get("name") if isinstance(me, dict) else me
+            logger.info("Crypto Pay connected app={}", name)
+        except Exception as exc:
+            logger.warning("Crypto Pay getMe failed: {}", exc)
     await _register_bot_commands(bot)
     _poller_task = asyncio.create_task(marketplace_poller_loop(bot))
     _reminder_task = asyncio.create_task(subscription_reminder_loop(bot))

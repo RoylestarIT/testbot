@@ -10,8 +10,8 @@ def qr_instructions(settings: Settings, plan: SubscriptionPlan) -> str:
     )
     plan_name = "PRO" if plan == SubscriptionPlan.PRO else "Lite"
     return (
-        f"<b>Оплата по QR (Беларусь) — {plan_name}</b>\n\n"
-        f"Сумма: <b>${price}/мес</b> (эквивалент в BYN по курсу вашего банка).\n\n"
+        f"<b>Перевод (РФ / РБ) — {plan_name}</b>\n\n"
+        f"Сумма: <b>${price}/мес</b> (эквивалент в ₽ / BYN по курсу банка).\n\n"
         f"{settings.qr_payment_instructions.strip()}\n\n"
         "После оплаты нажмите «Я оплатил». Администратор проверит перевод и активирует подписку."
     )
