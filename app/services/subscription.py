@@ -123,6 +123,29 @@ async def create_qr_pending(
     )
 
 
+async def grant_subscription_by_tg_id(
+    session: AsyncSession,
+    *,
+    tg_id: int,
+    plan: SubscriptionPlan,
+) -> tuple[Subscription | None, str | None]:
+    from app.db.repositories.user import UserRepository
+
+    user = await UserRepository(session).get_by_tg_id(tg_id)
+    if user is None:
+        return None, "Пользователь не найден — пусть отправит /start боту."
+    repo = SubscriptionRepository(session)
+    subscription = await repo.create(
+        user_id=user.id,
+        plan=plan,
+        status=SubscriptionStatus.PENDING,
+        payment_method=PaymentMethod.QR,
+        external_payment_id=f"admin-grant-{datetime.now(UTC).timestamp():.0f}",
+    )
+    activated = await activate_subscription(session, subscription)
+    return activated, None
+
+
 async def reject_qr_subscription(session: AsyncSession, subscription_id: int) -> Subscription | None:
     repo = SubscriptionRepository(session)
     subscription = await repo.get_by_id(subscription_id)

@@ -7,6 +7,7 @@ from loguru import logger
 
 from app.bot.copy import REVIEWS_MENU_TEXT
 from app.bot.keyboards.menu import main_menu_keyboard
+from app.core.config import get_settings
 from app.bot.keyboards.reviews import (
     rating_keyboard,
     reviews_menu_keyboard,
@@ -155,9 +156,10 @@ async def menu_main(callback: CallbackQuery, state: FSMContext) -> None:
     if callback.message:
         from app.bot.copy import WELCOME_TEXT
 
+        tg_id = callback.from_user.id if callback.from_user else 0
         await callback.message.edit_text(
             f"{WELCOME_TEXT}\n\nВыберите раздел в меню:",
-            reply_markup=main_menu_keyboard(),
+            reply_markup=main_menu_keyboard(show_admin=tg_id in get_settings().admin_ids),
         )
 
 

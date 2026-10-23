@@ -4,6 +4,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 
 from app.bot.copy import HELP_TEXT, TERMS_TEXT, WELCOME_TEXT
 from app.bot.keyboards.menu import main_menu_keyboard
+from app.core.config import get_settings
 from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
@@ -23,14 +24,19 @@ def _needs_terms(db_user: DbUser) -> bool:
     return db_user.terms_accepted_at is None
 
 
+def _show_admin_menu(tg_id: int) -> bool:
+    return tg_id in get_settings().admin_ids
+
+
 @router.message(CommandStart())
 async def cmd_start(message: Message, db_user: DbUser) -> None:
     if _needs_terms(db_user):
         await message.answer(TERMS_TEXT, reply_markup=_terms_keyboard())
         return
+    tg_id = message.from_user.id if message.from_user else 0
     await message.answer(
         f"{WELCOME_TEXT}\n\nВыберите раздел в меню:",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=main_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
     )
 
 
@@ -42,9 +48,10 @@ async def onboarding_accept(callback: CallbackQuery, db_user: DbUser) -> None:
         await session.commit()
     await callback.answer("Спасибо!")
     if callback.message:
+        tg_id = callback.from_user.id if callback.from_user else 0
         await callback.message.edit_text(
             f"{WELCOME_TEXT}\n\nВыберите раздел в меню:",
-            reply_markup=main_menu_keyboard(),
+            reply_markup=main_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
         )
 
 

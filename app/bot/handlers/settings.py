@@ -4,6 +4,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from app.bot.copy import SETTINGS_INTRO as SETTINGS_TEXT
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.settings import (
     account_detail_keyboard,
@@ -24,8 +25,6 @@ from app.services.generation_limit import is_pro_user
 from app.services.marketplace.base import MarketplaceAPIError
 
 router = Router(name="settings")
-
-from app.bot.copy import SETTINGS_INTRO as SETTINGS_TEXT
 
 
 @router.callback_query(F.data == "menu:settings")
