@@ -22,7 +22,7 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
     auth_failed_accounts: list[tuple[int, int]] = []
 
     async with session_factory() as session:
-        accounts = await AccountRepository(session).list_active_all()
+        accounts = await AccountRepository(session).list_active_for_api_sync()
 
         for account in accounts:
             try:

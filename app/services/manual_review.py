@@ -4,9 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import EncryptionError, encrypt_secret
 from app.db.models import Marketplace, MarketplaceAccount
+from app.constants import MANUAL_SHOP_NAME
 from app.db.repositories.account import AccountRepository
-
-MANUAL_SHOP_NAME = "Ручной ввод"
 
 
 def _manual_api_key_ciphertext() -> str:

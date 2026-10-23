@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Marketplace, MarketplaceAccount
+from app.constants import MANUAL_SHOP_NAME
 
 
 class AccountRepository:
@@ -43,6 +44,17 @@ class AccountRepository:
 
     async def list_active_all(self) -> list[MarketplaceAccount]:
         stmt = select(MarketplaceAccount).where(MarketplaceAccount.is_active.is_(True))
+        result = await self._session.execute(stmt.order_by(MarketplaceAccount.id))
+        return list(result.scalars().all())
+
+    async def list_active_for_api_sync(self) -> list[MarketplaceAccount]:
+        """Активные кабинеты с реальным Seller API (без «Ручной ввод»)."""
+        stmt = select(MarketplaceAccount).where(
+            MarketplaceAccount.is_active.is_(True),
+            MarketplaceAccount.marketplace.in_((Marketplace.WB, Marketplace.OZON)),
+            (MarketplaceAccount.shop_name.is_(None))
+            | (MarketplaceAccount.shop_name != MANUAL_SHOP_NAME),
+        )
         result = await self._session.execute(stmt.order_by(MarketplaceAccount.id))
         return list(result.scalars().all())
 
