@@ -8,14 +8,18 @@ from loguru import logger
 from app.bot.copy import REVIEWS_MENU_TEXT
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.reviews import (
+    history_filter_keyboard,
     rating_keyboard,
     reviews_menu_keyboard,
     tone_keyboard,
     variants_keyboard,
 )
+from app.bot.utils.callbacks import safe_edit_message
+from app.services.pro_access import can_api_publish
 from app.bot.states.review import ManualReviewStates
 from app.core.config import get_settings
 from app.db.models import ReviewStatus, User as DbUser
+from app.db.repositories.account import AccountRepository
 from app.db.repositories.reply import ReplyRepository
 from app.db.repositories.review import ReviewRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
@@ -26,6 +30,11 @@ from app.services.tone_resolver import resolve_tone_input
 from app.services.manual_review import get_or_create_manual_account, new_manual_external_id
 
 router = Router(name="reviews")
+
+QUICK_REPLY_TEMPLATES = {
+    "thanks": "Спасибо большое за отзыв! Нам очень приятно, что вы остались довольны покупкой. Хороших вам дней!",
+    "glad": "Рады, что товар оправдал ожидания! Если появятся вопросы — мы на связи.",
+}
 
 
 async def _tone_input(session, user_id: int, tone_key: str):
@@ -121,6 +130,34 @@ async def _generate_and_persist(
     return review_id, variants
 
 
+async def _build_variants_keyboard(
+    session,
+    db_user: DbUser,
+    state: FSMContext,
+    variant_count: int,
+    selected_index: int,
+) -> InlineKeyboardMarkup:
+    data = await state.get_data()
+    rating = int(data.get("rating") or 5)
+    review_id_raw = data.get("review_id")
+    mp_flow = bool(data.get("mp_flow"))
+    queue: list[int] = [int(x) for x in (data.get("mp_queue") or [])]
+    review_id = int(review_id_raw) if review_id_raw is not None else None
+    has_next = bool(mp_flow and review_id is not None and review_id in queue and queue.index(review_id) < len(queue) - 1)
+    can_publish = False
+    if mp_flow:
+        can_publish, _ = await can_api_publish(session, db_user.id)
+    return variants_keyboard(
+        variant_count,
+        selected_index,
+        can_publish=can_publish,
+        review_id=review_id if mp_flow else None,
+        show_quick_templates=rating >= 4,
+        has_next_in_queue=has_next,
+        mp_mode=mp_flow,
+    )
+
+
 def _history_keyboard(reviews: list) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     for item in reviews[:12]:
@@ -137,20 +174,72 @@ def _history_keyboard(reviews: list) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-@router.callback_query(F.data == "review:history")
-async def review_history(callback: CallbackQuery, db_user: DbUser) -> None:
+def _history_statuses(key: str) -> tuple:
+    if key == "published":
+        return (ReviewStatus.PUBLISHED,)
+    if key == "copied":
+        return (ReviewStatus.PROCESSED,)
+    return (ReviewStatus.PROCESSED, ReviewStatus.PUBLISHED)
+
+
+async def _render_history(
+    db_user: DbUser,
+    *,
+    filter_key: str = "all",
+    account_id: int | None = None,
+) -> tuple[str, InlineKeyboardMarkup]:
     session_factory = get_session_factory()
     async with session_factory() as session:
-        reviews = await ReviewRepository(session).list_by_user(db_user.id)
-    await callback.answer()
+        accounts = await AccountRepository(session).list_by_user_id(db_user.id)
+        reviews = await ReviewRepository(session).list_by_user(
+            db_user.id,
+            statuses=_history_statuses(filter_key),
+            account_id=account_id,
+            limit=20,
+        )
     if not reviews:
-        text = "📚 История пуста — здесь появятся обработанные и опубликованные ответы."
+        text = "📚 История пуста — ответы появятся после копирования или publish."
         kb = reviews_menu_keyboard()
     else:
-        text = "📚 <b>История</b>\n\nНажмите на отзыв для деталей:"
+        label = {"all": "все", "published": "publish", "copied": "копия"}.get(filter_key, "все")
+        text = f"📚 <b>История</b> ({label})\n\nНажмите на отзыв:"
         kb = _history_keyboard(reviews)
+        filter_kb = history_filter_keyboard(
+            current=filter_key,
+            account_id=account_id,
+            accounts=[a for a in accounts if a.marketplace.value in ("wb", "ozon")],
+        )
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=filter_kb.inline_keyboard + kb.inline_keyboard,
+        )
+    return text, kb
+
+
+@router.callback_query(F.data == "review:history")
+async def review_history(callback: CallbackQuery, db_user: DbUser) -> None:
+    await callback.answer()
+    text, kb = await _render_history(db_user)
     if callback.message:
-        await callback.message.edit_text(text, reply_markup=kb)
+        await safe_edit_message(callback.message, text, reply_markup=kb)
+
+
+@router.callback_query(F.data.startswith("review:history:filter:"))
+async def review_history_filter(callback: CallbackQuery, db_user: DbUser) -> None:
+    key = callback.data.split(":")[-1]
+    await callback.answer()
+    text, kb = await _render_history(db_user, filter_key=key)
+    if callback.message:
+        await safe_edit_message(callback.message, text, reply_markup=kb)
+
+
+@router.callback_query(F.data.startswith("review:history:acc:"))
+async def review_history_account(callback: CallbackQuery, db_user: DbUser) -> None:
+    acc_raw = int(callback.data.split(":")[-1])
+    account_id = None if acc_raw == 0 else acc_raw
+    await callback.answer()
+    text, kb = await _render_history(db_user, account_id=account_id)
+    if callback.message:
+        await safe_edit_message(callback.message, text, reply_markup=kb)
 
 
 @router.callback_query(F.data.startswith("review:history:item:"))
@@ -163,7 +252,10 @@ async def review_history_item(callback: CallbackQuery, db_user: DbUser) -> None:
             await callback.answer("Не найден", show_alert=True)
             return
         replies = await ReplyRepository(session).list_by_review_id(review_id)
-    status = "🟢 опубликован" if review.status == ReviewStatus.PUBLISHED else "✔️ обработан"
+    if review.status == ReviewStatus.PUBLISHED:
+        status = "🟢 опубликован в API"
+    else:
+        status = "📋 скопирован (Lite)"
     lines = [
         f"<b>Отзыв #{review.id}</b> · {status}",
         f"⭐ {review.rating or '?'}",
@@ -212,9 +304,11 @@ async def manual_edit_apply(message: Message, state: FSMContext, db_user: DbUser
     session_factory = get_session_factory()
     async with session_factory() as session:
         remaining = await remaining_generations_today(session, db_user.id)
+    async with session_factory() as session:
+        kb = await _build_variants_keyboard(session, db_user, state, len(variants), selected)
     await message.answer(
         _format_variants_message(variants, selected, remaining),
-        reply_markup=variants_keyboard(len(variants), selected),
+        reply_markup=kb,
     )
 
 
@@ -227,17 +321,13 @@ async def menu_reviews(callback: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "menu:main")
-async def menu_main(callback: CallbackQuery, state: FSMContext) -> None:
+async def menu_main(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    from app.bot.handlers.dashboard import _edit_dashboard
+
     await state.clear()
     await callback.answer()
     if callback.message:
-        from app.bot.copy import WELCOME_TEXT
-
-        tg_id = callback.from_user.id if callback.from_user else 0
-        await callback.message.edit_text(
-            f"{WELCOME_TEXT}\n\nВыберите раздел в меню:",
-            reply_markup=main_menu_keyboard(show_admin=tg_id in get_settings().admin_ids),
-        )
+        await _edit_dashboard(callback.message, db_user)
 
 
 @router.callback_query(F.data == "review:manual:start")
@@ -338,11 +428,40 @@ async def manual_review_tone(callback: CallbackQuery, state: FSMContext, db_user
 
     async with session_factory() as session:
         remaining = await remaining_generations_today(session, db_user.id)
+        kb = await _build_variants_keyboard(session, db_user, state, len(variants), 0)
 
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             _format_variants_message(variants, 0, remaining),
-            reply_markup=variants_keyboard(len(variants), 0),
+            reply_markup=kb,
+        )
+
+
+@router.callback_query(ManualReviewStates.viewing_variants, F.data.startswith("review:quick:"))
+async def manual_quick_reply(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    key = callback.data.split(":")[-1]
+    template = QUICK_REPLY_TEMPLATES.get(key)
+    if not template:
+        await callback.answer("Шаблон не найден")
+        return
+    data = await state.get_data()
+    variants: list[str] = data.get("variants") or ["", "", ""]
+    while len(variants) < 3:
+        variants.append("")
+    selected = int(data.get("selected_index", 0))
+    variants[selected] = template
+    await state.update_data(variants=variants)
+    await callback.answer("Шаблон подставлен")
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        remaining = await remaining_generations_today(session, db_user.id)
+        kb = await _build_variants_keyboard(session, db_user, state, len(variants), selected)
+    if callback.message:
+        await safe_edit_message(
+            callback.message,
+            _format_variants_message(variants, selected, remaining),
+            reply_markup=kb,
         )
 
 
@@ -360,11 +479,13 @@ async def pick_variant(callback: CallbackQuery, state: FSMContext, db_user: DbUs
     session_factory = get_session_factory()
     async with session_factory() as session:
         remaining = await remaining_generations_today(session, db_user.id)
+        kb = await _build_variants_keyboard(session, db_user, state, len(variants), index)
 
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             _format_variants_message(variants, index, remaining),
-            reply_markup=variants_keyboard(len(variants), index),
+            reply_markup=kb,
         )
 
 
@@ -435,11 +556,13 @@ async def more_variants(callback: CallbackQuery, state: FSMContext, db_user: DbU
 
     async with session_factory() as session:
         remaining = await remaining_generations_today(session, db_user.id)
+        kb = await _build_variants_keyboard(session, db_user, state, len(variants), 0)
 
     if callback.message:
-        await callback.message.edit_text(
+        await safe_edit_message(
+            callback.message,
             _format_variants_message(variants, 0, remaining),
-            reply_markup=variants_keyboard(len(variants), 0),
+            reply_markup=kb,
         )
 
 

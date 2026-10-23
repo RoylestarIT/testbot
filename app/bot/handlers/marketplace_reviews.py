@@ -4,6 +4,9 @@ from datetime import UTC, datetime, timedelta
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
+from app.bot.handlers.reviews import QUICK_REPLY_TEMPLATES, _build_variants_keyboard
+from app.bot.keyboards.empty_states import no_cabinets_keyboard, no_new_reviews_keyboard
+from app.bot.utils.callbacks import safe_edit_message
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from loguru import logger
 
@@ -75,31 +78,19 @@ def _publish_confirm_keyboard(review_id: int) -> InlineKeyboardMarkup:
     )
 
 
-def _mp_variants_keyboard(
+async def _mp_variants_keyboard(
+    session,
+    db_user: DbUser,
+    state: FSMContext,
     variants: list[str],
     selected: int,
     review_id: int,
-    *,
-    can_publish: bool,
 ) -> InlineKeyboardMarkup:
-    base = variants_keyboard(len(variants), selected)
-    action_row = [
-        InlineKeyboardButton(text="📋 Скопировать", callback_data="review:mp:copy"),
-        InlineKeyboardButton(text="✏️ Править", callback_data="review:mp:edit"),
-    ]
-    if can_publish:
-        action_row.append(
-            InlineKeyboardButton(
-                text="🚀 Опубликовать",
-                callback_data=f"review:mp:publish:{review_id}",
-            )
-        )
-    extra = [
-        action_row,
-        [InlineKeyboardButton(text="⏰ Отложить", callback_data=f"review:mp:snooze:{review_id}")],
-        [InlineKeyboardButton(text="← Новые отзывы", callback_data="review:mp:list")],
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=base.inline_keyboard[:-1] + extra)
+    base = await _build_variants_keyboard(session, db_user, state, len(variants), selected)
+    rows = base.inline_keyboard[:-1]
+    rows.append([InlineKeyboardButton(text="⏰ Отложить", callback_data=f"review:mp:snooze:{review_id}")])
+    rows.append([InlineKeyboardButton(text="← Новые отзывы", callback_data="review:mp:list")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def _pro_upsell_keyboard() -> InlineKeyboardMarkup:
@@ -153,7 +144,13 @@ async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: l
 async def sync_reviews_menu(callback: CallbackQuery, db_user: DbUser) -> None:
     accounts = await _mp_accounts(db_user)
     if not accounts:
-        await callback.answer("Подключите кабинет в Настройках", show_alert=True)
+        await callback.answer()
+        if callback.message:
+            await safe_edit_message(
+                callback.message,
+                "⚠️ <b>Нет кабинетов</b>\n\nПодключите WB или Ozon, чтобы синхронизировать отзывы.",
+                reply_markup=no_cabinets_keyboard(),
+            )
         return
     if len(accounts) == 1:
         await callback.answer("Синхронизация…")
@@ -178,33 +175,50 @@ async def sync_reviews_one(callback: CallbackQuery, db_user: DbUser) -> None:
 
 
 @router.callback_query(F.data == "review:mp:list")
-async def list_mp_reviews(callback: CallbackQuery, db_user: DbUser) -> None:
+async def list_mp_reviews(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
         accounts = await AccountRepository(session).list_by_user_id(db_user.id, active_only=True)
-        mp_ids = [a.id for a in accounts if a.marketplace in (Marketplace.WB, Marketplace.OZON)]
-        reviews: list = []
-        for acc_id in mp_ids:
-            reviews.extend(
-                await ReviewRepository(session).list_by_account(
-                    acc_id,
-                    status=ReviewStatus.NEW,
-                    limit=20,
+        mp_accounts = [a for a in accounts if a.marketplace in (Marketplace.WB, Marketplace.OZON)]
+        if not mp_accounts:
+            await callback.answer()
+            if callback.message:
+                await safe_edit_message(
+                    callback.message,
+                    MP_LIST_EMPTY,
+                    reply_markup=no_cabinets_keyboard(),
                 )
-            )
-    reviews.sort(key=lambda r: r.created_at, reverse=True)
+            return
+        reviews = await ReviewRepository(session).list_new_for_user(db_user.id, limit=30)
+    await state.update_data(mp_queue=[r.id for r in reviews])
     await callback.answer()
-    text = MP_LIST_EMPTY if not reviews else MP_LIST_HEADER
+    if not reviews:
+        text = MP_LIST_EMPTY
+        kb = no_new_reviews_keyboard()
+    else:
+        text = f"{MP_LIST_HEADER}\n\nВ очереди: <b>{len(reviews)}</b>"
+        kb = _mp_reviews_keyboard(reviews)
     if callback.message:
-        await callback.message.edit_text(
-            text,
-            reply_markup=_mp_reviews_keyboard(reviews) if reviews else reviews_menu_keyboard(),
-        )
+        await safe_edit_message(callback.message, text, reply_markup=kb)
 
 
-@router.callback_query(F.data.startswith("review:mp:pick:"))
-async def mp_pick_review(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
-    review_id = int(callback.data.split(":")[-1])
+async def _open_mp_review(
+    review_id: int,
+    callback: CallbackQuery,
+    state: FSMContext,
+    db_user: DbUser,
+) -> None:
+    data = await state.get_data()
+    queue: list[int] = [int(x) for x in (data.get("mp_queue") or [])]
+    if not queue:
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            reviews = await ReviewRepository(session).list_new_for_user(db_user.id, limit=30)
+        queue = [r.id for r in reviews]
+        await state.update_data(mp_queue=queue)
+    queue_pos = ""
+    if review_id in queue:
+        queue_pos = f"\n<i>Отзыв {queue.index(review_id) + 1} из {len(queue)}</i>"
     session_factory = get_session_factory()
     async with session_factory() as session:
         review = await ReviewRepository(session).get_by_id(review_id)
@@ -227,10 +241,14 @@ async def mp_pick_review(callback: CallbackQuery, state: FSMContext, db_user: Db
     await state.set_state(ManualReviewStates.waiting_tone)
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(
-            format_review_card(review, account, can_publish_via_api=can_publish),
-            reply_markup=tone_keyboard(profiles),
-        )
+        card = format_review_card(review, account, can_publish_via_api=can_publish) + queue_pos
+        await safe_edit_message(callback.message, card, reply_markup=tone_keyboard(profiles))
+
+
+@router.callback_query(F.data.startswith("review:mp:pick:"))
+async def mp_pick_review(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    review_id = int(callback.data.split(":")[-1])
+    await _open_mp_review(review_id, callback, state, db_user)
 
 
 @router.callback_query(
@@ -264,9 +282,12 @@ async def mp_pick_variant(callback: CallbackQuery, state: FSMContext, db_user: D
         allowed, _ = await can_api_publish(session, db_user.id)
 
     if callback.message:
-        await callback.message.edit_text(
+        async with session_factory() as session:
+            kb = await _mp_variants_keyboard(session, db_user, state, variants, index, review_id)
+        await safe_edit_message(
+            callback.message,
             _format_variants_message(variants, index, remaining),
-            reply_markup=_mp_variants_keyboard(variants, index, review_id, can_publish=allowed),
+            reply_markup=kb,
         )
 
 
@@ -350,9 +371,12 @@ async def _mp_generate_variants(
         allowed, _ = await can_api_publish(session, db_user.id)
 
     if callback.message:
-        await callback.message.edit_text(
+        async with session_factory() as session:
+            kb = await _mp_variants_keyboard(session, db_user, state, variants, 0, int(review_id))
+        await safe_edit_message(
+            callback.message,
             _format_variants_message(variants, 0, remaining),
-            reply_markup=_mp_variants_keyboard(variants, 0, int(review_id), can_publish=allowed),
+            reply_markup=kb,
         )
 
 
@@ -471,9 +495,12 @@ async def mp_publish_cancel(callback: CallbackQuery, state: FSMContext, db_user:
         session_factory = get_session_factory()
         async with session_factory() as session:
             allowed, _ = await can_api_publish(session, db_user.id)
-        await callback.message.edit_text(
+        async with session_factory() as session:
+            kb = await _mp_variants_keyboard(session, db_user, state, variants, selected, review_id)
+        await safe_edit_message(
+            callback.message,
             _format_variants_message(variants, selected, None),
-            reply_markup=_mp_variants_keyboard(variants, selected, review_id, can_publish=allowed),
+            reply_markup=kb,
         )
 
 
@@ -505,10 +532,64 @@ async def mp_edit_apply(message: Message, state: FSMContext, db_user: DbUser) ->
     async with session_factory() as session:
         remaining = await remaining_generations_today(session, db_user.id)
         allowed, _ = await can_api_publish(session, db_user.id)
+    async with session_factory() as session:
+        kb = await _mp_variants_keyboard(session, db_user, state, variants, selected, review_id)
     await message.answer(
         _format_variants_message(variants, selected, remaining),
-        reply_markup=_mp_variants_keyboard(variants, selected, review_id, can_publish=allowed),
+        reply_markup=kb,
     )
+
+
+@router.callback_query(MarketplaceReviewStates.viewing_variants, F.data.startswith("review:quick:"), MpFlowFilter())
+async def mp_quick_reply(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    key = callback.data.split(":")[-1]
+    template = QUICK_REPLY_TEMPLATES.get(key)
+    if not template:
+        await callback.answer("Шаблон не найден")
+        return
+    data = await state.get_data()
+    variants: list[str] = data.get("variants") or ["", "", ""]
+    while len(variants) < 3:
+        variants.append("")
+    selected = int(data.get("selected_index", 0))
+    variants[selected] = template
+    review_id = int(data.get("review_id", 0))
+    await state.update_data(variants=variants)
+    await callback.answer("Шаблон подставлен")
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        remaining = await remaining_generations_today(session, db_user.id)
+        kb = await _mp_variants_keyboard(session, db_user, state, variants, selected, review_id)
+    if callback.message:
+        await safe_edit_message(
+            callback.message,
+            _format_variants_message(variants, selected, remaining),
+            reply_markup=kb,
+        )
+
+
+@router.callback_query(F.data == "review:mp:next")
+async def mp_next_review(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    data = await state.get_data()
+    queue: list[int] = [int(x) for x in (data.get("mp_queue") or [])]
+    current = data.get("review_id")
+    session_factory = get_session_factory()
+    if not queue:
+        async with session_factory() as session:
+            reviews = await ReviewRepository(session).list_new_for_user(db_user.id, limit=30)
+        queue = [r.id for r in reviews]
+    next_id: int | None = None
+    if current is not None and int(current) in queue:
+        idx = queue.index(int(current))
+        if idx + 1 < len(queue):
+            next_id = queue[idx + 1]
+    if next_id is None and queue:
+        next_id = queue[0]
+    if next_id is None:
+        await callback.answer("Очередь пуста", show_alert=True)
+        return
+    await callback.answer()
+    await _open_mp_review(next_id, callback, state, db_user)
 
 
 @router.callback_query(F.data.startswith("review:mp:snooze:"))

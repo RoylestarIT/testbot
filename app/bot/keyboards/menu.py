@@ -32,7 +32,7 @@ def dashboard_keyboard(
         [
             [InlineKeyboardButton(text="📬 Новые отзывы", callback_data="review:mp:list")],
             [InlineKeyboardButton(text="🔄 Синхронизировать", callback_data="review:sync")],
-            [InlineKeyboardButton(text="← Главное меню", callback_data="menu:main")],
+            [InlineKeyboardButton(text="📋 Полное меню", callback_data="menu:full")],
         ]
     )
     if show_admin:

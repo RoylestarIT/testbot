@@ -19,6 +19,7 @@ from app.services.plans import (
     has_lite_or_higher,
 )
 from app.services.subscription import get_effective_subscription
+from app.services.onboarding_checklist import build_onboarding_checklist
 from app.tasks.poller import get_poller_status_line
 
 
@@ -104,8 +105,11 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
             f"tone <b>{tone_n}/{FREE_MAX_TONE_PROFILES}</b> · Lite/PRO снимают лимиты"
         )
 
+    checklist = await build_onboarding_checklist(session, user)
+
     return (
-        "🏠 <b>Сводка</b>\n\n"
+        "🏠 <b>Сводка ReviewPilot</b>\n\n"
+        f"{checklist}"
         f"{plan_line}\n"
         f"📬 Новых отзывов: <b>{new_count}</b>"
         + (f" · отложено: {snoozed_count}" if snoozed_count else "")

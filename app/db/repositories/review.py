@@ -69,6 +69,7 @@ class ReviewRepository:
         user_id: int,
         *,
         statuses: tuple[ReviewStatus, ...] = (ReviewStatus.PROCESSED, ReviewStatus.PUBLISHED),
+        account_id: int | None = None,
         limit: int = 15,
     ) -> list[Review]:
         stmt = (
@@ -77,6 +78,23 @@ class ReviewRepository:
             .where(
                 MarketplaceAccount.user_id == user_id,
                 Review.status.in_(statuses),
+            )
+        )
+        if account_id is not None:
+            stmt = stmt.where(Review.account_id == account_id)
+        stmt = stmt.order_by(Review.created_at.desc()).limit(limit)
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_new_for_user(self, user_id: int, *, limit: int = 30) -> list[Review]:
+        now = datetime.now(UTC)
+        stmt = (
+            select(Review)
+            .join(MarketplaceAccount, Review.account_id == MarketplaceAccount.id)
+            .where(
+                MarketplaceAccount.user_id == user_id,
+                Review.status == ReviewStatus.NEW,
+                or_(Review.snoozed_until.is_(None), Review.snoozed_until <= now),
             )
             .order_by(Review.created_at.desc())
             .limit(limit)

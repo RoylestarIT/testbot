@@ -25,6 +25,7 @@ from app.bot.states.admin import AdminStates
 from app.core.config import get_settings
 from app.db.models import SubscriptionPlan
 from app.db.repositories.subscription import SubscriptionRepository
+from app.db.repositories.promo_code import PromoCodeRepository
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.services.admin_stats import build_stats_message
@@ -499,6 +500,52 @@ async def admin_user_revoke(callback: CallbackQuery, bot: Bot) -> None:
         await bot.send_message(user.tg_id, "Подписка PRO/trial завершена администратором.")
     except Exception:
         pass
+
+
+@router.callback_query(F.data == "admin:promo")
+async def admin_promo_info(callback: CallbackQuery) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        promos = await PromoCodeRepository(session).list_active()
+    lines = ["🎟 <b>Промокоды</b>\n"]
+    if not promos:
+        lines.append("Активных кодов нет.")
+    else:
+        for p in promos[:10]:
+            lines.append(
+                f"• <code>{p.code}</code> +{p.trial_days}d trial · "
+                f"{p.redemption_count}/{p.max_redemptions}"
+            )
+    lines.append("\nСоздать: <code>/promo_create КОД дней max_uses</code>")
+    lines.append("Пользователь: <code>/promo КОД</code>")
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text("\n".join(lines), reply_markup=admin_back_keyboard())
+
+
+@router.message(Command("promo_create"))
+async def admin_promo_create(message: Message, command: CommandObject) -> None:
+    if message.from_user is None or not _is_admin(message.from_user.id):
+        return
+    parts = (command.args or "").split()
+    if len(parts) != 3 or not parts[1].isdigit() or not parts[2].isdigit():
+        await message.answer("Формат: /promo_create SALE7 7 100")
+        return
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        promo = await PromoCodeRepository(session).create(
+            code=parts[0],
+            trial_days=int(parts[1]),
+            max_redemptions=int(parts[2]),
+        )
+        await session.commit()
+    await message.answer(
+        f"✅ Промокод <code>{promo.code}</code> (+{promo.trial_days}d, max {promo.max_redemptions})",
+        reply_markup=admin_menu_keyboard(),
+    )
 
 
 # --- Команды оставлены как запасной вариант ---

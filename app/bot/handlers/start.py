@@ -2,7 +2,8 @@ from aiogram import F, Router
 from aiogram.filters import CommandStart
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.bot.copy import HELP_TEXT, TERMS_TEXT, WELCOME_TEXT
+from app.bot.copy import HELP_TEXT, TERMS_TEXT
+from app.bot.handlers.dashboard import _edit_dashboard, _send_dashboard
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.core.config import get_settings
 from app.db.models import User as DbUser
@@ -49,12 +50,7 @@ async def cmd_start(message: Message, db_user: DbUser) -> None:
     if _needs_terms(db_user):
         await message.answer(TERMS_TEXT, reply_markup=_terms_keyboard())
         return
-    tg_id = message.from_user.id if message.from_user else 0
-    kb = await _home_keyboard(db_user.id, tg_id)
-    await message.answer(
-        f"{WELCOME_TEXT}\n\nВыберите раздел в меню:",
-        reply_markup=kb,
-    )
+    await _send_dashboard(message, db_user)
 
 
 @router.callback_query(F.data == "onboarding:accept")
@@ -65,16 +61,27 @@ async def onboarding_accept(callback: CallbackQuery, db_user: DbUser) -> None:
         await session.commit()
     await callback.answer("Спасибо!")
     if callback.message:
-        tg_id = callback.from_user.id if callback.from_user else 0
-        kb = await _home_keyboard(db_user.id, tg_id)
-        await callback.message.edit_text(
-            f"{WELCOME_TEXT}\n\nВыберите раздел в меню:",
-            reply_markup=kb,
+        await _edit_dashboard(callback.message, db_user)
+
+
+@router.callback_query(F.data == "menu:full")
+async def menu_full(callback: CallbackQuery) -> None:
+    from app.bot.utils.callbacks import safe_edit_message
+
+    tg_id = callback.from_user.id if callback.from_user else 0
+    await callback.answer()
+    if callback.message:
+        await safe_edit_message(
+            callback.message,
+            "Выберите раздел:",
+            reply_markup=main_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
         )
 
 
 @router.callback_query(F.data == "menu:help")
 async def menu_help(callback: CallbackQuery) -> None:
+    from app.bot.utils.callbacks import safe_edit_message
+
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(HELP_TEXT, reply_markup=main_menu_keyboard())
+        await safe_edit_message(callback.message, HELP_TEXT, reply_markup=main_menu_keyboard())

@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import asyncio
 
-from aiogram import Bot
-from loguru import logger
-
 from datetime import UTC, datetime
 
+from aiogram import Bot
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from loguru import logger
+
+from app.bot.keyboards.empty_states import poller_notify_keyboard
 from app.core.config import Settings, get_settings
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.user import UserRepository
@@ -34,6 +36,7 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
     settings = settings or get_settings()
     session_factory = get_session_factory()
     user_new_counts: dict[int, int] = {}
+    user_new_negative: dict[int, int] = {}
     auth_failed_accounts: list[tuple[int, int]] = []
 
     async with session_factory() as session:
@@ -53,6 +56,9 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
 
             if created > 0:
                 user_new_counts[account.user_id] = user_new_counts.get(account.user_id, 0) + created
+                for review in new_reviews:
+                    if review.rating is not None and review.rating <= 3:
+                        user_new_negative[account.user_id] = user_new_negative.get(account.user_id, 0) + 1
 
         await session.commit()
 
@@ -64,12 +70,23 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
             user = await UserRepository(session).get_by_id(user_id)
         if user is None:
             continue
-        try:
-            await bot.send_message(
-                user.tg_id,
-                f"📩 ReviewPilot: новых отзывов — <b>{count}</b>.\n"
-                "Откройте «Отзывы → Новые из маркетплейсов».",
+        if not user.notify_new_reviews:
+            continue
+        if user.notify_negative_only:
+            count = user_new_negative.get(user_id, 0)
+            if count <= 0:
+                continue
+            notify_text = (
+                f"⚠️ ReviewPilot: негативных отзывов (1–3★) — <b>{count}</b>.\n"
+                "Ответьте внимательно."
             )
+        else:
+            notify_text = (
+                f"📩 ReviewPilot: новых отзывов — <b>{count}</b>.\n"
+                "Откройте «Новые из маркетплейсов»."
+            )
+        try:
+            await bot.send_message(user.tg_id, notify_text, reply_markup=poller_notify_keyboard())
         except Exception:
             logger.warning("Failed to notify user_id={} about new reviews", user_id)
 

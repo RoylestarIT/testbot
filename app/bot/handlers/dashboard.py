@@ -2,7 +2,8 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
-from app.bot.keyboards.menu import main_menu_keyboard, dashboard_keyboard
+from app.bot.keyboards.menu import dashboard_keyboard, main_menu_keyboard
+from app.bot.utils.callbacks import safe_edit_message
 from app.core.config import get_settings
 from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
@@ -17,25 +18,39 @@ def _show_admin(tg_id: int) -> bool:
     return tg_id in get_settings().admin_ids
 
 
+async def _dashboard_ui(session, db_user: DbUser, tg_id: int) -> tuple[str, object] | None:
+    user = await UserRepository(session).get_by_id(db_user.id)
+    if user is None:
+        return None
+    text = await build_user_dashboard(session, user)
+    paid_pro = await has_paid_pro(session, user.id)
+    kb = dashboard_keyboard(
+        show_trial=not user.trial_pro_used and not paid_pro,
+        show_onboarding=user.onboarding_completed_at is None,
+        show_admin=_show_admin(tg_id),
+    )
+    return text, kb
+
+
 async def _send_dashboard(target: Message, db_user: DbUser) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
-        user = await UserRepository(session).get_by_id(db_user.id)
-        if user is None:
-            await target.answer("Ошибка профиля.")
-            return
-        text = await build_user_dashboard(session, user)
-        paid_pro = await has_paid_pro(session, user.id)
-        show_trial = not user.trial_pro_used and not paid_pro
-        show_onboarding = user.onboarding_completed_at is None
-    await target.answer(
-        text,
-        reply_markup=dashboard_keyboard(
-            show_trial=show_trial,
-            show_onboarding=show_onboarding,
-            show_admin=_show_admin(target.from_user.id if target.from_user else 0),
-        ),
-    )
+        ui = await _dashboard_ui(session, db_user, target.from_user.id if target.from_user else 0)
+    if ui is None:
+        await target.answer("Ошибка профиля.")
+        return
+    text, kb = ui
+    await target.answer(text, reply_markup=kb)
+
+
+async def _edit_dashboard(message: Message, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        ui = await _dashboard_ui(session, db_user, message.from_user.id if message.from_user else 0)
+    if ui is None:
+        return
+    text, kb = ui
+    await safe_edit_message(message, text, reply_markup=kb)
 
 
 @router.message(Command("dashboard"))
@@ -47,23 +62,7 @@ async def cmd_dashboard(message: Message, db_user: DbUser) -> None:
 async def menu_dashboard(callback: CallbackQuery, db_user: DbUser) -> None:
     await callback.answer()
     if callback.message:
-        session_factory = get_session_factory()
-        async with session_factory() as session:
-            user = await UserRepository(session).get_by_id(db_user.id)
-            if user is None:
-                return
-            text = await build_user_dashboard(session, user)
-            paid_pro = await has_paid_pro(session, user.id)
-            show_trial = not user.trial_pro_used and not paid_pro
-            show_onboarding = user.onboarding_completed_at is None
-        await callback.message.edit_text(
-            text,
-            reply_markup=dashboard_keyboard(
-                show_trial=show_trial,
-                show_onboarding=show_onboarding,
-                show_admin=_show_admin(callback.from_user.id if callback.from_user else 0),
-            ),
-        )
+        await _edit_dashboard(callback.message, db_user)
 
 
 @router.callback_query(F.data == "menu:trial_pro")

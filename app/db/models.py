@@ -73,6 +73,12 @@ class User(Base):
     trial_pro_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     trial_pro_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     free_api_publishes_remaining: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    notify_new_reviews: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    notify_negative_only: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    last_subscription_reminder_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     marketplace_accounts: Mapped[list["MarketplaceAccount"]] = relationship(
         back_populates="user",
@@ -86,6 +92,56 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    promo_redemptions: Mapped[list["PromoRedemption"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+
+class PromoCode(Base):
+    __tablename__ = "promo_codes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    trial_days: Mapped[int] = mapped_column(Integer, default=7, nullable=False)
+    max_redemptions: Mapped[int] = mapped_column(Integer, default=100, nullable=False)
+    redemption_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    redemptions: Mapped[list["PromoRedemption"]] = relationship(
+        back_populates="promo_code",
+        cascade="all, delete-orphan",
+    )
+
+
+class PromoRedemption(Base):
+    __tablename__ = "promo_redemptions"
+    __table_args__ = (UniqueConstraint("user_id", "promo_code_id", name="uq_promo_user_code"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    promo_code_id: Mapped[int] = mapped_column(
+        ForeignKey("promo_codes.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    user: Mapped["User"] = relationship(back_populates="promo_redemptions")
+    promo_code: Mapped["PromoCode"] = relationship(back_populates="redemptions")
 
 
 class MarketplaceAccount(Base):

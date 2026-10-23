@@ -8,6 +8,7 @@ def settings_menu_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(text="Кабинеты маркетплейсов", callback_data="settings:accounts")],
             [InlineKeyboardButton(text="Tone of voice", callback_data="settings:tone")],
+            [InlineKeyboardButton(text="🔔 Уведомления", callback_data="settings:notifications")],
             [
                 InlineKeyboardButton(
                     text="Авто-публикация ответов (PRO)",

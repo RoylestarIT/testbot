@@ -18,6 +18,7 @@ from app.bot.states.settings import ConnectOzonStates, ConnectWbStates, ToneProf
 from app.core.security import EncryptionError
 from app.db.models import Marketplace, User as DbUser
 from app.db.repositories.account import AccountRepository
+from app.db.repositories.user import UserRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.db.session import get_session_factory
 from app.services.marketplace.account_connect import test_and_create_ozon_account, test_and_create_wb_account
@@ -515,6 +516,84 @@ async def settings_tone_edit_finish(message: Message, state: FSMContext, db_user
         f"✅ Профиль #{profile.id} обновлён.",
         reply_markup=settings_menu_keyboard(),
     )
+
+
+@router.callback_query(F.data == "settings:notifications")
+async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> None:
+    from app.bot.keyboards.notifications import notifications_keyboard
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+    if user is None:
+        await callback.answer("Ошибка")
+        return
+    await callback.answer()
+    text = (
+        "🔔 <b>Уведомления</b>\n\n"
+        "Push от фоновой синхронизации (poller). "
+        "«Только негатив» — уведомлять лишь о новых отзывах 1–3★."
+    )
+    if callback.message:
+        await callback.message.edit_text(
+            text,
+            reply_markup=notifications_keyboard(
+                notify_new=user.notify_new_reviews,
+                negative_only=user.notify_negative_only,
+            ),
+        )
+
+
+@router.callback_query(F.data == "settings:notify:toggle_new")
+async def settings_notify_toggle_new(callback: CallbackQuery, db_user: DbUser) -> None:
+    from app.bot.keyboards.notifications import notifications_keyboard
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            return
+        await UserRepository(session).set_notification_prefs(
+            db_user.id,
+            notify_new_reviews=not user.notify_new_reviews,
+        )
+        await session.commit()
+        user = await UserRepository(session).get_by_id(db_user.id)
+    await callback.answer("Сохранено")
+    if callback.message and user:
+        await callback.message.edit_text(
+            "🔔 <b>Уведомления</b>",
+            reply_markup=notifications_keyboard(
+                notify_new=user.notify_new_reviews,
+                negative_only=user.notify_negative_only,
+            ),
+        )
+
+
+@router.callback_query(F.data == "settings:notify:toggle_negative")
+async def settings_notify_toggle_negative(callback: CallbackQuery, db_user: DbUser) -> None:
+    from app.bot.keyboards.notifications import notifications_keyboard
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            return
+        await UserRepository(session).set_notification_prefs(
+            db_user.id,
+            notify_negative_only=not user.notify_negative_only,
+        )
+        await session.commit()
+        user = await UserRepository(session).get_by_id(db_user.id)
+    await callback.answer("Сохранено")
+    if callback.message and user:
+        await callback.message.edit_text(
+            "🔔 <b>Уведомления</b>",
+            reply_markup=notifications_keyboard(
+                notify_new=user.notify_new_reviews,
+                negative_only=user.notify_negative_only,
+            ),
+        )
 
 
 @router.callback_query(F.data.startswith("settings:tone:delete:"))

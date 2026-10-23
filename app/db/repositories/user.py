@@ -46,6 +46,23 @@ class UserRepository:
                 return user
         return None
 
+    async def set_notification_prefs(
+        self,
+        user_id: int,
+        *,
+        notify_new_reviews: bool | None = None,
+        notify_negative_only: bool | None = None,
+    ) -> User | None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            return None
+        if notify_new_reviews is not None:
+            user.notify_new_reviews = notify_new_reviews
+        if notify_negative_only is not None:
+            user.notify_negative_only = notify_negative_only
+        await self._session.flush()
+        return user
+
     async def accept_terms(self, user_id: int) -> User | None:
         user = await self.get_by_id(user_id)
         if user is None:

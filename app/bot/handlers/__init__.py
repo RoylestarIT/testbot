@@ -5,6 +5,7 @@ from app.bot.handlers import (
     dashboard,
     marketplace_reviews,
     onboarding,
+    promo,
     reviews,
     settings,
     start,
@@ -18,6 +19,7 @@ main_router = Router(name="main")
 main_router.include_router(start.router)
 main_router.include_router(dashboard.router)
 main_router.include_router(onboarding.router)
+main_router.include_router(promo.router)
 main_router.include_router(support.router)
 main_router.include_router(subscription.router)
 main_router.include_router(admin.router)
