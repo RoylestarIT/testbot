@@ -23,6 +23,17 @@ cp .env.example .env
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
+## Миграции
+
+Схема БД управляется Alembic. При старте бота миграции применяются автоматически (`alembic upgrade head`).
+
+Вручную:
+
+```bash
+alembic upgrade head
+alembic revision --autogenerate -m "описание изменений"
+```
+
 ## Запуск
 
 Из корня репозитория:

@@ -1,0 +1,54 @@
+from datetime import datetime
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.models import PaymentMethod, Subscription, SubscriptionPlan, SubscriptionStatus
+
+
+class SubscriptionRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def get_by_id(self, subscription_id: int) -> Subscription | None:
+        return await self._session.get(Subscription, subscription_id)
+
+    async def list_by_user_id(self, user_id: int) -> list[Subscription]:
+        result = await self._session.execute(
+            select(Subscription)
+            .where(Subscription.user_id == user_id)
+            .order_by(Subscription.id.desc())
+        )
+        return list(result.scalars().all())
+
+    async def get_active_for_user(self, user_id: int) -> Subscription | None:
+        result = await self._session.execute(
+            select(Subscription).where(
+                Subscription.user_id == user_id,
+                Subscription.status == SubscriptionStatus.ACTIVE,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def create(
+        self,
+        *,
+        user_id: int,
+        plan: SubscriptionPlan,
+        status: SubscriptionStatus,
+        expires_at: datetime | None = None,
+        payment_method: PaymentMethod | None = None,
+        external_payment_id: str | None = None,
+    ) -> Subscription:
+        subscription = Subscription(
+            user_id=user_id,
+            plan=plan,
+            status=status,
+            expires_at=expires_at,
+            payment_method=payment_method,
+            external_payment_id=external_payment_id,
+        )
+        self._session.add(subscription)
+        await self._session.flush()
+        await self._session.refresh(subscription)
+        return subscription

@@ -1,7 +1,9 @@
 from functools import lru_cache
 
+from typing import Annotated
+
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -23,7 +25,10 @@ class Settings(BaseSettings):
     )
     openai_model: str = Field(default="gpt-4o-mini", validation_alias="OPENAI_MODEL")
     fernet_key: str = Field(default="", validation_alias="FERNET_KEY")
-    admin_ids: list[int] = Field(default_factory=list, validation_alias="ADMIN_IDS")
+    admin_ids: Annotated[list[int], NoDecode] = Field(
+        default_factory=list,
+        validation_alias="ADMIN_IDS",
+    )
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
 
     @field_validator("admin_ids", mode="before")

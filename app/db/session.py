@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.core.config import get_settings
-from app.db.models import Base
+from app.db.migrations import run_migrations_async
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
@@ -46,9 +46,8 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
-    engine = _get_engine()
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    _get_engine()
+    await run_migrations_async()
 
 
 async def close_db() -> None:
