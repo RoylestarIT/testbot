@@ -17,7 +17,7 @@ WELCOME_TEXT = (
 
 HELP_TEXT = (
     "<b>Помощь</b>\n\n"
-    "• <b>Отзывы</b> — просмотр и генерация ответов (скоро).\n"
+    "• <b>Отзывы</b> — ручной ввод и генерация ответов (Lite).\n"
     "• <b>Настройки</b> — ключи API и tone of voice (скоро).\n"
     "• <b>Подписка</b> — Lite и PRO (скоро).\n\n"
     "Команда /start — вернуться в главное меню."
@@ -38,7 +38,7 @@ async def menu_help(callback: CallbackQuery) -> None:
         await callback.message.edit_text(HELP_TEXT, reply_markup=main_menu_keyboard())
 
 
-@router.callback_query(F.data.in_({"menu:reviews", "menu:settings", "menu:subscription"}))
+@router.callback_query(F.data.in_({"menu:settings", "menu:subscription"}))
 async def menu_stub(callback: CallbackQuery) -> None:
     await callback.answer()
     if callback.message:
