@@ -15,7 +15,7 @@ def support_keyboard() -> InlineKeyboardMarkup:
         rows.append(
             [InlineKeyboardButton(text="💬 Написать в поддержку", url=f"https://t.me/{uname}")]
         )
-    rows.append([InlineKeyboardButton(text="← Главное меню", callback_data="menu:main")])
+    rows.append([InlineKeyboardButton(text="🏠 Главное меню", callback_data="menu:main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -27,8 +27,8 @@ async def menu_support(callback: CallbackQuery) -> None:
     from app.bot.ui import brand_title, muted, section
 
     text = (
-        brand_title("Поддержка", tagline="Поможем с API, оплатой и генерацией")
-        + section("Контакт")
+        brand_title("Поддержка", tagline="Поможем с API, оплатой и генерацией", icon="🆘")
+        + section("Контакт", icon="💬")
         + f"\n  <b>{contact}</b>\n"
         + muted("Опишите проблему одним сообщением в личку.")
     )

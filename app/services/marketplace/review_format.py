@@ -32,7 +32,7 @@ def format_review_card(
     mp = "—"
     marketplace = account.marketplace if account else None
     if account is not None:
-        mp = "WB" if account.marketplace == Marketplace.WB else "Ozon"
+        mp = "🟣 WB" if account.marketplace == Marketplace.WB else "🔵 Ozon"
     rating = review.rating if review.rating is not None else None
     shop = account.shop_name if account and account.shop_name else mp
     product = _product_hint(review.raw_json, marketplace)
@@ -43,7 +43,11 @@ def format_review_card(
     else:
         head = f"<b>{shop}</b>"
 
-    publish = "можно отправить из бота" if can_publish_via_api else "скопируйте ответ в кабинет"
+    publish = (
+        "🚀 можно отправить из бота"
+        if can_publish_via_api
+        else "📋 скопируйте ответ в кабинет"
+    )
 
     text = (review.text or "—").strip()
     if len(text) > 700:

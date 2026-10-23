@@ -39,9 +39,8 @@ from app.services.subscription import (
 router = Router(name="admin")
 
 ADMIN_PANEL_TEXT = (
-    "✦ <b>ReviewPilot</b>\n<b>Админ-панель</b>\n"
-    "━━━━━━━━━━━━━━\n"
-    "<i>Управление заявками, пользователями и рассылкой.</i>"
+    "✨ <b>ReviewPilot</b>\n🛠 <b>Админ-панель</b>\n\n"
+    "<i>Заявки, пользователи, рассылка и промокоды.</i>"
 )
 
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 BRAND = "ReviewPilot"
+ICON = "✨"
 
 
 def muted(text: str) -> str:
@@ -28,7 +29,7 @@ def dashboard_home(
     footer: str | None = None,
 ) -> str:
     lines = [
-        f"<b>{BRAND}</b>",
+        f"{ICON} <b>{BRAND}</b>",
         "",
         focus_line,
     ]
@@ -52,18 +53,19 @@ def review_stars(rating: int | str) -> str:
 # --- совместимость со старыми экранами (упрощённые) ---
 
 
-def brand_title(screen: str, *, tagline: str | None = None) -> str:
+def brand_title(screen: str, *, tagline: str | None = None, icon: str = ICON) -> str:
     if tagline:
-        return f"<b>{BRAND}</b>\n<b>{screen}</b>\n{muted(tagline)}\n"
-    return f"<b>{BRAND}</b> · <b>{screen}</b>\n\n"
+        return f"{icon} <b>{BRAND}</b>\n<b>{screen}</b>\n{muted(tagline)}\n"
+    return f"{icon} <b>{BRAND}</b> · <b>{screen}</b>\n\n"
 
 
-def section(title: str) -> str:
-    return f"\n<b>{title}</b>"
+def section(title: str, *, icon: str = "") -> str:
+    prefix = f"{icon} " if icon else ""
+    return f"\n<b>{prefix}{title}</b>"
 
 
-def bullet(text: str) -> str:
-    return f"• {text}"
+def bullet(text: str, *, icon: str = "▫️") -> str:
+    return f"{icon} {text}"
 
 
 def kv(label: str, value: str) -> str:
@@ -82,21 +84,21 @@ def progress_bar(current: int, total: int, width: int = 6) -> str:
 
 
 def tier_badge_free() -> str:
-    return "Free"
+    return "🆓 Free"
 
 
 def tier_badge_lite() -> str:
-    return "Lite"
+    return "✨ Lite"
 
 
 def tier_badge_pro() -> str:
-    return "PRO"
+    return "💎 PRO"
 
 
 def tier_badge_trial() -> str:
-    return "Trial PRO"
+    return "🎁 Trial PRO"
 
 
 def checklist_line(done: bool, label: str) -> str:
-    mark = "✓" if done else "—"
+    mark = "✅" if done else "⬜"
     return f"{mark} {label}"

@@ -8,6 +8,6 @@ def notifications_keyboard(*, notify_new: bool, negative_only: bool) -> InlineKe
         inline_keyboard=[
             [InlineKeyboardButton(text=new_label, callback_data="settings:notify:toggle_new")],
             [InlineKeyboardButton(text=neg_label, callback_data="settings:notify:toggle_negative")],
-            [InlineKeyboardButton(text="← Настройки", callback_data="menu:settings")],
+            [InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu:settings")],
         ]
     )

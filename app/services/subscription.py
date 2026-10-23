@@ -178,7 +178,7 @@ def format_subscription_summary(
     generations_remaining: int | None = None,
     access_tier_line: str | None = None,
 ) -> str:
-    lines = ["<b>Ваш доступ</b>", f"Telegram ID: <code>{user.tg_id}</code>", ""]
+    lines = ["👤 <b>Ваш доступ</b>", f"🆔 Telegram ID: <code>{user.tg_id}</code>", ""]
     if access_tier_line:
         lines.append(access_tier_line)
         lines.append("")

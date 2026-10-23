@@ -11,21 +11,21 @@ from app.bot.ui import brand_title, muted, progress_bar
 router = Router(name="onboarding")
 
 STEPS = [
-    brand_title("Шаг 1 из 3", tagline="Кабинет маркетплейса")
+    brand_title("Шаг 1 из 3", tagline="Кабинет маркетплейса", icon="🏪")
     + "\n"
     + progress_bar(1, 3)
     + "\n\n"
-    + muted("Настройки → подключите WB или Ozon (API-ключ)."),
-    brand_title("Шаг 2 из 3", tagline="Синхронизация")
+    + muted("⚙️ Настройки → подключите 🟣 WB или 🔵 Ozon (API-ключ)."),
+    brand_title("Шаг 2 из 3", tagline="Синхронизация", icon="🔄")
     + "\n"
     + progress_bar(2, 3)
     + "\n\n"
-    + muted("Отзывы → синхронизация — подтянем новые отзывы в очередь."),
-    brand_title("Шаг 3 из 3", tagline="Первый ответ")
+    + muted("💬 Отзывы → синхронизация — подтянем новые отзывы в очередь."),
+    brand_title("Шаг 3 из 3", tagline="Первый ответ", icon="✍️")
     + "\n"
     + progress_bar(3, 3)
     + "\n\n"
-    + muted("Очередь WB/Ozon или ручной ввод → тон → варианты ответа."),
+    + muted("📬 Очередь WB/Ozon или ручной ввод → 🎨 тон → варианты ответа."),
 ]
 
 
@@ -39,10 +39,10 @@ def _step_keyboard(step: int) -> InlineKeyboardMarkup:
     else:
         next_data = "onboarding:done"
         action = [InlineKeyboardButton(text="📬 Новые отзывы", callback_data="review:mp:list")]
-    rows = [action, [InlineKeyboardButton(text="Далее →", callback_data=next_data)]]
+    rows = [action, [InlineKeyboardButton(text="➡️ Далее", callback_data=next_data)]]
     if step > 0:
-        rows.append([InlineKeyboardButton(text="← Назад", callback_data=f"onboarding:step:{step - 1}")])
-    rows.append([InlineKeyboardButton(text="Пропустить", callback_data="onboarding:done")])
+        rows.append([InlineKeyboardButton(text="◀️ Назад", callback_data=f"onboarding:step:{step - 1}")])
+    rows.append([InlineKeyboardButton(text="⏭ Пропустить", callback_data="onboarding:done")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -72,6 +72,6 @@ async def onboarding_done(callback: CallbackQuery, db_user: DbUser) -> None:
     tg_id = callback.from_user.id if callback.from_user else 0
     if callback.message:
         await callback.message.edit_text(
-            "✦ <b>ReviewPilot</b>\nНастройка завершена.\n<i>Удачных продаж на маркетплейсах.</i>",
+            "✨ <b>ReviewPilot</b>\n🎉 Настройка завершена.\n<i>Удачных продаж на маркетплейсах.</i>",
             reply_markup=main_menu_keyboard(show_admin=tg_id in get_settings().admin_ids),
         )

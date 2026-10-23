@@ -42,11 +42,11 @@ def _subscription_menu_text() -> str:
     settings = get_settings()
     pay = payment_mode_label(settings)
     return (
-        brand_title("Подписка", tagline="Free · Lite · PRO")
-        + section("Оплата")
+        brand_title("Подписка", tagline="Free · Lite · PRO", icon="💎")
+        + section("Оплата", icon="💳")
         + f"\n  {kv('Способ', pay)}"
         + f"\n  {muted(LITE_VS_PRO_SHORT)}"
-        + section("QR (РБ)")
+        + section("QR (РБ)", icon="🇧🇾")
         + "\n"
         + muted("Заявка → подтверждение администратором.")
         + footer_hint("«Сравнение тарифов» — полная таблица возможностей.")

@@ -176,7 +176,7 @@ def _history_keyboard(reviews: list) -> InlineKeyboardMarkup:
                 )
             ]
         )
-    rows.append([InlineKeyboardButton(text="← Отзывы", callback_data="menu:reviews")])
+    rows.append([InlineKeyboardButton(text="💬 Отзывы", callback_data="menu:reviews")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -281,7 +281,7 @@ async def review_history_item(callback: CallbackQuery, db_user: DbUser) -> None:
             "\n".join(lines),
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=[
-                    [InlineKeyboardButton(text="← История", callback_data="review:history")],
+                    [InlineKeyboardButton(text="📚 История", callback_data="review:history")],
                 ]
             ),
         )

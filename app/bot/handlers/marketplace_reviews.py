@@ -60,7 +60,7 @@ def _mp_reviews_keyboard(reviews: list) -> InlineKeyboardMarkup:
                 )
             ]
         )
-    rows.append([InlineKeyboardButton(text="← Отзывы", callback_data="menu:reviews")])
+    rows.append([InlineKeyboardButton(text="💬 Отзывы", callback_data="menu:reviews")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -73,7 +73,7 @@ def _publish_confirm_keyboard(review_id: int) -> InlineKeyboardMarkup:
                     callback_data=f"review:mp:confirm:{review_id}",
                 )
             ],
-            [InlineKeyboardButton(text="Отмена", callback_data="review:mp:cancel_publish")],
+            [InlineKeyboardButton(text="❌ Отмена", callback_data="review:mp:cancel_publish")],
         ]
     )
 
@@ -89,7 +89,7 @@ async def _mp_variants_keyboard(
     base = await _build_variants_keyboard(session, db_user, state, len(variants), selected)
     rows = base.inline_keyboard[:-1]
     rows.append([InlineKeyboardButton(text="⏰ Отложить", callback_data=f"review:mp:snooze:{review_id}")])
-    rows.append([InlineKeyboardButton(text="← Новые отзывы", callback_data="review:mp:list")])
+    rows.append([InlineKeyboardButton(text="📬 Новые отзывы", callback_data="review:mp:list")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 

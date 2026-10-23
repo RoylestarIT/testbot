@@ -81,37 +81,42 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
     remaining = await remaining_generations_today(session, user.id)
     tier = await describe_access_tier(session, user, subscription)
 
+    if subscription and subscription.status.value == "active":
+        tier_icon = "💎" if subscription.plan == SubscriptionPlan.PRO else "✨"
+    elif user.trial_pro_until:
+        tier_icon = "🎁"
+    else:
+        tier_icon = "🆓"
+
     if new_count > 0:
         focus = f"📬  <b>{new_count}</b> {_review_word(new_count)} ждёт ответа"
-        hint = "Кнопка «Очередь отзывов» ниже"
+        hint = "👇 Кнопка «Очередь отзывов»"
     else:
         focus = "📭  Новых отзывов нет"
-        hint = "Синхронизация подтянет свежие из WB/Ozon"
+        hint = "🔄 Нажмите «Синхронизация»"
 
-    details: list[str] = [f"Тариф: <b>{tier}</b>"]
+    details: list[str] = [f"{tier_icon}  Тариф: <b>{tier}</b>"]
 
     if remaining is not None:
-        details.append(f"Генераций сегодня: <b>{remaining}</b> из 5")
+        details.append(f"⚡  Генераций сегодня: <b>{remaining}</b> / 5")
     elif subscription and subscription.status.value == "active" and subscription.plan == SubscriptionPlan.LITE:
-        details.append("Publish: копирование в кабинет")
-    elif subscription and subscription.status.value == "active" and subscription.plan == SubscriptionPlan.PRO:
-        details.append(f"Publish в API: квота <b>{user.free_api_publishes_remaining}</b>")
+        details.append("📋  Publish: копирование в кабинет")
     else:
-        details.append(f"Publish в API: квота <b>{user.free_api_publishes_remaining}</b>")
+        details.append(f"🚀  Publish в API: квота <b>{user.free_api_publishes_remaining}</b>")
 
     if snoozed_count:
-        details.append(f"Отложено: {snoozed_count}")
+        details.append(f"⏳  Отложено: <b>{snoozed_count}</b>")
 
     if api_accounts:
         names = []
         for acc in api_accounts[:3]:
-            mp = "WB" if acc.marketplace == Marketplace.WB else "Ozon"
-            label = acc.shop_name or mp
-            names.append(label)
+            mp = "🟣" if acc.marketplace == Marketplace.WB else "🔵"
+            label = acc.shop_name or ("WB" if acc.marketplace == Marketplace.WB else "Ozon")
+            names.append(f"{mp} {label}")
         tail = f" (+{len(api_accounts) - 3})" if len(api_accounts) > 3 else ""
-        details.append(f"Кабинеты: {', '.join(names)}{tail}")
+        details.append(f"🏪  {', '.join(names)}{tail}")
     else:
-        details.append("Кабинеты: <b>не подключены</b>")
+        details.append("🏪  Кабинеты: <b>не подключены</b>")
 
     nudge = await build_onboarding_nudge(session, user)
     if nudge:
@@ -122,10 +127,14 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
         acc_n = await count_user_api_accounts(session, user.id)
         tone_n = await count_user_tone_profiles(session, user.id)
         details.append(
-            muted(f"Free: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} каб., {tone_n}/{FREE_MAX_TONE_PROFILES} tone")
+            muted(
+                f"🔒 Free: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} каб., "
+                f"{tone_n}/{FREE_MAX_TONE_PROFILES} tone"
+            )
         )
 
-    footer = get_poller_status_line().strip() or None
+    footer_raw = get_poller_status_line().strip()
+    footer = f"🔄 {footer_raw}" if footer_raw else None
 
     return dashboard_home(
         focus_line=focus,

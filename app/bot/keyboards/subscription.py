@@ -17,27 +17,27 @@ def subscription_menu_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=f"Lite · безлимит · {pay}",
+                    text=f"✨ Lite · безлимит · {pay}",
                     callback_data="sub:stars:lite",
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text=f"PRO · publish + авто · {pay}",
+                    text=f"💎 PRO · publish + авто · {pay}",
                     callback_data="sub:stars:pro",
                 ),
             ],
             [
-                InlineKeyboardButton(text="→  Сравнение тарифов", callback_data="sub:compare"),
+                InlineKeyboardButton(text="📊  Сравнение тарифов", callback_data="sub:compare"),
             ],
             [
-                InlineKeyboardButton(text="→  Оплата QR (РБ)", callback_data="sub:qr:menu"),
+                InlineKeyboardButton(text="💳  Оплата QR (РБ)", callback_data="sub:qr:menu"),
             ],
             [
-                InlineKeyboardButton(text="→  Мой доступ", callback_data="sub:status"),
+                InlineKeyboardButton(text="👤  Мой доступ", callback_data="sub:status"),
             ],
             [
-                InlineKeyboardButton(text="←  Сводка", callback_data="menu:main"),
+                InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:main"),
             ],
         ]
     )
@@ -47,10 +47,10 @@ def qr_plan_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="Lite $10", callback_data="sub:qr:lite"),
-                InlineKeyboardButton(text="PRO $30", callback_data="sub:qr:pro"),
+                InlineKeyboardButton(text="✨ Lite $10", callback_data="sub:qr:lite"),
+                InlineKeyboardButton(text="💎 PRO $30", callback_data="sub:qr:pro"),
             ],
-            [InlineKeyboardButton(text="←  Назад", callback_data="menu:subscription")],
+            [InlineKeyboardButton(text="◀️  Назад", callback_data="menu:subscription")],
         ]
     )
 
@@ -59,8 +59,8 @@ def qr_paid_keyboard(plan: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="→  Я оплатил", callback_data=f"sub:qr:paid:{plan}"),
+                InlineKeyboardButton(text="✅  Я оплатил", callback_data=f"sub:qr:paid:{plan}"),
             ],
-            [InlineKeyboardButton(text="←  Назад", callback_data="menu:subscription")],
+            [InlineKeyboardButton(text="◀️  Назад", callback_data="menu:subscription")],
         ]
     )

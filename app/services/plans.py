@@ -14,32 +14,32 @@ FREE_MAX_MARKETPLACE_ACCOUNTS = 1
 FREE_MAX_TONE_PROFILES = 1
 
 PLANS_COMPARISON_TEXT = (
-    brand_title("Тарифы", tagline="Free · Lite · PRO")
-    + section("Free")
+    brand_title("Тарифы", tagline="Free · Lite · PRO", icon="💎")
+    + section("Free", icon="🆓")
     + "\n"
-    + bullet("5 генераций в день")
+    + bullet("⚡ 5 генераций в день")
     + "\n"
-    + bullet(f"{FREE_MAX_MARKETPLACE_ACCOUNTS} кабинет · {FREE_MAX_TONE_PROFILES} tone")
+    + bullet(f"🏪 {FREE_MAX_MARKETPLACE_ACCOUNTS} кабинет · 🎨 {FREE_MAX_TONE_PROFILES} tone")
     + "\n"
-    + bullet("ответ — копирование в кабинет")
-    + section("Lite ~$10/мес")
+    + bullet("📋 ответ — копирование в кабинет")
+    + section("Lite ~$10/мес", icon="✨")
     + "\n"
-    + bullet("безлимит генераций")
+    + bullet("♾️ безлимит генераций")
     + "\n"
-    + bullet("несколько кабинетов и tone")
+    + bullet("🏪 несколько кабинетов и tone")
     + "\n"
-    + bullet("без publish в API")
-    + section("PRO ~$30/мес")
+    + bullet("📋 без publish в API")
+    + section("PRO ~$30/мес", icon="🚀")
     + "\n"
-    + bullet("безлимит генераций")
+    + bullet("♾️ безлимит генераций")
     + "\n"
-    + bullet("publish в WB/Ozon из бота")
+    + bullet("🚀 publish в WB/Ozon из бота")
     + "\n"
-    + bullet("авто-ответы 4–5★")
-    + section("Trial PRO")
+    + bullet("🤖 авто-ответы 4–5★")
+    + section("Trial PRO", icon="🎁")
     + "\n"
     + quote("Один раз на аккаунт — возможности PRO на срок trial (кнопка в сводке).")
-    + footer_hint("Бесплатные publish в API — см. счётчик в сводке.")
+    + footer_hint("🎟 Бесплатные publish в API — см. счётчик в сводке.")
 )
 
 LITE_VS_PRO_SHORT = (
