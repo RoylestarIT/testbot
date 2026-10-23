@@ -30,6 +30,22 @@ class UserRepository:
         await self._session.refresh(user)
         return user
 
+    async def complete_onboarding(self, user_id: int) -> User | None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            return None
+        user.onboarding_completed_at = datetime.now(UTC)
+        await self._session.flush()
+        return user
+
+    async def get_by_username(self, username: str) -> User | None:
+        clean = username.lstrip("@").lower()
+        result = await self._session.execute(select(User).where(User.username.isnot(None)))
+        for user in result.scalars().all():
+            if user.username and user.username.lower() == clean:
+                return user
+        return None
+
     async def accept_terms(self, user_id: int) -> User | None:
         user = await self.get_by_id(user_id)
         if user is None:

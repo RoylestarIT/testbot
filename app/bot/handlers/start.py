@@ -28,15 +28,32 @@ def _show_admin_menu(tg_id: int) -> bool:
     return tg_id in get_settings().admin_ids
 
 
+async def _home_keyboard(db_user_id: int, tg_id: int) -> InlineKeyboardMarkup:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user_id)
+        show_onboarding = user is not None and user.onboarding_completed_at is None
+    kb = main_menu_keyboard(show_admin=_show_admin_menu(tg_id))
+    if not show_onboarding:
+        return kb
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🚀 Начать настройку", callback_data="menu:onboarding")],
+            *kb.inline_keyboard,
+        ]
+    )
+
+
 @router.message(CommandStart())
 async def cmd_start(message: Message, db_user: DbUser) -> None:
     if _needs_terms(db_user):
         await message.answer(TERMS_TEXT, reply_markup=_terms_keyboard())
         return
     tg_id = message.from_user.id if message.from_user else 0
+    kb = await _home_keyboard(db_user.id, tg_id)
     await message.answer(
         f"{WELCOME_TEXT}\n\nВыберите раздел в меню:",
-        reply_markup=main_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
+        reply_markup=kb,
     )
 
 
@@ -49,9 +66,10 @@ async def onboarding_accept(callback: CallbackQuery, db_user: DbUser) -> None:
     await callback.answer("Спасибо!")
     if callback.message:
         tg_id = callback.from_user.id if callback.from_user else 0
+        kb = await _home_keyboard(db_user.id, tg_id)
         await callback.message.edit_text(
             f"{WELCOME_TEXT}\n\nВыберите раздел в меню:",
-            reply_markup=main_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
+            reply_markup=kb,
         )
 
 

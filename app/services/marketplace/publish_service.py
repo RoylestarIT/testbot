@@ -8,6 +8,7 @@ from app.db.repositories.account import AccountRepository
 from app.db.repositories.review import ReviewRepository
 from app.services.marketplace.base import MarketplaceAPIError
 from app.services.marketplace.factory import get_client_for_account
+from app.services.pro_access import consume_api_publish_quota
 
 
 async def publish_reply_to_marketplace(
@@ -44,6 +45,8 @@ async def publish_reply_to_marketplace(
         if getattr(client, "_owns_client", False):
             await client.aclose()
 
+    account_user_id = account.user_id
+    await consume_api_publish_quota(session, account_user_id)
     await ReviewRepository(session).update_status(review.id, ReviewStatus.PUBLISHED)
     logger.info(
         "Review reply published review_id={} account_id={} marketplace={}",

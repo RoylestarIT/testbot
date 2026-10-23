@@ -3,18 +3,16 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import GeneratedReply, MarketplaceAccount, Review, SubscriptionPlan, SubscriptionStatus
-from app.db.repositories.subscription import SubscriptionRepository
+from app.db.models import GeneratedReply, MarketplaceAccount, Review
+from app.services.pro_access import has_pro_access
 
 FREE_DAILY_GENERATIONS = 5
 VARIANTS_PER_GENERATION = 3
 
 
 async def is_pro_user(session: AsyncSession, user_id: int) -> bool:
-    subscription = await SubscriptionRepository(session).get_active_for_user(user_id)
-    if subscription is None or subscription.status != SubscriptionStatus.ACTIVE:
-        return False
-    return subscription.plan == SubscriptionPlan.PRO
+    """PRO-возможности: оплаченный PRO или активный trial."""
+    return await has_pro_access(session, user_id)
 
 
 async def count_replies_today(session: AsyncSession, user_id: int) -> int:

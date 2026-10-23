@@ -10,12 +10,16 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.keyboards.admin import (
     admin_back_keyboard,
     admin_menu_keyboard,
+    admin_user_card_keyboard,
     broadcast_cancel_keyboard,
     broadcast_preview_keyboard,
     grant_cancel_keyboard,
     grant_plan_keyboard,
     pending_detail_keyboard,
 )
+from app.services.admin_audit import notify_admins
+from app.services.pro_access import admin_extend_trial
+from app.services.subscription import expire_active_subscriptions
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.states.admin import AdminStates
 from app.core.config import get_settings
@@ -372,6 +376,129 @@ async def admin_broadcast_send(callback: CallbackQuery, state: FSMContext, bot: 
     await state.clear()
     if callback.message:
         await callback.message.edit_text(result, reply_markup=admin_menu_keyboard())
+
+
+async def _build_user_card(session, user_id: int) -> str | None:
+    user = await UserRepository(session).get_by_id(user_id)
+    if user is None:
+        return None
+    from app.services.dashboard import build_user_dashboard
+
+    header = (
+        f"👤 <b>Пользователь</b> db_id={user.id}\n"
+        f"tg_id: <code>{user.tg_id}</code>\n"
+        f"username: @{user.username or '—'}\n"
+    )
+    body = await build_user_dashboard(session, user)
+    return header + "\n" + body
+
+
+@router.callback_query(F.data == "admin:find_user")
+async def admin_find_user_start(callback: CallbackQuery, state: FSMContext) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await state.set_state(AdminStates.waiting_user_query)
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            "👤 Пришлите <b>Telegram ID</b> или <b>@username</b>:",
+            reply_markup=admin_back_keyboard(),
+        )
+
+
+@router.message(AdminStates.waiting_user_query, F.text)
+async def admin_find_user_query(message: Message, state: FSMContext, bot: Bot) -> None:
+    if message.from_user is None or not _is_admin(message.from_user.id):
+        return
+    raw = (message.text or "").strip()
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = None
+        if raw.isdigit():
+            user = await UserRepository(session).get_by_tg_id(int(raw))
+        elif raw.startswith("@"):
+            user = await UserRepository(session).get_by_username(raw)
+        if user is None:
+            await message.answer("Не найден.", reply_markup=admin_menu_keyboard())
+            await state.clear()
+            return
+        text = await _build_user_card(session, user.id)
+    await state.clear()
+    if text:
+        await message.answer(text, reply_markup=admin_user_card_keyboard(user.id))
+        await notify_admins(bot, f"Admin opened user card db_id={user.id}")
+
+
+@router.callback_query(F.data.startswith("admin:user:grant:"))
+async def admin_user_grant(callback: CallbackQuery, bot: Bot) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    parts = callback.data.split(":")
+    plan = SubscriptionPlan.PRO if parts[3] == "pro" else SubscriptionPlan.LITE
+    user_id = int(parts[4])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(user_id)
+        if user is None:
+            await callback.answer("Не найден", show_alert=True)
+            return
+        msg, ok = await _execute_grant(bot, user.tg_id, plan)
+        await session.commit()
+    await callback.answer("OK" if ok else "Ошибка", show_alert=True)
+    if callback.message:
+        await callback.message.answer(msg, reply_markup=admin_user_card_keyboard(user_id))
+    await notify_admins(bot, f"Grant {plan.value} to user db_id={user_id}")
+
+
+@router.callback_query(F.data.startswith("admin:user:trial:"))
+async def admin_user_trial(callback: CallbackQuery, bot: Bot) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    parts = callback.data.split(":")
+    days = int(parts[3])
+    user_id = int(parts[4])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await admin_extend_trial(session, user_id, days)
+        await session.commit()
+    if user is None:
+        await callback.answer("Не найден", show_alert=True)
+        return
+    await callback.answer("Trial продлён")
+    await notify_admins(bot, f"Trial +{days}d user db_id={user_id}")
+    if callback.message:
+        await callback.message.answer(
+            f"Trial PRO до {user.trial_pro_until.strftime('%d.%m.%Y') if user.trial_pro_until else '—'}",
+            reply_markup=admin_user_card_keyboard(user_id),
+        )
+
+
+@router.callback_query(F.data.startswith("admin:user:revoke:"))
+async def admin_user_revoke(callback: CallbackQuery, bot: Bot) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    user_id = int(callback.data.split(":")[-1])
+    from datetime import UTC, datetime
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(user_id)
+        if user is None:
+            await callback.answer("Не найден", show_alert=True)
+            return
+        await expire_active_subscriptions(session, user_id)
+        user.trial_pro_until = datetime.now(UTC)
+        await session.commit()
+    await callback.answer("PRO снят")
+    await notify_admins(bot, f"Revoke PRO user db_id={user_id}")
+    try:
+        await bot.send_message(user.tg_id, "Подписка PRO/trial завершена администратором.")
+    except Exception:
+        pass
 
 
 # --- Команды оставлены как запасной вариант ---

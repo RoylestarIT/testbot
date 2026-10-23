@@ -4,6 +4,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import ErrorEvent
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.types import BotCommand
 from aiogram.fsm.storage.memory import MemoryStorage
 from loguru import logger
 
@@ -18,10 +19,22 @@ from app.tasks.poller import marketplace_poller_loop
 _poller_task: asyncio.Task[None] | None = None
 
 
+async def _register_bot_commands(bot: Bot) -> None:
+    await bot.set_my_commands(
+        [
+            BotCommand(command="start", description="Главное меню"),
+            BotCommand(command="dashboard", description="Сводка и статусы"),
+            BotCommand(command="my_subscription", description="Моя подписка"),
+            BotCommand(command="admin", description="Админ-панель"),
+        ]
+    )
+
+
 async def on_startup(bot: Bot) -> None:
     global _poller_task
     await init_db()
     logger.info("Database initialized")
+    await _register_bot_commands(bot)
     _poller_task = asyncio.create_task(marketplace_poller_loop(bot))
 
 

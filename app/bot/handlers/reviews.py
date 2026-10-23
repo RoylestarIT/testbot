@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from loguru import logger
 
 from app.bot.copy import REVIEWS_MENU_TEXT
 from app.bot.keyboards.menu import main_menu_keyboard
-from app.core.config import get_settings
 from app.bot.keyboards.reviews import (
     rating_keyboard,
     reviews_menu_keyboard,
@@ -122,6 +121,22 @@ async def _generate_and_persist(
     return review_id, variants
 
 
+def _history_keyboard(reviews: list) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    for item in reviews[:12]:
+        preview = (item.text or "—")[:28].replace("\n", " ")
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=f"⭐{item.rating or '?'} {preview}",
+                    callback_data=f"review:history:item:{item.id}",
+                )
+            ]
+        )
+    rows.append([InlineKeyboardButton(text="← Отзывы", callback_data="menu:reviews")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 @router.callback_query(F.data == "review:history")
 async def review_history(callback: CallbackQuery, db_user: DbUser) -> None:
     session_factory = get_session_factory()
@@ -130,15 +145,77 @@ async def review_history(callback: CallbackQuery, db_user: DbUser) -> None:
     await callback.answer()
     if not reviews:
         text = "📚 История пуста — здесь появятся обработанные и опубликованные ответы."
+        kb = reviews_menu_keyboard()
     else:
-        lines = ["📚 <b>История</b> (последние)", ""]
-        for item in reviews:
-            status = "🟢 опубликован" if item.status == ReviewStatus.PUBLISHED else "✔️ обработан"
-            preview = (item.text or "—")[:50].replace("\n", " ")
-            lines.append(f"{status} · ⭐{item.rating or '?'} · {preview}")
-        text = "\n".join(lines)
+        text = "📚 <b>История</b>\n\nНажмите на отзыв для деталей:"
+        kb = _history_keyboard(reviews)
     if callback.message:
-        await callback.message.edit_text(text, reply_markup=reviews_menu_keyboard())
+        await callback.message.edit_text(text, reply_markup=kb)
+
+
+@router.callback_query(F.data.startswith("review:history:item:"))
+async def review_history_item(callback: CallbackQuery, db_user: DbUser) -> None:
+    review_id = int(callback.data.split(":")[-1])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        review = await ReviewRepository(session).get_by_id_for_user(review_id, db_user.id)
+        if review is None:
+            await callback.answer("Не найден", show_alert=True)
+            return
+        replies = await ReplyRepository(session).list_by_review_id(review_id)
+    status = "🟢 опубликован" if review.status == ReviewStatus.PUBLISHED else "✔️ обработан"
+    lines = [
+        f"<b>Отзыв #{review.id}</b> · {status}",
+        f"⭐ {review.rating or '?'}",
+        "",
+        review.text or "—",
+        "",
+        "<b>Ответы:</b>",
+    ]
+    if replies:
+        for reply in replies[-3:]:
+            lines.append(f"• {reply.text[:300]}")
+    else:
+        lines.append("—")
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            "\n".join(lines),
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="← История", callback_data="review:history")],
+                ]
+            ),
+        )
+
+
+@router.callback_query(ManualReviewStates.viewing_variants, F.data == "review:edit")
+async def manual_edit_start(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(ManualReviewStates.waiting_edit_text)
+    await callback.answer()
+    if callback.message:
+        await callback.message.answer("✏️ Пришлите исправленный текст ответа.")
+
+
+@router.message(ManualReviewStates.waiting_edit_text, F.text)
+async def manual_edit_apply(message: Message, state: FSMContext, db_user: DbUser) -> None:
+    text = (message.text or "").strip()
+    data = await state.get_data()
+    variants: list[str] = data.get("variants") or []
+    selected = int(data.get("selected_index", 0))
+    if not variants:
+        await state.clear()
+        return
+    variants[selected] = text
+    await state.update_data(variants=variants)
+    await state.set_state(ManualReviewStates.viewing_variants)
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        remaining = await remaining_generations_today(session, db_user.id)
+    await message.answer(
+        _format_variants_message(variants, selected, remaining),
+        reply_markup=variants_keyboard(len(variants), selected),
+    )
 
 
 @router.callback_query(F.data == "menu:reviews")

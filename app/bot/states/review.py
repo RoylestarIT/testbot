@@ -6,3 +6,4 @@ class ManualReviewStates(StatesGroup):
     waiting_rating = State()
     waiting_tone = State()
     viewing_variants = State()
+    waiting_edit_text = State()

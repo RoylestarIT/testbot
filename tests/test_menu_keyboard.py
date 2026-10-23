@@ -1,11 +1,24 @@
 from app.bot.keyboards.menu import main_menu_keyboard
 
 
-def test_main_menu_keyboard_has_four_buttons() -> None:
+def test_main_menu_keyboard_has_core_sections() -> None:
     markup = main_menu_keyboard()
     texts = [
         button.text
         for row in markup.inline_keyboard
         for button in row
     ]
-    assert texts == ["Отзывы", "Настройки", "Подписка", "Помощь"]
+    assert texts == [
+        "🏠 Сводка",
+        "Отзывы",
+        "Настройки",
+        "Подписка",
+        "🆘 Поддержка",
+        "Помощь",
+    ]
+
+
+def test_main_menu_keyboard_shows_admin_for_admins() -> None:
+    markup = main_menu_keyboard(show_admin=True)
+    texts = [button.text for row in markup.inline_keyboard for button in row]
+    assert "🛠 Админ-панель" in texts

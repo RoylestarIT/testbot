@@ -5,6 +5,8 @@ import asyncio
 from aiogram import Bot
 from loguru import logger
 
+from datetime import UTC, datetime
+
 from app.core.config import Settings, get_settings
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.user import UserRepository
@@ -13,8 +15,21 @@ from app.services.marketplace.base import MarketplaceAPIError
 from app.services.marketplace.sync_service import sync_account_reviews
 from app.db.session import get_session_factory
 
+_last_poller_ok_at: datetime | None = None
+_last_poller_error: str | None = None
+
+
+def get_poller_status_line() -> str:
+    if _last_poller_ok_at is None:
+        return "🔄 Poller: ещё не было успешного цикла\n"
+    ts = _last_poller_ok_at.strftime("%d.%m %H:%M")
+    if _last_poller_error:
+        return f"🔄 Poller: OK {ts} UTC · ⚠️ прошлая ошибка\n"
+    return f"🔄 Poller: OK {ts} UTC\n"
+
 
 async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = None) -> None:
+    global _last_poller_ok_at, _last_poller_error
     """Один проход: активные кабинеты → новые отзывы в БД → уведомление селлеру."""
     settings = settings or get_settings()
     session_factory = get_session_factory()
@@ -40,6 +55,9 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
                 user_new_counts[account.user_id] = user_new_counts.get(account.user_id, 0) + created
 
         await session.commit()
+
+    _last_poller_ok_at = datetime.now(UTC)
+    _last_poller_error = None
 
     for user_id, count in user_new_counts.items():
         async with session_factory() as session:
@@ -79,6 +97,8 @@ async def marketplace_poller_loop(bot: Bot, settings: Settings | None = None) ->
             await poll_marketplace_reviews_once(bot, settings)
         except asyncio.CancelledError:
             raise
-        except Exception:
+        except Exception as exc:
+            global _last_poller_error
+            _last_poller_error = str(exc)[:200]
             logger.exception("Marketplace poller iteration failed")
         await asyncio.sleep(interval_sec)

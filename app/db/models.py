@@ -66,6 +66,13 @@ class User(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    onboarding_completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    trial_pro_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    trial_pro_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    free_api_publishes_remaining: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
 
     marketplace_accounts: Mapped[list["MarketplaceAccount"]] = relationship(
         back_populates="user",
@@ -150,6 +157,7 @@ class Review(Base):
         nullable=False,
     )
     raw_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    snoozed_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     account: Mapped["MarketplaceAccount"] = relationship(back_populates="reviews")
     generated_replies: Mapped[list["GeneratedReply"]] = relationship(

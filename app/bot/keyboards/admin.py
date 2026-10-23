@@ -6,9 +6,26 @@ def admin_menu_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(text="📊 Статистика", callback_data="admin:stats")],
             [InlineKeyboardButton(text="⏳ Pending-заявки", callback_data="admin:pending:0")],
+            [InlineKeyboardButton(text="👤 Найти пользователя", callback_data="admin:find_user")],
             [InlineKeyboardButton(text="🎁 Выдать подписку", callback_data="admin:grant")],
             [InlineKeyboardButton(text="📢 Рассылка", callback_data="admin:broadcast")],
             [InlineKeyboardButton(text="← Главное меню", callback_data="menu:main")],
+        ]
+    )
+
+
+def admin_user_card_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Grant Lite", callback_data=f"admin:user:grant:lite:{user_id}"),
+                InlineKeyboardButton(text="Grant PRO", callback_data=f"admin:user:grant:pro:{user_id}"),
+            ],
+            [
+                InlineKeyboardButton(text="+7d Trial PRO", callback_data=f"admin:user:trial:7:{user_id}"),
+                InlineKeyboardButton(text="Снять PRO", callback_data=f"admin:user:revoke:{user_id}"),
+            ],
+            [InlineKeyboardButton(text="← Админ-панель", callback_data="menu:admin")],
         ]
     )
 

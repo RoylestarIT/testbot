@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     subscription_lite_usd_label: str = Field(default="10", validation_alias="SUBSCRIPTION_LITE_USD")
     subscription_pro_usd_label: str = Field(default="30", validation_alias="SUBSCRIPTION_PRO_USD")
     poll_interval_minutes: int = Field(default=15, validation_alias="POLL_INTERVAL_MINUTES")
+    trial_pro_days: int = Field(default=7, validation_alias="TRIAL_PRO_DAYS")
+    free_api_publishes: int = Field(default=3, validation_alias="FREE_API_PUBLISHES")
+    support_username: str = Field(default="", validation_alias="SUPPORT_USERNAME")
     qr_payment_instructions: str = Field(
         default=(
             "1. Отсканируйте QR-код вашего банка (ERIP / перевод по номеру телефона — реквизиты уточняйте у поддержки).\n"

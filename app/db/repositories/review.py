@@ -1,6 +1,7 @@
+from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import MarketplaceAccount, Review, ReviewStatus
@@ -32,6 +33,8 @@ class ReviewRepository:
         stmt = select(Review).where(Review.account_id == account_id)
         if status is not None:
             stmt = stmt.where(Review.status == status)
+        now = datetime.now(UTC)
+        stmt = stmt.where(or_(Review.snoozed_until.is_(None), Review.snoozed_until <= now))
         stmt = stmt.order_by(Review.created_at.desc()).limit(limit)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
@@ -80,6 +83,22 @@ class ReviewRepository:
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+    async def snooze(self, review_id: int, until: datetime) -> Review | None:
+        review = await self.get_by_id(review_id)
+        if review is None:
+            return None
+        review.snoozed_until = until
+        await self._session.flush()
+        return review
+
+    async def get_by_id_for_user(self, review_id: int, user_id: int) -> Review | None:
+        result = await self._session.execute(
+            select(Review)
+            .join(MarketplaceAccount, Review.account_id == MarketplaceAccount.id)
+            .where(Review.id == review_id, MarketplaceAccount.user_id == user_id)
+        )
+        return result.scalar_one_or_none()
 
     async def update_status(self, review_id: int, status: ReviewStatus) -> Review | None:
         review = await self.get_by_id(review_id)

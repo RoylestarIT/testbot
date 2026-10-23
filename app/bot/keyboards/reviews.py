@@ -98,6 +98,9 @@ def variants_keyboard(variant_count: int, selected_index: int = 0) -> InlineKeyb
                 ),
             ],
             [
+                InlineKeyboardButton(text="✏️ Править", callback_data="review:edit"),
+            ],
+            [
                 InlineKeyboardButton(text="Ещё варианты", callback_data="review:more"),
                 InlineKeyboardButton(text="Изменить тон", callback_data="review:change_tone"),
             ],
