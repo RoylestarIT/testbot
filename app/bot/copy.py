@@ -44,7 +44,9 @@ REVIEWS_MENU_TEXT = (
 
 SETTINGS_INTRO = (
     "⚙️ <b>Настройки</b>\n\n"
-    "Подключите Seller API, настройте tone of voice и (на PRO) авто-публикацию."
+    "Подключите Seller API и tone of voice.\n"
+    "Бесплатно: 1 кабинет и 1 tone · Lite/PRO — без лимита.\n"
+    "Авто-публикация — только PRO."
 )
 
 SYNC_INTRO = "🔄 <b>Синхронизация</b>\n\nВыберите кабинет или синхронизируйте все сразу."

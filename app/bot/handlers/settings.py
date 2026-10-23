@@ -23,6 +23,15 @@ from app.db.session import get_session_factory
 from app.services.marketplace.account_connect import test_and_create_ozon_account, test_and_create_wb_account
 from app.services.generation_limit import is_pro_user
 from app.services.marketplace.base import MarketplaceAPIError
+from app.services.plans import (
+    FREE_MAX_MARKETPLACE_ACCOUNTS,
+    FREE_MAX_TONE_PROFILES,
+    can_add_marketplace_account,
+    can_add_tone_profile,
+    count_user_api_accounts,
+    count_user_tone_profiles,
+    has_lite_or_higher,
+)
 
 router = Router(name="settings")
 
@@ -55,17 +64,29 @@ async def settings_accounts(callback: CallbackQuery, db_user: DbUser) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
         accounts = await AccountRepository(session).list_by_user_id(db_user.id)
+        lite_plus = await has_lite_or_higher(session, db_user.id)
+        api_count = await count_user_api_accounts(session, db_user.id)
     await callback.answer()
-    text = (
-        "<b>Кабинеты маркетплейсов</b>\n\n"
-        "Можно подключить несколько аккаунтов WB/Ozon."
-    )
+    if lite_plus:
+        limit_line = "Можно подключить несколько аккаунтов WB/Ozon."
+    else:
+        limit_line = (
+            f"Бесплатно: <b>{api_count}/{FREE_MAX_MARKETPLACE_ACCOUNTS}</b> кабинет WB/Ozon. "
+            "Lite/PRO — без лимита."
+        )
+    text = f"<b>Кабинеты маркетплейсов</b>\n\n{limit_line}"
     if callback.message:
         await callback.message.edit_text(text, reply_markup=accounts_menu_keyboard(accounts))
 
 
 @router.callback_query(F.data == "settings:connect:wb")
-async def connect_wb_start(callback: CallbackQuery, state: FSMContext) -> None:
+async def connect_wb_start(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        allowed, msg = await can_add_marketplace_account(session, db_user.id)
+    if not allowed:
+        await callback.answer(msg or "Лимит кабинетов", show_alert=True)
+        return
     await state.set_state(ConnectWbStates.waiting_api_key)
     await callback.answer()
     if callback.message:
@@ -103,6 +124,11 @@ async def connect_wb_finish(message: Message, state: FSMContext, db_user: DbUser
     session_factory = get_session_factory()
     try:
         async with session_factory() as session:
+            allowed, limit_msg = await can_add_marketplace_account(session, db_user.id)
+            if not allowed:
+                await message.answer(limit_msg or "Лимит кабинетов.", reply_markup=settings_menu_keyboard())
+                await state.clear()
+                return
             account, sample = await test_and_create_wb_account(
                 session,
                 user_id=db_user.id,
@@ -134,7 +160,13 @@ async def connect_wb_finish(message: Message, state: FSMContext, db_user: DbUser
 
 
 @router.callback_query(F.data == "settings:connect:ozon")
-async def connect_ozon_start(callback: CallbackQuery, state: FSMContext) -> None:
+async def connect_ozon_start(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        allowed, msg = await can_add_marketplace_account(session, db_user.id)
+    if not allowed:
+        await callback.answer(msg or "Лимит кабинетов", show_alert=True)
+        return
     await state.set_state(ConnectOzonStates.waiting_client_id)
     await callback.answer()
     if callback.message:
@@ -180,6 +212,11 @@ async def connect_ozon_finish(message: Message, state: FSMContext, db_user: DbUs
     session_factory = get_session_factory()
     try:
         async with session_factory() as session:
+            allowed, limit_msg = await can_add_marketplace_account(session, db_user.id)
+            if not allowed:
+                await message.answer(limit_msg or "Лимит кабинетов.", reply_markup=settings_menu_keyboard())
+                await state.clear()
+                return
             account, sample = await test_and_create_ozon_account(
                 session,
                 user_id=db_user.id,
@@ -293,16 +330,31 @@ async def settings_tone_list(callback: CallbackQuery, db_user: DbUser) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
         profiles = await ToneProfileRepository(session).list_by_user_id(db_user.id)
+        lite_plus = await has_lite_or_higher(session, db_user.id)
+        tone_count = await count_user_tone_profiles(session, db_user.id)
     await callback.answer()
+    if lite_plus:
+        limit_line = "Можно создать несколько профилей tone."
+    else:
+        limit_line = (
+            f"Бесплатно: <b>{tone_count}/{FREE_MAX_TONE_PROFILES}</b> профиль. "
+            "Lite/PRO — без лимита."
+        )
     if callback.message:
         await callback.message.edit_text(
-            "<b>Tone of voice</b>\n\nПрофили используются при генерации ответов.",
+            f"<b>Tone of voice</b>\n\n{limit_line}",
             reply_markup=tone_menu_keyboard(profiles),
         )
 
 
 @router.callback_query(F.data == "settings:tone:add")
-async def settings_tone_add(callback: CallbackQuery, state: FSMContext) -> None:
+async def settings_tone_add(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        allowed, msg = await can_add_tone_profile(session, db_user.id)
+    if not allowed:
+        await callback.answer(msg or "Лимит tone-профилей", show_alert=True)
+        return
     await state.set_state(ToneProfileStates.waiting_description)
     await callback.answer()
     if callback.message:
@@ -340,6 +392,11 @@ async def settings_tone_examples(message: Message, state: FSMContext, db_user: D
 
     session_factory = get_session_factory()
     async with session_factory() as session:
+        allowed, limit_msg = await can_add_tone_profile(session, db_user.id)
+        if not allowed:
+            await state.clear()
+            await message.answer(limit_msg or "Лимит tone-профилей.", reply_markup=settings_menu_keyboard())
+            return
         profile = await ToneProfileRepository(session).create(
             user_id=db_user.id,
             description=str(desc),

@@ -216,6 +216,7 @@ async def mp_pick_review(callback: CallbackQuery, state: FSMContext, db_user: Db
             await callback.answer("Нет доступа", show_alert=True)
             return
         profiles = await ToneProfileRepository(session).list_by_user_id(db_user.id)
+        can_publish, _ = await can_api_publish(session, db_user.id)
 
     await state.update_data(
         review_id=review_id,
@@ -227,7 +228,7 @@ async def mp_pick_review(callback: CallbackQuery, state: FSMContext, db_user: Db
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(
-            format_review_card(review, account),
+            format_review_card(review, account, can_publish_via_api=can_publish),
             reply_markup=tone_keyboard(profiles),
         )
 

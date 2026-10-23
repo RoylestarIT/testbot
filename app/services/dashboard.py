@@ -10,7 +10,14 @@ from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus,
 from app.db.repositories.account import AccountRepository
 from app.services.generation_limit import remaining_generations_today
 from app.services.pro_access import has_paid_pro, is_trial_pro_active
-from app.services.plans import describe_access_tier
+from app.services.plans import (
+    FREE_MAX_MARKETPLACE_ACCOUNTS,
+    FREE_MAX_TONE_PROFILES,
+    count_user_api_accounts,
+    count_user_tone_profiles,
+    describe_access_tier,
+    has_lite_or_higher,
+)
 from app.services.subscription import get_effective_subscription
 from app.tasks.poller import get_poller_status_line
 
@@ -88,6 +95,15 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
     if user.onboarding_completed_at is None and not api_accounts:
         onboarding_hint = "\n\n👉 Нажмите <b>«Начать настройку»</b> — проведём за 3 шага."
 
+    limits_hint = ""
+    if not await has_lite_or_higher(session, user.id):
+        acc_n = await count_user_api_accounts(session, user.id)
+        tone_n = await count_user_tone_profiles(session, user.id)
+        limits_hint = (
+            f"\n🔒 Бесплатно: кабинеты <b>{acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS}</b>, "
+            f"tone <b>{tone_n}/{FREE_MAX_TONE_PROFILES}</b> · Lite/PRO снимают лимиты"
+        )
+
     return (
         "🏠 <b>Сводка</b>\n\n"
         f"{plan_line}\n"
@@ -97,5 +113,6 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
         f"🎟 Бесплатных publish в API: <b>{user.free_api_publishes_remaining}</b>\n"
         f"{cabinets}\n"
         f"{get_poller_status_line()}"
+        f"{limits_hint}"
         f"{onboarding_hint}"
     )

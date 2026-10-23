@@ -190,6 +190,7 @@ def format_subscription_summary(
                 f"Генераций сегодня: <b>{generations_remaining if generations_remaining is not None else '—'}</b> из 5",
                 "Publish в WB/Ozon из бота: <b>только PRO</b> (или trial / бесплатная квота)",
                 "",
+                "Лимиты бесплатно: 1 кабинет WB/Ozon, 1 tone-профиль.\n"
                 "Оформите Lite или PRO — кнопка «Сравнение тарифов».",
             ]
         )

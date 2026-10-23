@@ -22,7 +22,12 @@ def _product_hint(raw: dict[str, Any] | None, marketplace: Marketplace | None) -
     return None
 
 
-def format_review_card(review: Review, account: MarketplaceAccount | None) -> str:
+def format_review_card(
+    review: Review,
+    account: MarketplaceAccount | None,
+    *,
+    can_publish_via_api: bool = False,
+) -> str:
     mp = "—"
     marketplace = account.marketplace if account else None
     if account is not None:
@@ -37,10 +42,17 @@ def format_review_card(review: Review, account: MarketplaceAccount | None) -> st
     text = (review.text or "—").strip()
     if len(text) > 800:
         text = text[:800] + "…"
+    if can_publish_via_api:
+        publish_line = "📌 Отправка в маркетплейс из бота: <b>доступна</b> (PRO / trial / квота)\n"
+    else:
+        publish_line = (
+            "📌 Отправка в API: <b>нужен PRO</b> · сейчас — «Скопировать ответ»\n"
+        )
     return (
         f"📄 <b>Отзыв</b> · {shop}\n"
         f"{stars_line}{product_line}\n"
-        f"Площадка: {mp}\n\n"
+        f"Площадка: {mp}\n"
+        f"{publish_line}\n"
         f"{text}\n\n"
         "Выберите <b>тон ответа</b> (или быстрый пресет ниже):"
     )

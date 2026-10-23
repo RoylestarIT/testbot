@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.db.models import (
     Base,
+    Marketplace,
     PaymentMethod,
     SubscriptionPlan,
     SubscriptionStatus,
@@ -12,7 +13,14 @@ from app.db.models import (
 from app.db.repositories.subscription import SubscriptionRepository
 from app.db.repositories.user import UserRepository
 from app.services.generation_limit import can_generate, remaining_generations_today
-from app.services.plans import has_unlimited_generations
+from app.db.repositories.account import AccountRepository
+from app.db.repositories.tone_profile import ToneProfileRepository
+from app.services.plans import (
+    FREE_MAX_MARKETPLACE_ACCOUNTS,
+    can_add_marketplace_account,
+    can_add_tone_profile,
+    has_unlimited_generations,
+)
 
 
 @pytest.fixture
@@ -43,6 +51,37 @@ async def test_paid_lite_unlocks_unlimited_generations(session: AsyncSession) ->
     allowed, msg = await can_generate(session, user.id)
     assert allowed is True
     assert msg is None
+
+
+@pytest.mark.asyncio
+async def test_free_user_cannot_add_second_account(session: AsyncSession) -> None:
+    user = await UserRepository(session).create(tg_id=8003, username="one_cab")
+    await AccountRepository(session).create(
+        user_id=user.id,
+        marketplace=Marketplace.WB,
+        encrypted_api_key="enc",
+        shop_name="shop",
+        is_active=True,
+    )
+    await session.commit()
+    allowed, msg = await can_add_marketplace_account(session, user.id)
+    assert allowed is False
+    assert msg is not None
+    assert str(FREE_MAX_MARKETPLACE_ACCOUNTS) in msg
+
+
+@pytest.mark.asyncio
+async def test_free_user_cannot_add_second_tone(session: AsyncSession) -> None:
+    user = await UserRepository(session).create(tg_id=8004, username="one_tone")
+    await ToneProfileRepository(session).create(
+        user_id=user.id,
+        description="friendly tone",
+        example_replies=None,
+    )
+    await session.commit()
+    allowed, msg = await can_add_tone_profile(session, user.id)
+    assert allowed is False
+    assert msg is not None
 
 
 @pytest.mark.asyncio
