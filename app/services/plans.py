@@ -29,7 +29,7 @@ PLANS_COMPARISON_TEXT = (
     + bullet("🏪 несколько кабинетов и tone")
     + "\n"
     + bullet("📋 без publish в API")
-    + section("PRO ~$30/мес", icon="🚀")
+    + section("PRO ~$20/мес", icon="🚀")
     + "\n"
     + bullet("♾️ безлимит генераций")
     + "\n"

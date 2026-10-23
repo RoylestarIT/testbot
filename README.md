@@ -56,7 +56,7 @@ python3 -m app.main
 CRYPTO_PAY_API_TOKEN=...   # @CryptoBot → Crypto Pay → Create App
 PAYMENT_ENABLE_STARS=false
 CRYPTO_LITE_AMOUNT_USD=10
-CRYPTO_PRO_AMOUNT_USD=30
+CRYPTO_PRO_AMOUNT_USD=20
 ```
 
 В @CryptoBot включите **Webhooks** на `https://ВАШ_ДОМЕН:8081/cryptopay/webhook` (или путь из `CRYPTO_PAY_WEBHOOK_PATH`).  

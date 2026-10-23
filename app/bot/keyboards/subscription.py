@@ -2,6 +2,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.core.config import get_settings
 from app.services.payment.crypto_pay import crypto_pay_enabled
+from app.services.payment.fx_rates import SubscriptionPricing
 from app.services.payment.payment_options import card_payments_enabled, stars_payments_enabled
 from app.services.payment.telegram_stars import uses_telegram_stars
 
@@ -13,7 +14,13 @@ def _pay_label() -> str:
     return settings.payment_currency.upper()
 
 
-def subscription_menu_keyboard() -> InlineKeyboardMarkup:
+def _truncate_btn(text: str, limit: int = 64) -> str:
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1] + "…"
+
+
+def subscription_menu_keyboard(pricing: SubscriptionPricing) -> InlineKeyboardMarkup:
     settings = get_settings()
     rows: list[list[InlineKeyboardButton]] = []
 
@@ -21,18 +28,8 @@ def subscription_menu_keyboard() -> InlineKeyboardMarkup:
         pay = _pay_label()
         rows.extend(
             [
-                [
-                    InlineKeyboardButton(
-                        text=f"✨ Lite · безлимит · {pay}",
-                        callback_data="sub:stars:lite",
-                    ),
-                ],
-                [
-                    InlineKeyboardButton(
-                        text=f"💎 PRO · publish + авто · {pay}",
-                        callback_data="sub:stars:pro",
-                    ),
-                ],
+                [InlineKeyboardButton(text=f"✨ Lite · {pay}", callback_data="sub:stars:lite")],
+                [InlineKeyboardButton(text=f"💎 PRO · {pay}", callback_data="sub:stars:pro")],
             ]
         )
     elif card_payments_enabled(settings):
@@ -49,13 +46,13 @@ def subscription_menu_keyboard() -> InlineKeyboardMarkup:
             [
                 [
                     InlineKeyboardButton(
-                        text=f"🪙 Lite · ${settings.crypto_lite_amount_usd} USDT/TON…",
+                        text=_truncate_btn(pricing.crypto_lite_button()),
                         callback_data="sub:crypto:lite",
                     ),
                 ],
                 [
                     InlineKeyboardButton(
-                        text=f"🪙 PRO · ${settings.crypto_pro_amount_usd} USDT/TON…",
+                        text=_truncate_btn(pricing.crypto_pro_button()),
                         callback_data="sub:crypto:pro",
                     ),
                 ],
@@ -65,9 +62,7 @@ def subscription_menu_keyboard() -> InlineKeyboardMarkup:
     rows.extend(
         [
             [InlineKeyboardButton(text="📊  Сравнение тарифов", callback_data="sub:compare")],
-            [
-                InlineKeyboardButton(text="💳  Перевод (РФ / РБ)", callback_data="sub:qr:menu"),
-            ],
+            [InlineKeyboardButton(text="💳  Перевод (РФ / РБ)", callback_data="sub:qr:menu")],
             [InlineKeyboardButton(text="👤  Мой доступ", callback_data="sub:status")],
             [InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:dashboard")],
         ]
@@ -75,12 +70,20 @@ def subscription_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def qr_plan_keyboard() -> InlineKeyboardMarkup:
+def qr_plan_keyboard(pricing: SubscriptionPricing) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="✨ Lite $10", callback_data="sub:qr:lite"),
-                InlineKeyboardButton(text="💎 PRO $30", callback_data="sub:qr:pro"),
+                InlineKeyboardButton(
+                    text=_truncate_btn(pricing.lite_line()),
+                    callback_data="sub:qr:lite",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=_truncate_btn(pricing.pro_line()),
+                    callback_data="sub:qr:pro",
+                ),
             ],
             [InlineKeyboardButton(text="◀️  Назад", callback_data="menu:subscription")],
         ]
@@ -90,9 +93,7 @@ def qr_plan_keyboard() -> InlineKeyboardMarkup:
 def qr_paid_keyboard(plan: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(text="✅  Я оплатил", callback_data=f"sub:qr:paid:{plan}"),
-            ],
+            [InlineKeyboardButton(text="✅  Я оплатил", callback_data=f"sub:qr:paid:{plan}")],
             [InlineKeyboardButton(text="◀️  Назад", callback_data="menu:subscription")],
         ]
     )

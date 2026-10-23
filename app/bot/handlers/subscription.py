@@ -21,6 +21,7 @@ from app.services.payment.crypto_pay import (
     crypto_amount_for_plan,
     crypto_pay_enabled,
 )
+from app.services.payment.fx_rates import SubscriptionPricing, get_subscription_pricing
 from app.services.payment.manual_qr import qr_instructions
 from app.services.payment.payment_options import card_payments_enabled, stars_payments_enabled
 from app.services.payment.telegram_stars import (
@@ -46,8 +47,8 @@ from app.tasks.crypto_pay_poller import process_crypto_pending_once
 
 router = Router(name="subscription")
 
-def _subscription_menu_text() -> str:
-    from app.bot.ui import brand_title, footer_hint, kv, muted, section
+def _subscription_menu_text(pricing: SubscriptionPricing) -> str:
+    from app.bot.ui import brand_title, bullet, footer_hint, kv, muted, section
 
     settings = get_settings()
     methods: list[str] = []
@@ -61,13 +62,20 @@ def _subscription_menu_text() -> str:
     pay_line = ", ".join(methods)
     return (
         brand_title("Подписка", tagline="Free · Lite · PRO", icon="💎")
+        + section("Цены", icon="💱")
+        + "\n"
+        + bullet(pricing.lite_line())
+        + "\n"
+        + bullet(pricing.pro_line())
+        + "\n"
+        + muted(f"Курс: {pricing.source}. Актуально для перевода и 🪙 Crypto Bot.")
         + section("Оплата", icon="💳")
         + f"\n  {kv('Способы', pay_line)}"
         + f"\n  {muted(LITE_VS_PRO_SHORT)}"
         + section("Перевод", icon="🏦")
         + "\n"
         + muted("РФ или РБ — заявка, подтверждение администратором.")
-        + footer_hint("🪙 Crypto Bot — автоматически после оплаты счёта.")
+        + footer_hint("Суммы в ₽ и BYN — ориентир обменника Crypto Bot.")
     )
 
 
@@ -109,29 +117,37 @@ async def _notify_admins_qr(bot: Bot, *, subscription_id: int, db_user: DbUser, 
 
 @router.message(Command("my_subscription"))
 async def cmd_my_subscription(message: Message, db_user: DbUser) -> None:
+    pricing = await get_subscription_pricing()
     text = await _subscription_status_text(db_user)
-    await message.answer(text, reply_markup=subscription_menu_keyboard())
+    await message.answer(text, reply_markup=subscription_menu_keyboard(pricing))
 
 
 @router.callback_query(F.data == "menu:subscription")
 async def menu_subscription(callback: CallbackQuery, db_user: DbUser) -> None:
+    pricing = await get_subscription_pricing()
     text = await _subscription_status_text(db_user)
     await answer_and_edit(
         callback,
-        f"{_subscription_menu_text()}\n\n{text}",
-        reply_markup=subscription_menu_keyboard(),
+        f"{_subscription_menu_text(pricing)}\n\n{text}",
+        reply_markup=subscription_menu_keyboard(pricing),
     )
 
 
 @router.callback_query(F.data == "sub:status")
 async def subscription_status(callback: CallbackQuery, db_user: DbUser) -> None:
+    pricing = await get_subscription_pricing()
     text = await _subscription_status_text(db_user)
-    await answer_and_edit(callback, text, reply_markup=subscription_menu_keyboard())
+    await answer_and_edit(callback, text, reply_markup=subscription_menu_keyboard(pricing))
 
 
 @router.callback_query(F.data == "sub:compare")
 async def subscription_compare(callback: CallbackQuery) -> None:
-    await answer_and_edit(callback, PLANS_COMPARISON_TEXT, reply_markup=subscription_menu_keyboard())
+    pricing = await get_subscription_pricing()
+    await answer_and_edit(
+        callback,
+        PLANS_COMPARISON_TEXT,
+        reply_markup=subscription_menu_keyboard(pricing),
+    )
 
 
 @router.callback_query(F.data.in_({"sub:stars:lite", "sub:stars:pro"}))
@@ -243,13 +259,15 @@ async def crypto_create_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUs
     if not pay_url:
         await callback.answer("Нет ссылки на оплату", show_alert=True)
         return
+    pricing = await get_subscription_pricing()
     plan_name = "PRO" if plan == SubscriptionPlan.PRO else "Lite"
+    usd = pricing.pro_usd if plan == SubscriptionPlan.PRO else pricing.lite_usd
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(
             f"🪙 <b>Оплата {plan_name}</b>\n\n"
-            f"Сумма: <b>${crypto_amount_for_plan(settings, plan)}</b> (можно оплатить USDT, TON и др.)\n"
-            "Нажмите кнопку ниже — откроется @CryptoBot.\n"
+            f"Сумма: <b>{pricing.format_usd_line(usd)}</b>\n"
+            "<i>Оплата USDT, TON и др. в @CryptoBot</i>\n\n"
             "После оплаты доступ включится автоматически (до 2 минут).",
             reply_markup=crypto_pay_keyboard(str(pay_url)),
         )
@@ -259,18 +277,21 @@ async def crypto_create_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUs
 async def crypto_check_payment(callback: CallbackQuery, bot: Bot, db_user: DbUser) -> None:
     await callback.answer("Проверяю…")
     await process_crypto_pending_once(bot)
+    pricing = await get_subscription_pricing()
     text = await _subscription_status_text(db_user)
     if callback.message:
-        await callback.message.answer(text, reply_markup=subscription_menu_keyboard())
+        await callback.message.answer(text, reply_markup=subscription_menu_keyboard(pricing))
 
 
 @router.callback_query(F.data == "sub:qr:menu")
 async def qr_plan_menu(callback: CallbackQuery) -> None:
+    pricing = await get_subscription_pricing()
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(
-            "Выберите тариф для оплаты переводом (РФ / РБ):",
-            reply_markup=qr_plan_keyboard(),
+            "Выберите тариф для оплаты переводом (РФ / РБ):\n\n"
+            f"{pricing.lite_line()}\n{pricing.pro_line()}",
+            reply_markup=qr_plan_keyboard(pricing),
         )
 
 
@@ -279,10 +300,11 @@ async def qr_show_instructions(callback: CallbackQuery) -> None:
     plan_key = callback.data.split(":")[-1]
     plan = SubscriptionPlan.PRO if plan_key == "pro" else SubscriptionPlan.LITE
     settings = get_settings()
+    pricing = await get_subscription_pricing()
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(
-            qr_instructions(settings, plan),
+            qr_instructions(settings, plan, pricing=pricing),
             reply_markup=qr_paid_keyboard(plan_key),
         )
 
@@ -298,11 +320,12 @@ async def qr_mark_paid(callback: CallbackQuery, bot: Bot, db_user: DbUser) -> No
         sub_id = subscription.id
 
     await _notify_admins_qr(bot, subscription_id=sub_id, db_user=db_user, plan=plan)
+    pricing = await get_subscription_pricing()
     await callback.answer("Заявка отправлена администратору")
     if callback.message:
         await callback.message.edit_text(
             "✅ Заявка на оплату QR создана.\n\n"
             f"Номер заявки: <code>{sub_id}</code>\n"
             "После проверки перевода администратор активирует подписку.",
-            reply_markup=subscription_menu_keyboard(),
+            reply_markup=subscription_menu_keyboard(pricing),
         )
