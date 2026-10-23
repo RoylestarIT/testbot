@@ -4,7 +4,7 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.types import BotCommand, ErrorEvent
+from aiogram.types import ErrorEvent
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery, Message
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
@@ -32,19 +32,6 @@ _crypto_poller_task: asyncio.Task[None] | None = None
 _health_runner: web.AppRunner | None = None
 
 
-async def _register_bot_commands(bot: Bot) -> None:
-    await bot.set_my_commands(
-        [
-            BotCommand(command="start", description="🏠 Сводка · co-pilot WB/Ozon"),
-            BotCommand(command="dashboard", description="📊 Сводка и статусы"),
-            BotCommand(command="help", description="📖 Справка по боту"),
-            BotCommand(command="my_subscription", description="💎 Моя подписка"),
-            BotCommand(command="promo", description="🎟 Активировать промокод"),
-            BotCommand(command="admin", description="🛠 Админ-панель"),
-        ]
-    )
-
-
 async def on_startup(bot: Bot) -> None:
     global _poller_task, _reminder_task, _digest_task, _stale_reminder_task, _crypto_poller_task, _health_runner
     settings = get_settings()
@@ -60,7 +47,9 @@ async def on_startup(bot: Bot) -> None:
             logger.info("Crypto Pay connected app={}", name)
         except Exception as exc:
             logger.warning("Crypto Pay getMe failed: {}", exc)
-    await _register_bot_commands(bot)
+    from app.bot.bot_profile import apply_bot_profile
+
+    await apply_bot_profile(bot, settings)
     _poller_task = asyncio.create_task(marketplace_poller_loop(bot))
     _reminder_task = asyncio.create_task(subscription_reminder_loop(bot))
     _digest_task = asyncio.create_task(daily_digest_loop(bot))

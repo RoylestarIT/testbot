@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     )
 
     bot_token: str = Field(validation_alias="BOT_TOKEN")
+    bot_short_description: str = Field(default="", validation_alias="BOT_SHORT_DESCRIPTION")
+    bot_description: str = Field(default="", validation_alias="BOT_DESCRIPTION")
+    bot_profile_language: str = Field(default="ru", validation_alias="BOT_PROFILE_LANGUAGE")
     database_url: str = Field(
         default="sqlite+aiosqlite:///./reviewpilot.db",
         validation_alias="DATABASE_URL",
