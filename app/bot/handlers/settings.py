@@ -8,6 +8,7 @@ from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.settings import (
     account_detail_keyboard,
     accounts_menu_keyboard,
+    autopublish_accounts_keyboard,
     settings_menu_keyboard,
     tone_detail_keyboard,
     tone_menu_keyboard,
@@ -19,6 +20,7 @@ from app.db.repositories.account import AccountRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.db.session import get_session_factory
 from app.services.marketplace.account_connect import test_and_create_ozon_account, test_and_create_wb_account
+from app.services.generation_limit import is_pro_user
 from app.services.marketplace.base import MarketplaceAPIError
 
 router = Router(name="settings")
@@ -38,14 +40,17 @@ async def menu_settings(callback: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "pro:autopublish")
-async def pro_autopublish_stub(callback: CallbackQuery) -> None:
+async def pro_autopublish_menu(callback: CallbackQuery, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        accounts = await AccountRepository(session).list_by_user_id(db_user.id, active_only=True)
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(
             "<b>Авто-публикация (PRO)</b>\n\n"
-            "Фоновый poller уже подтягивает новые отзывы. "
-            "Полная авто-публикация без подтверждения — в следующих итерациях.",
-            reply_markup=settings_menu_keyboard(),
+            "Для отзывов <b>4–5★</b> бот сгенерирует и опубликует ответ без подтверждения "
+            "(1–3★ — только уведомление). Выберите кабинет:",
+            reply_markup=autopublish_accounts_keyboard(accounts),
         )
 
 
@@ -210,16 +215,51 @@ async def settings_account_detail(callback: CallbackQuery, db_user: DbUser) -> N
     session_factory = get_session_factory()
     async with session_factory() as session:
         account = await AccountRepository(session).get_by_id(account_id)
+        is_pro = await is_pro_user(session, db_user.id)
     if account is None or account.user_id != db_user.id:
         await callback.answer("Кабинет не найден", show_alert=True)
         return
     mp = "Wildberries" if account.marketplace == Marketplace.WB else "Ozon"
     name = account.shop_name or f"{mp} #{account.id}"
+    sync_hint = ""
+    if account.last_sync_at:
+        sync_hint = f"\nПоследняя синхронизация: {account.last_sync_at.strftime('%d.%m.%Y %H:%M')} UTC"
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(
-            f"<b>{name}</b>\nПлощадка: {mp}\nСтатус: {'активен' if account.is_active else 'отключён'}",
-            reply_markup=account_detail_keyboard(account.id, account.is_active),
+            f"<b>{name}</b>\nПлощадка: {mp}\nСтатус: {'активен' if account.is_active else 'отключён'}"
+            f"{sync_hint}",
+            reply_markup=account_detail_keyboard(
+                account.id,
+                account.is_active,
+                auto_publish_enabled=account.auto_publish_enabled,
+                show_auto_publish=is_pro and account.marketplace in (Marketplace.WB, Marketplace.OZON),
+            ),
+        )
+
+
+@router.callback_query(F.data.startswith("settings:account_autopublish:"))
+async def settings_account_autopublish(callback: CallbackQuery, db_user: DbUser) -> None:
+    account_id = int(callback.data.split(":")[-1])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        if not await is_pro_user(session, db_user.id):
+            await callback.answer("Только для PRO", show_alert=True)
+            return
+        repo = AccountRepository(session)
+        account = await repo.get_by_id(account_id)
+        if account is None or account.user_id != db_user.id:
+            await callback.answer("Нет доступа", show_alert=True)
+            return
+        account = await repo.set_auto_publish(account_id, not account.auto_publish_enabled)
+        accounts = await repo.list_by_user_id(db_user.id, active_only=True)
+        await session.commit()
+    await callback.answer("Сохранено")
+    if callback.message and account is not None:
+        await callback.message.edit_text(
+            "<b>Авто-публикация (PRO)</b>\n\n"
+            "4–5★ — авто-ответ; 1–3★ — только уведомление.",
+            reply_markup=autopublish_accounts_keyboard(accounts),
         )
 
 
@@ -239,9 +279,16 @@ async def settings_account_toggle(callback: CallbackQuery, db_user: DbUser) -> N
     if callback.message and account is not None:
         mp = "Wildberries" if account.marketplace == Marketplace.WB else "Ozon"
         name = account.shop_name or f"{mp} #{account.id}"
+        async with session_factory() as session:
+            is_pro = await is_pro_user(session, db_user.id)
         await callback.message.edit_text(
             f"<b>{name}</b>\nПлощадка: {mp}\nСтатус: {'активен' if account.is_active else 'отключён'}",
-            reply_markup=account_detail_keyboard(account.id, account.is_active),
+            reply_markup=account_detail_keyboard(
+                account.id,
+                account.is_active,
+                auto_publish_enabled=account.auto_publish_enabled,
+                show_auto_publish=is_pro and account.marketplace in (Marketplace.WB, Marketplace.OZON),
+            ),
         )
 
 
@@ -326,8 +373,95 @@ async def settings_tone_view(callback: CallbackQuery, db_user: DbUser) -> None:
     if callback.message:
         await callback.message.edit_text(
             f"<b>Профиль #{profile.id}</b>\n\n{profile.description}\n\n<b>Примеры:</b>\n{ex_text}",
-            reply_markup=tone_detail_keyboard(profile.id),
+            reply_markup=tone_detail_keyboard(profile.id, profile.is_default),
         )
+
+
+@router.callback_query(F.data.startswith("settings:tone:default:"))
+async def settings_tone_set_default(callback: CallbackQuery, db_user: DbUser) -> None:
+    profile_id = int(callback.data.split(":")[-1])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        profile = await ToneProfileRepository(session).set_default(profile_id, db_user.id)
+        await session.commit()
+    if profile is None:
+        await callback.answer("Не найден", show_alert=True)
+        return
+    await callback.answer("Профиль по умолчанию обновлён")
+    if callback.message:
+        examples = profile.example_replies or []
+        ex_text = "\n".join(f"• {item}" for item in examples) if examples else "—"
+        await callback.message.edit_text(
+            f"<b>Профиль #{profile.id}</b> ★\n\n{profile.description}\n\n<b>Примеры:</b>\n{ex_text}",
+            reply_markup=tone_detail_keyboard(profile.id, True),
+        )
+
+
+@router.callback_query(F.data.startswith("settings:tone:edit:"))
+async def settings_tone_edit_start(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    profile_id = int(callback.data.split(":")[-1])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        profile = await ToneProfileRepository(session).get_by_id(profile_id)
+    if profile is None or profile.user_id != db_user.id:
+        await callback.answer("Не найден", show_alert=True)
+        return
+    await state.update_data(editing_profile_id=profile_id)
+    await state.set_state(ToneProfileStates.waiting_edit_description)
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            f"Новое описание tone для профиля #{profile_id}:\n\n"
+            f"Текущее: {profile.description}"
+        )
+
+
+@router.message(ToneProfileStates.waiting_edit_description, F.text)
+async def settings_tone_edit_description(message: Message, state: FSMContext) -> None:
+    desc = (message.text or "").strip()
+    if len(desc) < 5:
+        await message.answer("Слишком коротко.")
+        return
+    await state.update_data(tone_description=desc)
+    await state.set_state(ToneProfileStates.waiting_edit_examples)
+    await message.answer("Примеры ответов (строки) или «-» оставить без изменений примеров.")
+
+
+@router.message(ToneProfileStates.waiting_edit_examples, F.text)
+async def settings_tone_edit_finish(message: Message, state: FSMContext, db_user: DbUser) -> None:
+    data = await state.get_data()
+    profile_id = data.get("editing_profile_id")
+    desc = data.get("tone_description")
+    if not profile_id or not desc:
+        await state.clear()
+        await message.answer("Сессия сброшена.")
+        return
+    raw = (message.text or "").strip()
+    examples: list[str] | None | str = None
+    if raw not in {"", "-", "—"}:
+        examples = [line.strip() for line in raw.splitlines() if line.strip()][:3]
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        repo = ToneProfileRepository(session)
+        if examples is None:
+            old = await repo.get_by_id(int(profile_id))
+            examples = old.example_replies if old else None
+        profile = await repo.update_description(
+            int(profile_id),
+            db_user.id,
+            description=str(desc),
+            example_replies=examples if isinstance(examples, list) else None,
+        )
+        await session.commit()
+    await state.clear()
+    if profile is None:
+        await message.answer("Не удалось сохранить.")
+        return
+    await message.answer(
+        f"✅ Профиль #{profile.id} обновлён.",
+        reply_markup=settings_menu_keyboard(),
+    )
 
 
 @router.callback_query(F.data.startswith("settings:tone:delete:"))

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -22,7 +20,8 @@ from app.db.repositories.review import ReviewRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.db.session import get_session_factory
 from app.services.generation_limit import can_generate, remaining_generations_today
-from app.services.llm import LLMError, ToneProfileInput, generate_replies
+from app.services.llm import LLMError, generate_replies
+from app.services.tone_resolver import resolve_tone_input
 from app.services.manual_review import get_or_create_manual_account, new_manual_external_id
 
 router = Router(name="reviews")
@@ -34,24 +33,8 @@ REVIEWS_MENU_TEXT = (
 )
 
 
-def _examples_from_json(raw: Any) -> list[str] | None:
-    if not raw:
-        return None
-    if isinstance(raw, list):
-        return [str(item) for item in raw]
-    return None
-
-
-async def _tone_input(session, user_id: int, tone_key: str) -> ToneProfileInput:
-    if tone_key == "default":
-        return ToneProfileInput(description="Дружелюбный, профессиональный, лаконичный")
-    profile = await ToneProfileRepository(session).get_by_id(int(tone_key))
-    if profile is None or profile.user_id != user_id:
-        return ToneProfileInput(description="Дружелюбный, профессиональный, лаконичный")
-    return ToneProfileInput(
-        description=profile.description,
-        example_replies=_examples_from_json(profile.example_replies),
-    )
+async def _tone_input(session, user_id: int, tone_key: str):
+    return await resolve_tone_input(session, user_id, tone_key)
 
 
 def _format_variants_message(variants: list[str], selected_index: int, remaining: int | None) -> str:

@@ -65,33 +65,46 @@ class WildberriesClient(MarketplaceClient):
         limit: int = 20,
         unanswered_only: bool = True,
     ) -> list[MarketplaceReviewDTO]:
-        take = max(1, min(limit, 5000))
-        params = {
-            "isAnswered": "false" if unanswered_only else "true",
-            "take": take,
-            "skip": 0,
-            "order": "dateDesc",
-        }
-        response = await request_with_retry(
-            self._client,
-            "GET",
-            WB_FEEDBACKS_LIST_PATH,
-            headers=_auth_headers(self._token(account)),
-            params=params,
-        )
-        if response.status_code == 401:
-            raise MarketplaceAPIError("WB: не авторизован (проверьте API-ключ)", status_code=401)
-        if response.status_code >= 400:
-            raise MarketplaceAPIError(
-                f"WB: ошибка получения отзывов ({response.status_code})",
-                status_code=response.status_code,
+        target = max(1, min(limit, 5000))
+        collected: list[MarketplaceReviewDTO] = []
+        skip = 0
+        headers = _auth_headers(self._token(account))
+
+        while len(collected) < target:
+            take = min(100, target - len(collected))
+            params = {
+                "isAnswered": "false" if unanswered_only else "true",
+                "take": take,
+                "skip": skip,
+                "order": "dateDesc",
+            }
+            response = await request_with_retry(
+                self._client,
+                "GET",
+                WB_FEEDBACKS_LIST_PATH,
+                headers=headers,
+                params=params,
             )
-        payload = response.json()
-        data = payload.get("data") if isinstance(payload, dict) else None
-        items = data.get("feedbacks", []) if isinstance(data, dict) else []
-        if not isinstance(items, list):
-            return []
-        return [_parse_wb_feedback(item) for item in items if isinstance(item, dict)]
+            if response.status_code == 401:
+                raise MarketplaceAPIError("WB: не авторизован (проверьте API-ключ)", status_code=401)
+            if response.status_code >= 400:
+                raise MarketplaceAPIError(
+                    f"WB: ошибка получения отзывов ({response.status_code})",
+                    status_code=response.status_code,
+                )
+            payload = response.json()
+            data = payload.get("data") if isinstance(payload, dict) else None
+            items = data.get("feedbacks", []) if isinstance(data, dict) else []
+            if not isinstance(items, list) or not items:
+                break
+            for item in items:
+                if isinstance(item, dict):
+                    collected.append(_parse_wb_feedback(item))
+            skip += len(items)
+            if len(items) < take:
+                break
+
+        return collected[:target]
 
     async def publish_reply(
         self,

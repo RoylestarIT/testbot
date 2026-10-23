@@ -11,10 +11,10 @@ from app.db.models import MarketplaceAccount
 from app.services.http_client import DEFAULT_TIMEOUT, request_with_retry
 from app.services.marketplace.base import MarketplaceAPIError, MarketplaceClient, MarketplaceReviewDTO
 
-# Документация Ozon Seller API (ReviewAPI)
-# https://docs.ozon.ru/api/seller/ — базовый URL:
+# Документация Ozon Seller API (ReviewAPI):
+# POST https://api-seller.ozon.ru/v1/review/list
 OZON_SELLER_BASE_URL = "https://api-seller.ozon.ru"
-OZON_REVIEW_LIST_PATH = "/v2/review/list"
+OZON_REVIEW_LIST_PATH = "/v1/review/list"
 OZON_REVIEW_COMMENT_CREATE_PATH = "/v1/review/comment/create"
 
 
@@ -72,40 +72,61 @@ class OzonClient(MarketplaceClient):
         unanswered_only: bool = True,
     ) -> list[MarketplaceReviewDTO]:
         client_id, api_key = self._credentials(account)
-        req_limit = max(20, min(limit, 100))
-        body: dict[str, Any] = {
-            "limit": req_limit,
-            "sort_dir": "DESC",
-        }
-        if unanswered_only:
-            body["filters"] = {"order_status": "ALL"}
-        response = await request_with_retry(
-            self._client,
-            "POST",
-            OZON_REVIEW_LIST_PATH,
-            headers=_ozon_headers(client_id, api_key),
-            json=body,
-        )
-        if response.status_code == 401:
-            raise MarketplaceAPIError("Ozon: не авторизован", status_code=401)
-        if response.status_code == 403:
-            raise MarketplaceAPIError(
-                "Ozon: доступ запрещён (нужна подписка Premium Pro / Управление отзывами?)",
-                status_code=403,
+        remaining = max(1, limit)
+        last_id: str | None = None
+        collected: list[MarketplaceReviewDTO] = []
+
+        while remaining > 0:
+            page_limit = max(20, min(remaining, 100))
+            body: dict[str, Any] = {
+                "limit": page_limit,
+                "sort_dir": "DESC",
+            }
+            if unanswered_only:
+                body["status"] = "UNPROCESSED"
+            else:
+                body["status"] = "ALL"
+            if last_id:
+                body["last_id"] = last_id
+
+            response = await request_with_retry(
+                self._client,
+                "POST",
+                OZON_REVIEW_LIST_PATH,
+                headers=_ozon_headers(client_id, api_key),
+                json=body,
             )
-        if response.status_code >= 400:
-            raise MarketplaceAPIError(
-                f"Ozon: ошибка получения отзывов ({response.status_code})",
-                status_code=response.status_code,
-            )
-        payload = response.json()
-        items = payload.get("reviews", []) if isinstance(payload, dict) else []
-        if not isinstance(items, list):
-            return []
-        reviews = [_parse_ozon_review(item) for item in items if isinstance(item, dict)]
-        if unanswered_only:
-            reviews = [r for r in reviews if (r.raw_json or {}).get("status") == "UNPROCESSED"]
-        return reviews
+            if response.status_code == 401:
+                raise MarketplaceAPIError("Ozon: не авторизован", status_code=401)
+            if response.status_code == 403:
+                raise MarketplaceAPIError(
+                    "Ozon: доступ запрещён (нужна подписка Premium Plus / Управление отзывами?)",
+                    status_code=403,
+                )
+            if response.status_code >= 400:
+                raise MarketplaceAPIError(
+                    f"Ozon: ошибка получения отзывов ({response.status_code})",
+                    status_code=response.status_code,
+                )
+
+            payload = response.json()
+            if not isinstance(payload, dict):
+                break
+            items = payload.get("reviews", [])
+            if not isinstance(items, list):
+                break
+            for item in items:
+                if isinstance(item, dict):
+                    collected.append(_parse_ozon_review(item))
+            remaining = limit - len(collected)
+            if remaining <= 0 or not payload.get("has_next"):
+                break
+            next_last = payload.get("last_id")
+            if not next_last or not items:
+                break
+            last_id = str(next_last)
+
+        return collected[:limit]
 
     async def publish_reply(
         self,

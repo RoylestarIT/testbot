@@ -126,13 +126,29 @@ async def admin_broadcast(message: Message, command: CommandObject, bot: Bot) ->
         await message.answer("Команда доступна только администраторам.")
         return
     if not command.args or not command.args.strip():
-        await message.answer("Использование: /broadcast текст сообщения")
+        await message.answer(
+            "Использование:\n"
+            "/broadcast preview Текст — показать число получателей\n"
+            "/broadcast send Текст — отправить всем"
+        )
         return
 
-    text = command.args.strip()
+    raw = command.args.strip()
+    if raw.startswith("preview "):
+        mode = "preview"
+        text = raw.removeprefix("preview ").strip()
+    elif raw.startswith("send "):
+        mode = "send"
+        text = raw.removeprefix("send ").strip()
+    else:
+        await message.answer("Укажите режим: preview или send (см. /broadcast).")
+        return
+
+    if not text:
+        await message.answer("Пустой текст рассылки.")
+        return
+
     session_factory = get_session_factory()
-    sent = 0
-    failed = 0
     async with session_factory() as session:
         from sqlalchemy import select
 
@@ -141,11 +157,25 @@ async def admin_broadcast(message: Message, command: CommandObject, bot: Bot) ->
         result = await session.execute(select(User))
         users = list(result.scalars().all())
 
+    if mode == "preview":
+        await message.answer(
+            f"<b>Предпросмотр рассылки</b>\n\n"
+            f"Получателей: <b>{len(users)}</b>\n\n"
+            f"{text}\n\n"
+            "Для отправки: /broadcast send …"
+        )
+        return
+
+    import asyncio
+
+    sent = 0
+    failed = 0
     for user in users:
         try:
             await bot.send_message(user.tg_id, text)
             sent += 1
         except Exception:
             failed += 1
+        await asyncio.sleep(0.05)
 
     await message.answer(f"Рассылка завершена. Доставлено: {sent}, ошибок: {failed}.")

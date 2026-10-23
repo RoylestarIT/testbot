@@ -99,6 +99,8 @@ class MarketplaceAccount(Base):
     encrypted_client_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     shop_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    auto_publish_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -227,5 +229,6 @@ class ToneProfile(Base):
     )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     example_replies: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="tone_profiles")

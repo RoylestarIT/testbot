@@ -53,3 +53,11 @@ class AccountRepository:
         account.is_active = is_active
         await self._session.flush()
         return account
+
+    async def set_auto_publish(self, account_id: int, enabled: bool) -> MarketplaceAccount | None:
+        account = await self.get_by_id(account_id)
+        if account is None:
+            return None
+        account.auto_publish_enabled = enabled
+        await self._session.flush()
+        return account

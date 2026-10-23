@@ -5,14 +5,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from loguru import logger
 
+from app.bot.filters.mp_flow import MpFlowFilter
 from app.bot.handlers.reviews import (
-    REVIEWS_MENU_TEXT,
     _format_variants_message,
     _generate_and_persist,
     _tone_input,
 )
 from app.bot.keyboards.reviews import reviews_menu_keyboard, tone_keyboard, variants_keyboard
-from app.bot.filters.mp_flow import MpFlowFilter
+from app.bot.keyboards.settings import sync_accounts_keyboard
 from app.bot.states.marketplace_review import MarketplaceReviewStates
 from app.bot.states.review import ManualReviewStates
 from app.db.models import Marketplace, ReviewStatus, User as DbUser
@@ -20,16 +20,17 @@ from app.db.repositories.account import AccountRepository
 from app.db.repositories.review import ReviewRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.db.session import get_session_factory
-from app.services.generation_limit import remaining_generations_today
+from app.services.generation_limit import is_pro_user, remaining_generations_today
 from app.services.llm import LLMError
 from app.services.marketplace.base import MarketplaceAPIError
 from app.services.marketplace.publish_service import publish_reply_to_marketplace
+from app.services.marketplace.review_format import format_review_card
 from app.services.marketplace.sync_service import sync_account_reviews
 
 router = Router(name="marketplace_reviews")
 
 
-def _mp_reviews_keyboard(reviews: list, page: int = 0) -> InlineKeyboardMarkup:
+def _mp_reviews_keyboard(reviews: list) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     for review in reviews[:10]:
         preview = (review.text or "—")[:40].replace("\n", " ")
@@ -60,18 +61,42 @@ def _publish_confirm_keyboard(review_id: int) -> InlineKeyboardMarkup:
     )
 
 
-@router.callback_query(F.data == "review:sync")
-async def sync_reviews(callback: CallbackQuery, db_user: DbUser) -> None:
-    await callback.answer("Синхронизация…")
+def _mp_variants_keyboard(variants: list[str], selected: int, review_id: int) -> InlineKeyboardMarkup:
+    base = variants_keyboard(len(variants), selected)
+    extra = [
+        [
+            InlineKeyboardButton(
+                text="Опубликовать на WB/Ozon (PRO)",
+                callback_data=f"review:mp:publish:{review_id}",
+            )
+        ],
+        [InlineKeyboardButton(text="← Новые отзывы", callback_data="review:mp:list")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=base.inline_keyboard[:-1] + extra)
+
+
+async def _mp_accounts(db_user: DbUser) -> list:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        accounts = await AccountRepository(session).list_by_user_id(db_user.id, active_only=True)
+    return [a for a in accounts if a.marketplace in (Marketplace.WB, Marketplace.OZON)]
+
+
+async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: list[int] | None) -> None:
     session_factory = get_session_factory()
     total_new = 0
     errors: list[str] = []
     async with session_factory() as session:
         accounts = await AccountRepository(session).list_by_user_id(db_user.id, active_only=True)
-        mp_accounts = [a for a in accounts if a.marketplace in (Marketplace.WB, Marketplace.OZON)]
+        mp_accounts = [
+            a
+            for a in accounts
+            if a.marketplace in (Marketplace.WB, Marketplace.OZON)
+            and (account_ids is None or a.id in account_ids)
+        ]
         for account in mp_accounts:
             try:
-                created, _ = await sync_account_reviews(session, account)
+                created, _, _ = await sync_account_reviews(session, account)
                 total_new += created
             except MarketplaceAPIError as exc:
                 logger.warning("Sync failed account_id={} err={}", account.id, exc)
@@ -80,9 +105,40 @@ async def sync_reviews(callback: CallbackQuery, db_user: DbUser) -> None:
 
     lines = [f"Синхронизация завершена. Новых отзывов: <b>{total_new}</b>."]
     if errors:
-        lines.append("\nОшибки:\n" + "\n".join(f"• {e}" for e in errors[:3]))
+        lines.append("\nОшибки:\n" + "\n".join(f"• {e}" for e in errors[:5]))
     if callback.message:
         await callback.message.edit_text("\n".join(lines), reply_markup=reviews_menu_keyboard())
+
+
+@router.callback_query(F.data == "review:sync")
+async def sync_reviews_menu(callback: CallbackQuery, db_user: DbUser) -> None:
+    accounts = await _mp_accounts(db_user)
+    if not accounts:
+        await callback.answer("Подключите кабинет в Настройках", show_alert=True)
+        return
+    if len(accounts) == 1:
+        await callback.answer("Синхронизация…")
+        await _execute_sync(callback, db_user, [accounts[0].id])
+        return
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            "<b>Синхронизация</b>\n\nВыберите кабинет:",
+            reply_markup=sync_accounts_keyboard(accounts),
+        )
+
+
+@router.callback_query(F.data == "review:sync:all")
+async def sync_reviews_all(callback: CallbackQuery, db_user: DbUser) -> None:
+    await callback.answer("Синхронизация…")
+    await _execute_sync(callback, db_user, None)
+
+
+@router.callback_query(F.data.regexp(r"^review:sync:\d+$"))
+async def sync_reviews_one(callback: CallbackQuery, db_user: DbUser) -> None:
+    account_id = int(callback.data.split(":")[-1])
+    await callback.answer("Синхронизация…")
+    await _execute_sync(callback, db_user, [account_id])
 
 
 @router.callback_query(F.data == "review:mp:list")
@@ -137,9 +193,8 @@ async def mp_pick_review(callback: CallbackQuery, state: FSMContext, db_user: Db
     await state.set_state(ManualReviewStates.waiting_tone)
     await callback.answer()
     if callback.message:
-        preview = (review.text or "—")[:500]
         await callback.message.edit_text(
-            f"<b>Отзыв</b>\n{preview}\n\nВыберите <b>тон ответа</b>:",
+            format_review_card(review, account),
             reply_markup=tone_keyboard(profiles),
         )
 
@@ -150,7 +205,75 @@ async def mp_pick_review(callback: CallbackQuery, state: FSMContext, db_user: Db
     MpFlowFilter(),
 )
 async def mp_tone_generate(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
-    tone_key = callback.data.removeprefix("review:tone:")
+    await _mp_generate_variants(callback, state, db_user, tone_key=callback.data.removeprefix("review:tone:"))
+
+
+@router.callback_query(
+    MarketplaceReviewStates.viewing_variants,
+    F.data.startswith("review:pick:"),
+    MpFlowFilter(),
+)
+async def mp_pick_variant(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    data = await state.get_data()
+    index = int(callback.data.split(":")[-1])
+    variants: list[str] = data.get("variants") or []
+    review_id = int(data.get("review_id", 0))
+    if index < 0 or index >= len(variants):
+        await callback.answer("Неверный вариант")
+        return
+    await state.update_data(selected_index=index)
+    await callback.answer(f"Вариант {index + 1}")
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        remaining = await remaining_generations_today(session, db_user.id)
+
+    if callback.message:
+        await callback.message.edit_text(
+            _format_variants_message(variants, index, remaining),
+            reply_markup=_mp_variants_keyboard(variants, index, review_id),
+        )
+
+
+@router.callback_query(
+    MarketplaceReviewStates.viewing_variants,
+    F.data == "review:more",
+    MpFlowFilter(),
+)
+async def mp_more_variants(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    data = await state.get_data()
+    tone_key = str(data.get("tone_key", "default"))
+    await callback.answer("Генерирую…")
+    if callback.message:
+        await callback.message.edit_text("⏳ Генерирую ещё варианты…")
+    await _mp_generate_variants(callback, state, db_user, tone_key=tone_key)
+
+
+@router.callback_query(
+    MarketplaceReviewStates.viewing_variants,
+    F.data == "review:change_tone",
+    MpFlowFilter(),
+)
+async def mp_change_tone(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    await state.set_state(ManualReviewStates.waiting_tone)
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        profiles = await ToneProfileRepository(session).list_by_user_id(db_user.id)
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            "Выберите другой <b>тон ответа</b>:",
+            reply_markup=tone_keyboard(profiles),
+        )
+
+
+async def _mp_generate_variants(
+    callback: CallbackQuery,
+    state: FSMContext,
+    db_user: DbUser,
+    *,
+    tone_key: str,
+) -> None:
     data = await state.get_data()
     review_text = data.get("review_text")
     rating = data.get("rating")
@@ -159,10 +282,6 @@ async def mp_tone_generate(callback: CallbackQuery, state: FSMContext, db_user: 
         await state.clear()
         await callback.answer("Сессия сброшена", show_alert=True)
         return
-
-    await callback.answer("Генерирую…")
-    if callback.message:
-        await callback.message.edit_text("⏳ Генерирую варианты…")
 
     session_factory = get_session_factory()
     async with session_factory() as session:
@@ -197,53 +316,21 @@ async def mp_tone_generate(callback: CallbackQuery, state: FSMContext, db_user: 
     if callback.message:
         await callback.message.edit_text(
             _format_variants_message(variants, 0, remaining),
-            reply_markup=_mp_variants_keyboard(variants, 0, review_id),
-        )
-
-
-def _mp_variants_keyboard(variants: list[str], selected: int, review_id: int) -> InlineKeyboardMarkup:
-    base = variants_keyboard(len(variants), selected)
-    extra = [
-        [
-            InlineKeyboardButton(
-                text="Опубликовать на WB/Ozon",
-                callback_data=f"review:mp:publish:{review_id}",
-            )
-        ],
-        [InlineKeyboardButton(text="← Новые отзывы", callback_data="review:mp:list")],
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=base.inline_keyboard[:-1] + extra)
-
-
-@router.callback_query(
-    MarketplaceReviewStates.viewing_variants,
-    F.data.startswith("review:pick:"),
-    MpFlowFilter(),
-)
-async def mp_pick_variant(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
-    data = await state.get_data()
-    index = int(callback.data.split(":")[-1])
-    variants: list[str] = data.get("variants") or []
-    review_id = int(data.get("review_id", 0))
-    if index < 0 or index >= len(variants):
-        await callback.answer("Неверный вариант")
-        return
-    await state.update_data(selected_index=index)
-    await callback.answer(f"Вариант {index + 1}")
-
-    session_factory = get_session_factory()
-    async with session_factory() as session:
-        remaining = await remaining_generations_today(session, db_user.id)
-
-    if callback.message:
-        await callback.message.edit_text(
-            _format_variants_message(variants, index, remaining),
-            reply_markup=_mp_variants_keyboard(variants, index, review_id),
+            reply_markup=_mp_variants_keyboard(variants, 0, int(review_id)),
         )
 
 
 @router.callback_query(F.data.startswith("review:mp:publish:"))
-async def mp_publish_ask_confirm(callback: CallbackQuery, state: FSMContext) -> None:
+async def mp_publish_ask_confirm(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        if not await is_pro_user(session, db_user.id):
+            await callback.answer(
+                "Публикация на маркетплейс доступна с подпиской PRO. Lite — скопируйте текст вручную.",
+                show_alert=True,
+            )
+            return
+
     review_id = int(callback.data.split(":")[-1])
     data = await state.get_data()
     variants: list[str] = data.get("variants") or []
@@ -273,8 +360,13 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
         await state.clear()
         return
 
-    await callback.answer("Публикую…")
     session_factory = get_session_factory()
+    async with session_factory() as session:
+        if not await is_pro_user(session, db_user.id):
+            await callback.answer("Требуется PRO", show_alert=True)
+            return
+
+    await callback.answer("Публикую…")
     try:
         async with session_factory() as session:
             review = await ReviewRepository(session).get_by_id(int(review_id))

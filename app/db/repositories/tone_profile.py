@@ -43,3 +43,30 @@ class ToneProfileRepository:
         await self._session.delete(profile)
         await self._session.flush()
         return True
+
+    async def update_description(
+        self,
+        profile_id: int,
+        user_id: int,
+        *,
+        description: str,
+        example_replies: list[str] | None = None,
+    ) -> ToneProfile | None:
+        profile = await self.get_by_id(profile_id)
+        if profile is None or profile.user_id != user_id:
+            return None
+        profile.description = description
+        if example_replies is not None:
+            profile.example_replies = example_replies
+        await self._session.flush()
+        return profile
+
+    async def set_default(self, profile_id: int, user_id: int) -> ToneProfile | None:
+        profiles = await self.list_by_user_id(user_id)
+        target = await self.get_by_id(profile_id)
+        if target is None or target.user_id != user_id:
+            return None
+        for profile in profiles:
+            profile.is_default = profile.id == profile_id
+        await self._session.flush()
+        return target

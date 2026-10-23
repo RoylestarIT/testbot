@@ -16,6 +16,9 @@ async def publish_reply_to_marketplace(
     text: str,
 ) -> None:
     """Публикует ответ на маркетплейс после подтверждения пользователя."""
+    if review.status == ReviewStatus.PUBLISHED:
+        raise MarketplaceAPIError("Ответ уже опубликован ранее")
+
     account = await AccountRepository(session).get_by_id(review.account_id)
     if account is None or not account.is_active:
         raise MarketplaceAPIError("Аккаунт маркетплейса не найден или отключён")
@@ -26,16 +29,19 @@ async def publish_reply_to_marketplace(
     client = get_client_for_account(account)
     try:
         await client.publish_reply(account, review.external_id, text)
-    except MarketplaceAPIError:
+    except MarketplaceAPIError as exc:
         logger.warning(
-            "Marketplace publish failed review_id={} account_id={} marketplace={}",
+            "Marketplace publish failed review_id={} account_id={} marketplace={} status={}",
             review.id,
             account.id,
             account.marketplace.value,
+            exc.status_code,
         )
+        if exc.status_code == 401:
+            await AccountRepository(session).set_active(account.id, False)
         raise
     finally:
-        if hasattr(client, "aclose"):
+        if getattr(client, "_owns_client", False):
             await client.aclose()
 
     await ReviewRepository(session).update_status(review.id, ReviewStatus.PUBLISHED)

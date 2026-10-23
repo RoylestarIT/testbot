@@ -43,29 +43,87 @@ def accounts_menu_keyboard(accounts: list[MarketplaceAccount]) -> InlineKeyboard
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def account_detail_keyboard(account_id: int, is_active: bool) -> InlineKeyboardMarkup:
+def account_detail_keyboard(
+    account_id: int,
+    is_active: bool,
+    *,
+    auto_publish_enabled: bool = False,
+    show_auto_publish: bool = False,
+) -> InlineKeyboardMarkup:
     toggle = "Отключить" if is_active else "Включить"
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
+    rows: list[list[InlineKeyboardButton]] = [
+        [
+            InlineKeyboardButton(
+                text=toggle,
+                callback_data=f"settings:account_toggle:{account_id}",
+            )
+        ],
+    ]
+    if show_auto_publish:
+        ap_label = "🔴 Выкл авто-публикацию" if auto_publish_enabled else "🟢 Вкл авто-публикацию (4–5★)"
+        rows.append(
             [
                 InlineKeyboardButton(
-                    text=toggle,
-                    callback_data=f"settings:account_toggle:{account_id}",
+                    text=ap_label,
+                    callback_data=f"settings:account_autopublish:{account_id}",
                 )
-            ],
-            [InlineKeyboardButton(text="← Кабинеты", callback_data="settings:accounts")],
+            ]
+        )
+    rows.append([InlineKeyboardButton(text="← Кабинеты", callback_data="settings:accounts")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def autopublish_accounts_keyboard(accounts: list[MarketplaceAccount]) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    for acc in accounts:
+        if acc.marketplace not in (Marketplace.WB, Marketplace.OZON):
+            continue
+        mp = "WB" if acc.marketplace == Marketplace.WB else "Ozon"
+        name = acc.shop_name or f"{mp} #{acc.id}"
+        flag = "✅" if acc.auto_publish_enabled else "⬜"
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=f"{flag} {name}",
+                    callback_data=f"settings:account_autopublish:{acc.id}",
+                )
+            ]
+        )
+    rows.append([InlineKeyboardButton(text="← Настройки", callback_data="menu:settings")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def sync_accounts_keyboard(accounts: list[MarketplaceAccount]) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    for acc in accounts:
+        mp = "WB" if acc.marketplace == Marketplace.WB else "Ozon"
+        name = acc.shop_name or f"{mp} #{acc.id}"
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=name,
+                    callback_data=f"review:sync:{acc.id}",
+                )
+            ]
+        )
+    rows.extend(
+        [
+            [InlineKeyboardButton(text="Все кабинеты", callback_data="review:sync:all")],
+            [InlineKeyboardButton(text="← Отзывы", callback_data="menu:reviews")],
         ]
     )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def tone_menu_keyboard(profiles: list[ToneProfile]) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     for profile in profiles:
-        label = (profile.description or f"Профиль #{profile.id}")[:48]
+        prefix = "★ " if profile.is_default else ""
+        label = (profile.description or f"Профиль #{profile.id}")[:46]
         rows.append(
             [
                 InlineKeyboardButton(
-                    text=label,
+                    text=f"{prefix}{label}",
                     callback_data=f"settings:tone:view:{profile.id}",
                 )
             ]
@@ -79,9 +137,26 @@ def tone_menu_keyboard(profiles: list[ToneProfile]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def tone_detail_keyboard(profile_id: int) -> InlineKeyboardMarkup:
+def tone_detail_keyboard(profile_id: int, is_default: bool) -> InlineKeyboardMarkup:
+    default_btn = (
+        "Уже по умолчанию"
+        if is_default
+        else "Сделать по умолчанию"
+    )
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Редактировать",
+                    callback_data=f"settings:tone:edit:{profile_id}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=default_btn,
+                    callback_data=f"settings:tone:default:{profile_id}",
+                )
+            ],
             [
                 InlineKeyboardButton(
                     text="Удалить",

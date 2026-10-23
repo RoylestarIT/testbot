@@ -15,3 +15,5 @@ class ConnectOzonStates(StatesGroup):
 class ToneProfileStates(StatesGroup):
     waiting_description = State()
     waiting_examples = State()
+    waiting_edit_description = State()
+    waiting_edit_examples = State()
