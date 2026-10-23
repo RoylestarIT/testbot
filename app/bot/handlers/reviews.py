@@ -16,7 +16,7 @@ from app.bot.keyboards.reviews import (
 )
 from app.bot.states.review import ManualReviewStates
 from app.core.config import get_settings
-from app.db.models import ReviewStatus, User
+from app.db.models import ReviewStatus, User as DbUser
 from app.db.repositories.reply import ReplyRepository
 from app.db.repositories.review import ReviewRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
@@ -195,14 +195,14 @@ async def manual_review_text(message: Message, state: FSMContext) -> None:
 
 
 @router.callback_query(ManualReviewStates.waiting_rating, F.data.startswith("review:rating:"))
-async def manual_review_rating(callback: CallbackQuery, state: FSMContext, user: User) -> None:
+async def manual_review_rating(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
     rating = int(callback.data.split(":")[-1])
     await state.update_data(rating=rating)
     await state.set_state(ManualReviewStates.waiting_tone)
 
     session_factory = get_session_factory()
     async with session_factory() as session:
-        profiles = await ToneProfileRepository(session).list_by_user_id(user.id)
+        profiles = await ToneProfileRepository(session).list_by_user_id(db_user.id)
 
     await callback.answer()
     if callback.message:
@@ -213,7 +213,7 @@ async def manual_review_rating(callback: CallbackQuery, state: FSMContext, user:
 
 
 @router.callback_query(ManualReviewStates.waiting_tone, F.data.startswith("review:tone:"))
-async def manual_review_tone(callback: CallbackQuery, state: FSMContext, user: User) -> None:
+async def manual_review_tone(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
     tone_key = callback.data.removeprefix("review:tone:")
     data = await state.get_data()
     review_text = data.get("review_text")
@@ -229,11 +229,11 @@ async def manual_review_tone(callback: CallbackQuery, state: FSMContext, user: U
 
     session_factory = get_session_factory()
     async with session_factory() as session:
-        tone = await _tone_input(session, user.id, tone_key)
+        tone = await _tone_input(session, db_user.id, tone_key)
 
     try:
         review_id, variants = await _generate_and_persist(
-            user_id=user.id,
+            user_id=db_user.id,
             review_text=review_text,
             rating=int(rating),
             tone=tone,
@@ -258,7 +258,7 @@ async def manual_review_tone(callback: CallbackQuery, state: FSMContext, user: U
     await state.set_state(ManualReviewStates.viewing_variants)
 
     async with session_factory() as session:
-        remaining = await remaining_generations_today(session, user.id)
+        remaining = await remaining_generations_today(session, db_user.id)
 
     if callback.message:
         await callback.message.edit_text(
@@ -268,7 +268,7 @@ async def manual_review_tone(callback: CallbackQuery, state: FSMContext, user: U
 
 
 @router.callback_query(ManualReviewStates.viewing_variants, F.data.startswith("review:pick:"))
-async def pick_variant(callback: CallbackQuery, state: FSMContext, user: User) -> None:
+async def pick_variant(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
     index = int(callback.data.split(":")[-1])
     data = await state.get_data()
     variants: list[str] = data.get("variants") or []
@@ -280,7 +280,7 @@ async def pick_variant(callback: CallbackQuery, state: FSMContext, user: User) -
 
     session_factory = get_session_factory()
     async with session_factory() as session:
-        remaining = await remaining_generations_today(session, user.id)
+        remaining = await remaining_generations_today(session, db_user.id)
 
     if callback.message:
         await callback.message.edit_text(
@@ -317,7 +317,7 @@ async def publish_lite(callback: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data == "review:more")
-async def more_variants(callback: CallbackQuery, state: FSMContext, user: User) -> None:
+async def more_variants(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
     data = await state.get_data()
     review_text = data.get("review_text")
     rating = data.get("rating")
@@ -333,11 +333,11 @@ async def more_variants(callback: CallbackQuery, state: FSMContext, user: User) 
 
     session_factory = get_session_factory()
     async with session_factory() as session:
-        tone = await _tone_input(session, user.id, str(tone_key))
+        tone = await _tone_input(session, db_user.id, str(tone_key))
 
     try:
         review_id, variants = await _generate_and_persist(
-            user_id=user.id,
+            user_id=db_user.id,
             review_text=review_text,
             rating=int(rating),
             tone=tone,
@@ -355,7 +355,7 @@ async def more_variants(callback: CallbackQuery, state: FSMContext, user: User) 
     await state.set_state(ManualReviewStates.viewing_variants)
 
     async with session_factory() as session:
-        remaining = await remaining_generations_today(session, user.id)
+        remaining = await remaining_generations_today(session, db_user.id)
 
     if callback.message:
         await callback.message.edit_text(
@@ -365,11 +365,11 @@ async def more_variants(callback: CallbackQuery, state: FSMContext, user: User) 
 
 
 @router.callback_query(F.data == "review:change_tone")
-async def change_tone(callback: CallbackQuery, state: FSMContext, user: User) -> None:
+async def change_tone(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
     await state.set_state(ManualReviewStates.waiting_tone)
     session_factory = get_session_factory()
     async with session_factory() as session:
-        profiles = await ToneProfileRepository(session).list_by_user_id(user.id)
+        profiles = await ToneProfileRepository(session).list_by_user_id(db_user.id)
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(

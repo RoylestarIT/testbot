@@ -1,6 +1,7 @@
 import asyncio
 
 from aiogram import Bot, Dispatcher
+from aiogram.types import ErrorEvent
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -34,6 +35,10 @@ async def main() -> None:
     dp = Dispatcher(storage=MemoryStorage())
     dp.update.middleware(UserContextMiddleware())
     dp.include_router(main_router)
+
+    @dp.errors()
+    async def on_error(event: ErrorEvent) -> None:
+        logger.exception("Unhandled bot error: {}", event.exception)
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 

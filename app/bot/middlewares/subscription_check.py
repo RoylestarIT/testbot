@@ -4,7 +4,7 @@ from typing import Any
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, TelegramObject
 
-from app.db.models import User
+from app.db.models import User as DbUser
 from app.services.generation_limit import can_generate, remaining_generations_today
 from app.db.session import get_session_factory
 
@@ -29,14 +29,14 @@ class SubscriptionCheckMiddleware(BaseMiddleware):
         if not any(event.data.startswith(prefix) for prefix in GENERATION_CALLBACK_PREFIXES):
             return await handler(event, data)
 
-        user: User | None = data.get("user")
-        if user is None:
+        db_user: DbUser | None = data.get("db_user")
+        if db_user is None:
             return await handler(event, data)
 
         session_factory = get_session_factory()
         async with session_factory() as session:
-            allowed, message = await can_generate(session, user.id)
-            remaining = await remaining_generations_today(session, user.id)
+            allowed, message = await can_generate(session, db_user.id)
+            remaining = await remaining_generations_today(session, db_user.id)
             data["generation_allowed"] = allowed
             data["generations_remaining"] = remaining
 

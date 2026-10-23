@@ -9,7 +9,8 @@ from app.bot.keyboards.subscription import (
     subscription_menu_keyboard,
 )
 from app.core.config import get_settings
-from app.db.models import SubscriptionPlan, User
+from app.bot.utils.callbacks import answer_and_edit
+from app.db.models import SubscriptionPlan, User as DbUser
 from app.db.session import get_session_factory
 from app.services.generation_limit import remaining_generations_today
 from app.services.payment.manual_qr import qr_instructions
@@ -46,15 +47,15 @@ def _subscription_menu_text() -> str:
     )
 
 
-async def _subscription_status_text(user: User) -> str:
+async def _subscription_status_text(db_user: DbUser) -> str:
     session_factory = get_session_factory()
     async with session_factory() as session:
-        subscription = await get_effective_subscription(session, user.id)
-        remaining = await remaining_generations_today(session, user.id)
-    return format_subscription_summary(user, subscription, generations_remaining=remaining)
+        subscription = await get_effective_subscription(session, db_user.id)
+        remaining = await remaining_generations_today(session, db_user.id)
+    return format_subscription_summary(db_user, subscription, generations_remaining=remaining)
 
 
-async def _notify_admins_qr(bot: Bot, *, subscription_id: int, user: User, plan: SubscriptionPlan) -> None:
+async def _notify_admins_qr(bot: Bot, *, subscription_id: int, db_user: DbUser, plan: SubscriptionPlan) -> None:
     settings = get_settings()
     if not settings.admin_ids:
         return
@@ -62,9 +63,9 @@ async def _notify_admins_qr(bot: Bot, *, subscription_id: int, user: User, plan:
     text = (
         "<b>Заявка на оплату QR</b>\n\n"
         f"Subscription ID: <code>{subscription_id}</code>\n"
-        f"User DB id: <code>{user.id}</code>\n"
-        f"Telegram tg_id: <code>{user.tg_id}</code>\n"
-        f"Username: @{user.username or '—'}\n"
+        f"User DB id: <code>{db_user.id}</code>\n"
+        f"Telegram tg_id: <code>{db_user.tg_id}</code>\n"
+        f"Username: @{db_user.username or '—'}\n"
         f"План: <b>{plan_name}</b>\n\n"
         f"Активировать: /approve {subscription_id}"
     )
@@ -76,32 +77,29 @@ async def _notify_admins_qr(bot: Bot, *, subscription_id: int, user: User, plan:
 
 
 @router.message(Command("my_subscription"))
-async def cmd_my_subscription(message: Message, user: User) -> None:
-    text = await _subscription_status_text(user)
+async def cmd_my_subscription(message: Message, db_user: DbUser) -> None:
+    text = await _subscription_status_text(db_user)
     await message.answer(text, reply_markup=subscription_menu_keyboard())
 
 
 @router.callback_query(F.data == "menu:subscription")
-async def menu_subscription(callback: CallbackQuery, user: User) -> None:
-    await callback.answer()
-    if callback.message:
-        text = await _subscription_status_text(user)
-        await callback.message.edit_text(
-            f"{_subscription_menu_text()}\n\n{text}",
-            reply_markup=subscription_menu_keyboard(),
-        )
+async def menu_subscription(callback: CallbackQuery, db_user: DbUser) -> None:
+    text = await _subscription_status_text(db_user)
+    await answer_and_edit(
+        callback,
+        f"{_subscription_menu_text()}\n\n{text}",
+        reply_markup=subscription_menu_keyboard(),
+    )
 
 
 @router.callback_query(F.data == "sub:status")
-async def subscription_status(callback: CallbackQuery, user: User) -> None:
-    await callback.answer()
-    if callback.message:
-        text = await _subscription_status_text(user)
-        await callback.message.edit_text(text, reply_markup=subscription_menu_keyboard())
+async def subscription_status(callback: CallbackQuery, db_user: DbUser) -> None:
+    text = await _subscription_status_text(db_user)
+    await answer_and_edit(callback, text, reply_markup=subscription_menu_keyboard())
 
 
 @router.callback_query(F.data.in_({"sub:stars:lite", "sub:stars:pro"}))
-async def send_stars_invoice(callback: CallbackQuery, bot: Bot, user: User) -> None:
+async def send_stars_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUser) -> None:
     plan = SubscriptionPlan.PRO if callback.data.endswith(":pro") else SubscriptionPlan.LITE
     settings = get_settings()
     await callback.answer()
@@ -111,7 +109,7 @@ async def send_stars_invoice(callback: CallbackQuery, bot: Bot, user: User) -> N
         chat_id=callback.message.chat.id,
         title=invoice_title(plan),
         description=invoice_description(plan, settings),
-        payload=invoice_payload(plan, user.id),
+        payload=invoice_payload(plan, db_user.id),
         currency=invoice_currency(settings),
         prices=invoice_prices(settings, plan),
         provider_token=invoice_provider_token(settings),
@@ -119,13 +117,13 @@ async def send_stars_invoice(callback: CallbackQuery, bot: Bot, user: User) -> N
 
 
 @router.pre_checkout_query()
-async def pre_checkout_handler(pre_checkout: PreCheckoutQuery, user: User) -> None:
+async def pre_checkout_handler(pre_checkout: PreCheckoutQuery, db_user: DbUser) -> None:
     parsed = parse_invoice_payload(pre_checkout.invoice_payload)
     if parsed is None:
         await pre_checkout.answer(ok=False, error_message="Некорректный платёж")
         return
     plan, user_id = parsed
-    if user_id != user.id:
+    if user_id != db_user.id:
         await pre_checkout.answer(ok=False, error_message="Платёж привязан к другому пользователю")
         return
     if plan not in (SubscriptionPlan.LITE, SubscriptionPlan.PRO):
@@ -135,7 +133,7 @@ async def pre_checkout_handler(pre_checkout: PreCheckoutQuery, user: User) -> No
 
 
 @router.message(F.successful_payment)
-async def successful_payment_handler(message: Message, user: User) -> None:
+async def successful_payment_handler(message: Message, db_user: DbUser) -> None:
     payment = message.successful_payment
     if payment is None:
         return
@@ -144,7 +142,7 @@ async def successful_payment_handler(message: Message, user: User) -> None:
         await message.answer("Платёж получен, но не удалось определить тариф. Напишите в поддержку.")
         return
     plan, user_id = parsed
-    if user_id != user.id:
+    if user_id != db_user.id:
         await message.answer("Ошибка привязки платежа.")
         return
 
@@ -154,13 +152,13 @@ async def successful_payment_handler(message: Message, user: User) -> None:
     async with session_factory() as session:
         await activate_from_telegram_invoice(
             session,
-            user_id=user.id,
+            user_id=db_user.id,
             plan=plan,
             telegram_payment_charge_id=charge_id,
             payment_method=payment_method_for_invoice(settings),
         )
         await session.commit()
-        subscription = await get_effective_subscription(session, user.id)
+        subscription = await get_effective_subscription(session, db_user.id)
 
     plan_name = "PRO" if plan == SubscriptionPlan.PRO else "Lite"
     expires = subscription.expires_at.strftime("%d.%m.%Y") if subscription and subscription.expires_at else "—"
@@ -197,16 +195,16 @@ async def qr_show_instructions(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(F.data.startswith("sub:qr:paid:"))
-async def qr_mark_paid(callback: CallbackQuery, bot: Bot, user: User) -> None:
+async def qr_mark_paid(callback: CallbackQuery, bot: Bot, db_user: DbUser) -> None:
     plan_key = callback.data.split(":")[-1]
     plan = SubscriptionPlan.PRO if plan_key == "pro" else SubscriptionPlan.LITE
     session_factory = get_session_factory()
     async with session_factory() as session:
-        subscription = await create_qr_pending(session, user_id=user.id, plan=plan)
+        subscription = await create_qr_pending(session, user_id=db_user.id, plan=plan)
         await session.commit()
         sub_id = subscription.id
 
-    await _notify_admins_qr(bot, subscription_id=sub_id, user=user, plan=plan)
+    await _notify_admins_qr(bot, subscription_id=sub_id, db_user=db_user, plan=plan)
     await callback.answer("Заявка отправлена администратору")
     if callback.message:
         await callback.message.edit_text(

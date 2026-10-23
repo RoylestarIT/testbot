@@ -4,7 +4,7 @@ from typing import Any
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, TelegramObject
 
-from app.db.models import User
+from app.db.models import User as DbUser
 from app.db.session import get_session_factory
 from app.services.generation_limit import is_pro_user
 
@@ -25,14 +25,14 @@ class ProSubscriptionMiddleware(BaseMiddleware):
         if not event.data.startswith(PRO_CALLBACK_PREFIX):
             return await handler(event, data)
 
-        user: User | None = data.get("user")
-        if user is None:
+        db_user: DbUser | None = data.get("db_user")
+        if db_user is None:
             await event.answer("Сначала отправьте /start", show_alert=True)
             return None
 
         session_factory = get_session_factory()
         async with session_factory() as session:
-            allowed = await is_pro_user(session, user.id)
+            allowed = await is_pro_user(session, db_user.id)
 
         if not allowed:
             await event.answer(
