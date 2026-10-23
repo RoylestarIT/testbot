@@ -2,13 +2,32 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from aiogram import BaseMiddleware
-from aiogram.types import CallbackQuery, Message, TelegramObject
+from aiogram.dispatcher.middlewares.user_context import EVENT_FROM_USER_KEY
+from aiogram.types import CallbackQuery, Message, TelegramObject, Update
 from loguru import logger
 
 from app.core.config import get_settings
 from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
+
+
+def _resolve_telegram_user(event: TelegramObject, data: dict[str, Any]):
+    tg_user = data.get(EVENT_FROM_USER_KEY)
+    if tg_user is not None:
+        return tg_user
+    if isinstance(event, Update):
+        if event.callback_query and event.callback_query.from_user:
+            return event.callback_query.from_user
+        if event.message and event.message.from_user:
+            return event.message.from_user
+        if event.pre_checkout_query and event.pre_checkout_query.from_user:
+            return event.pre_checkout_query.from_user
+    if isinstance(event, Message) and event.from_user:
+        return event.from_user
+    if isinstance(event, CallbackQuery) and event.from_user:
+        return event.from_user
+    return None
 
 
 class UserContextMiddleware(BaseMiddleware):
@@ -18,12 +37,7 @@ class UserContextMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        tg_user = None
-        if isinstance(event, Message) and event.from_user:
-            tg_user = event.from_user
-        elif isinstance(event, CallbackQuery) and event.from_user:
-            tg_user = event.from_user
-
+        tg_user = _resolve_telegram_user(event, data)
         if tg_user is None:
             return await handler(event, data)
 
