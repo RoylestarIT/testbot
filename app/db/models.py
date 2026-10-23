@@ -46,6 +46,7 @@ class SubscriptionStatus(str, enum.Enum):
 
 class PaymentMethod(str, enum.Enum):
     STARS = "stars"
+    TELEGRAM = "telegram"
     QR = "qr"
 
 

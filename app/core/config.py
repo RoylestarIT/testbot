@@ -30,6 +30,16 @@ class Settings(BaseSettings):
         validation_alias="ADMIN_IDS",
     )
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
+    payment_provider_token: str = Field(default="", validation_alias="PAYMENT_PROVIDER_TOKEN")
+    payment_currency: str = Field(default="RUB", validation_alias="PAYMENT_CURRENCY")
+    subscription_lite_price_minor: int = Field(
+        default=100000,
+        validation_alias="SUBSCRIPTION_LITE_PRICE_MINOR",
+    )
+    subscription_pro_price_minor: int = Field(
+        default=300000,
+        validation_alias="SUBSCRIPTION_PRO_PRICE_MINOR",
+    )
     subscription_lite_stars: int = Field(default=750, validation_alias="SUBSCRIPTION_LITE_STARS")
     subscription_pro_stars: int = Field(default=2250, validation_alias="SUBSCRIPTION_PRO_STARS")
     subscription_lite_usd_label: str = Field(default="10", validation_alias="SUBSCRIPTION_LITE_USD")

@@ -14,15 +14,18 @@ from app.db.session import get_session_factory
 from app.services.generation_limit import remaining_generations_today
 from app.services.payment.manual_qr import qr_instructions
 from app.services.payment.telegram_stars import (
-    STARS_CURRENCY,
+    invoice_currency,
     invoice_description,
     invoice_payload,
     invoice_prices,
+    invoice_provider_token,
     invoice_title,
     parse_invoice_payload,
+    payment_method_for_invoice,
+    payment_mode_label,
 )
 from app.services.subscription import (
-    activate_from_stars,
+    activate_from_telegram_invoice,
     create_qr_pending,
     format_subscription_summary,
     get_effective_subscription,
@@ -30,12 +33,17 @@ from app.services.subscription import (
 
 router = Router(name="subscription")
 
-SUBSCRIPTION_MENU_TEXT = (
-    "<b>Подписка ReviewPilot</b>\n\n"
-    "• <b>Lite</b> — ~$10/мес (Telegram Stars или QR для РБ)\n"
-    "• <b>PRO</b> — ~$30/мес, без лимита генераций и PRO-функции\n\n"
-    "Бесплатный Lite: до 5 генераций в день."
-)
+def _subscription_menu_text() -> str:
+    settings = get_settings()
+    pay = payment_mode_label(settings)
+    return (
+        "<b>Подписка ReviewPilot</b>\n\n"
+        f"Оплата в боте: <b>{pay}</b>\n"
+        "• <b>Lite</b> — ~$10/мес\n"
+        "• <b>PRO</b> — ~$30/мес, без лимита генераций и PRO-функции\n\n"
+        "Также доступна оплата по QR (Беларусь).\n"
+        "Бесплатный Lite: до 5 генераций в день."
+    )
 
 
 async def _subscription_status_text(user: User) -> str:
@@ -79,7 +87,7 @@ async def menu_subscription(callback: CallbackQuery, user: User) -> None:
     if callback.message:
         text = await _subscription_status_text(user)
         await callback.message.edit_text(
-            f"{SUBSCRIPTION_MENU_TEXT}\n\n{text}",
+            f"{_subscription_menu_text()}\n\n{text}",
             reply_markup=subscription_menu_keyboard(),
         )
 
@@ -104,9 +112,9 @@ async def send_stars_invoice(callback: CallbackQuery, bot: Bot, user: User) -> N
         title=invoice_title(plan),
         description=invoice_description(plan, settings),
         payload=invoice_payload(plan, user.id),
-        currency=STARS_CURRENCY,
+        currency=invoice_currency(settings),
         prices=invoice_prices(settings, plan),
-        provider_token="",
+        provider_token=invoice_provider_token(settings),
     )
 
 
@@ -141,13 +149,15 @@ async def successful_payment_handler(message: Message, user: User) -> None:
         return
 
     charge_id = payment.telegram_payment_charge_id
+    settings = get_settings()
     session_factory = get_session_factory()
     async with session_factory() as session:
-        await activate_from_stars(
+        await activate_from_telegram_invoice(
             session,
             user_id=user.id,
             plan=plan,
             telegram_payment_charge_id=charge_id,
+            payment_method=payment_method_for_invoice(settings),
         )
         await session.commit()
         subscription = await get_effective_subscription(session, user.id)
@@ -155,7 +165,7 @@ async def successful_payment_handler(message: Message, user: User) -> None:
     plan_name = "PRO" if plan == SubscriptionPlan.PRO else "Lite"
     expires = subscription.expires_at.strftime("%d.%m.%Y") if subscription and subscription.expires_at else "—"
     await message.answer(
-        f"✅ Оплата Stars принята!\n\n"
+        f"✅ Оплата принята ({payment_mode_label(settings)})!\n\n"
         f"Тариф: <b>{plan_name}</b>\n"
         f"Активна до: <b>{expires}</b>\n\n"
         "Спасибо за подписку!",

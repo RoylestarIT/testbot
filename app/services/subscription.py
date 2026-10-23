@@ -62,6 +62,29 @@ async def activate_subscription(
     return subscription
 
 
+async def activate_from_telegram_invoice(
+    session: AsyncSession,
+    *,
+    user_id: int,
+    plan: SubscriptionPlan,
+    telegram_payment_charge_id: str,
+    payment_method: PaymentMethod,
+) -> Subscription:
+    repo = SubscriptionRepository(session)
+    subscription = await repo.create(
+        user_id=user_id,
+        plan=plan,
+        status=SubscriptionStatus.PENDING,
+        payment_method=payment_method,
+        external_payment_id=telegram_payment_charge_id,
+    )
+    return await activate_subscription(
+        session,
+        subscription,
+        external_payment_id=telegram_payment_charge_id,
+    )
+
+
 async def activate_from_stars(
     session: AsyncSession,
     *,
@@ -69,18 +92,12 @@ async def activate_from_stars(
     plan: SubscriptionPlan,
     telegram_payment_charge_id: str,
 ) -> Subscription:
-    repo = SubscriptionRepository(session)
-    subscription = await repo.create(
+    return await activate_from_telegram_invoice(
+        session,
         user_id=user_id,
         plan=plan,
-        status=SubscriptionStatus.PENDING,
+        telegram_payment_charge_id=telegram_payment_charge_id,
         payment_method=PaymentMethod.STARS,
-        external_payment_id=telegram_payment_charge_id,
-    )
-    return await activate_subscription(
-        session,
-        subscription,
-        external_payment_id=telegram_payment_charge_id,
     )
 
 
