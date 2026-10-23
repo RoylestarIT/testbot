@@ -35,6 +35,7 @@ from app.services.payment.telegram_stars import (
     payment_method_for_invoice,
     payment_mode_label,
 )
+from app.bot.copy import differentiators_section
 from app.services.plans import LITE_VS_PRO_SHORT, PLANS_COMPARISON_TEXT, describe_access_tier
 from app.services.subscription import (
     activate_from_telegram_invoice,
@@ -61,7 +62,7 @@ def _subscription_menu_text(pricing: SubscriptionPricing) -> str:
     methods.append("перевод РФ/РБ")
     pay_line = ", ".join(methods)
     return (
-        brand_title("Подписка", tagline="Free · Lite · PRO", icon="💎")
+        brand_title("Подписка", tagline="~$10 / ~$20 · Crypto · перевод РФ/РБ", icon="💎")
         + section("Цены", icon="💱")
         + "\n"
         + bullet(pricing.lite_line())
@@ -69,6 +70,7 @@ def _subscription_menu_text(pricing: SubscriptionPricing) -> str:
         + bullet(pricing.pro_line())
         + "\n"
         + muted(f"Курс: {pricing.source}. Актуально для перевода и 🪙 Crypto Bot.")
+        + differentiators_section(compact=True)
         + section("Оплата", icon="💳")
         + f"\n  {kv('Способы', pay_line)}"
         + f"\n  {muted(LITE_VS_PRO_SHORT)}"

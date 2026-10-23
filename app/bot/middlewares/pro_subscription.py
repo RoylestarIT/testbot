@@ -36,8 +36,8 @@ class ProSubscriptionMiddleware(BaseMiddleware):
 
         if not allowed:
             await event.answer(
-                "Только тариф PRO (авто-публикация). "
-                "Lite и бесплатный режим — генерация и копирование. "
+                "PRO (~$20): publish в API и авто только на 4–5★. "
+                "Lite — генерация и копирование. Негатив всегда вручную. "
                 "«Подписка» → Сравнение тарифов.",
                 show_alert=True,
             )

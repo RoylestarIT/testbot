@@ -27,7 +27,11 @@ async def menu_support(callback: CallbackQuery) -> None:
     from app.bot.ui import brand_title, muted, section
 
     text = (
-        brand_title("Поддержка", tagline="Поможем с API, оплатой и генерацией", icon="🆘")
+        brand_title(
+            "Поддержка",
+            tagline="API WB/Ozon, Crypto/перевод, генерация — всё из Telegram",
+            icon="🆘",
+        )
         + section("Контакт", icon="💬")
         + f"\n  <b>{contact}</b>\n"
         + muted("Опишите проблему одним сообщением в личку.")

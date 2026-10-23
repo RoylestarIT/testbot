@@ -77,6 +77,8 @@ async def build_dashboard_details(session: AsyncSession, user: User) -> str:
             lines.append(muted("✨ Lite — генерации без лимита, publish только копированием."))
         elif subscription.plan == SubscriptionPlan.PRO:
             lines.append("")
-            lines.append(muted("💎 PRO — publish в API и авто-ответы 4–5★."))
+            lines.append(
+                muted("💎 PRO — publish в API; авто только 4–5★, негатив — вручную.")
+            )
 
     return "\n".join(lines)

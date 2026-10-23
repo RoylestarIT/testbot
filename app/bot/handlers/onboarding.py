@@ -72,6 +72,7 @@ async def onboarding_done(callback: CallbackQuery, db_user: DbUser) -> None:
     tg_id = callback.from_user.id if callback.from_user else 0
     if callback.message:
         await callback.message.edit_text(
-            "✨ <b>ReviewPilot</b>\n🎉 Настройка завершена.\n<i>Удачных продаж на маркетплейсах.</i>",
+            "✨ <b>ReviewPilot</b>\n🎉 Настройка завершена.\n"
+            "<i>Отзывы в Telegram: 3 варианта, правка, негатив — только вы.</i>",
             reply_markup=main_menu_keyboard(show_admin=tg_id in get_settings().admin_ids),
         )

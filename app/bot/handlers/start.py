@@ -73,7 +73,8 @@ async def menu_more(callback: CallbackQuery) -> None:
     if callback.message:
         await safe_edit_message(
             callback.message,
-            "✨ <b>ReviewPilot</b>\n<i>Ручной ввод, поддержка и прочее:</i>",
+            "✨ <b>ReviewPilot</b>\n"
+            "<i>Co-pilot в Telegram: отзывы WB/Ozon под вашим контролем.</i>",
             reply_markup=main_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
         )
 

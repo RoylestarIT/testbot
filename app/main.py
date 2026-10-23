@@ -32,7 +32,7 @@ _health_runner: web.AppRunner | None = None
 async def _register_bot_commands(bot: Bot) -> None:
     await bot.set_my_commands(
         [
-            BotCommand(command="start", description="🏠 Сводка и главный экран"),
+            BotCommand(command="start", description="🏠 Сводка · co-pilot WB/Ozon"),
             BotCommand(command="dashboard", description="📊 Сводка и статусы"),
             BotCommand(command="help", description="📖 Справка по боту"),
             BotCommand(command="my_subscription", description="💎 Моя подписка"),

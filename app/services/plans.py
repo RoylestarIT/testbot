@@ -7,6 +7,7 @@ from app.db.models import Marketplace, Subscription, SubscriptionPlan, Subscript
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.services.pro_access import has_pro_access, is_trial_pro_active
+from app.bot.copy import differentiators_section
 from app.bot.ui import brand_title, bullet, footer_hint, muted, quote, section
 from app.services.subscription import get_effective_subscription, plan_label
 
@@ -14,7 +15,7 @@ FREE_MAX_MARKETPLACE_ACCOUNTS = 1
 FREE_MAX_TONE_PROFILES = 1
 
 PLANS_COMPARISON_TEXT = (
-    brand_title("Тарифы", tagline="Free · Lite · PRO", icon="💎")
+    brand_title("Тарифы", tagline="Подписка, не пакеты за каждый ответ", icon="💎")
     + section("Free", icon="🆓")
     + "\n"
     + bullet("⚡ 5 генераций в день")
@@ -35,7 +36,8 @@ PLANS_COMPARISON_TEXT = (
     + "\n"
     + bullet("🚀 publish в WB/Ozon из бота")
     + "\n"
-    + bullet("🤖 авто-ответы 4–5★")
+    + bullet("🤖 авто-ответы 4–5★ (1–3★ — только вручную)")
+    + differentiators_section(compact=True)
     + section("Trial PRO", icon="🎁")
     + "\n"
     + quote("Один раз на аккаунт — возможности PRO на срок trial (кнопка в сводке).")
@@ -43,8 +45,7 @@ PLANS_COMPARISON_TEXT = (
 )
 
 LITE_VS_PRO_SHORT = (
-    "Lite = ∞ генераций, несколько кабинетов/tone · "
-    "PRO = publish в маркетплейс + авто-ответы"
+    "Lite: ∞ генераций, копирование · PRO: publish + авто только 4–5★ · всё в Telegram"
 )
 
 UPSELL_LITE_OR_PRO = "Оформите Lite или PRO: «Подписка» → Сравнение тарифов."
