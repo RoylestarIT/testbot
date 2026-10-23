@@ -42,13 +42,23 @@ from app.services.llm import LLMError
 from app.services.marketplace.base import MarketplaceAPIError
 from app.services.marketplace.publish_service import publish_reply_to_marketplace
 from app.services.marketplace.review_format import format_review_card
+from app.services.bulk_quick_reply import apply_bulk_template, list_bulk_eligible
 from app.services.marketplace.sync_service import sync_account_reviews
 
 router = Router(name="marketplace_reviews")
 
 
-def _mp_reviews_keyboard(reviews: list) -> InlineKeyboardMarkup:
+def _mp_reviews_keyboard(reviews: list, *, bulk_count: int = 0) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
+    if bulk_count > 0:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=f"⚡ Пакет 4–5★ ({bulk_count})",
+                    callback_data="review:mp:bulk:preview",
+                )
+            ]
+        )
     for review in reviews[:10]:
         preview = (review.text or "—")[:40].replace("\n", " ")
         rating = f"⭐{review.rating}" if review.rating else "⭐?"
@@ -190,6 +200,7 @@ async def list_mp_reviews(callback: CallbackQuery, state: FSMContext, db_user: D
                 )
             return
         reviews = await ReviewRepository(session).list_new_for_user(db_user.id, limit=30)
+        bulk = await list_bulk_eligible(session, db_user.id)
     await state.update_data(mp_queue=[r.id for r in reviews])
     await callback.answer()
     if not reviews:
@@ -197,9 +208,50 @@ async def list_mp_reviews(callback: CallbackQuery, state: FSMContext, db_user: D
         kb = no_new_reviews_keyboard()
     else:
         text = f"{MP_LIST_HEADER}\n\nВ очереди: <b>{len(reviews)}</b>"
-        kb = _mp_reviews_keyboard(reviews)
+        kb = _mp_reviews_keyboard(reviews, bulk_count=len(bulk))
     if callback.message:
         await safe_edit_message(callback.message, text, reply_markup=kb)
+
+
+@router.callback_query(F.data == "review:mp:bulk:preview")
+async def mp_bulk_preview(callback: CallbackQuery, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        eligible = await list_bulk_eligible(session, db_user.id)
+    if not eligible:
+        await callback.answer("Нет подходящих отзывов", show_alert=True)
+        return
+    await callback.answer()
+    text = (
+        "⚡ <b>Пакетный ответ</b>\n\n"
+        f"Подходит отзывов 4–5★ с коротким текстом: <b>{len(eligible)}</b>.\n"
+        "Будет подставлен шаблон «Спасибо» и статус «обработан» (копируйте в кабинет).\n\n"
+        "Publish в API <b>не</b> выполняется автоматически."
+    )
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Применить", callback_data="review:mp:bulk:run")],
+            [InlineKeyboardButton(text="📬 Очередь", callback_data="review:mp:list")],
+        ]
+    )
+    if callback.message:
+        await safe_edit_message(callback.message, text, reply_markup=kb)
+
+
+@router.callback_query(F.data == "review:mp:bulk:run")
+async def mp_bulk_run(callback: CallbackQuery, db_user: DbUser) -> None:
+    template = QUICK_REPLY_TEMPLATES["thanks"]
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        count = await apply_bulk_template(session, user_id=db_user.id, template_text=template)
+        await session.commit()
+    await callback.answer("Готово")
+    if callback.message:
+        await callback.message.edit_text(
+            f"✅ Обработано отзывов: <b>{count}</b>.\n"
+            "Откройте кабинет и вставьте тот же текст или ответьте из очереди по одному.",
+            reply_markup=reviews_menu_keyboard(),
+        )
 
 
 async def _open_mp_review(
@@ -342,6 +394,9 @@ async def _mp_generate_variants(
     session_factory = get_session_factory()
     async with session_factory() as session:
         tone = await _tone_input(session, db_user.id, tone_key)
+
+    if callback.message:
+        await callback.message.edit_text("⏳ Генерирую варианты ответа…")
 
     try:
         review_id, variants = await _generate_and_persist(

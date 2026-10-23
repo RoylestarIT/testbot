@@ -16,6 +16,7 @@ from app.bot.keyboards.reviews import (
 )
 from app.bot.utils.callbacks import safe_edit_message
 from app.services.pro_access import can_api_publish
+from app.bot.states.marketplace_review import MarketplaceReviewStates
 from app.bot.states.review import ManualReviewStates
 from app.core.config import get_settings
 from app.db.models import ReviewStatus, User as DbUser
@@ -23,9 +24,12 @@ from app.db.repositories.account import AccountRepository
 from app.db.repositories.reply import ReplyRepository
 from app.db.repositories.review import ReviewRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
+from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.services.generation_limit import can_generate, remaining_generations_today
-from app.services.llm import LLMError, generate_replies
+from app.services.llm import LLMError, ToneProfileInput, generate_replies
+from app.services.llm_queue import run_llm_job
+from app.services.reply_templates import list_templates, template_by_id
 from app.services.tone_resolver import resolve_tone_input
 from app.services.manual_review import get_or_create_manual_account, new_manual_external_id
 
@@ -113,13 +117,17 @@ async def _generate_and_persist(
     )
 
     settings = get_settings()
-    variants = await generate_replies(
-        review_text,
-        rating,
-        tone,
-        count=3,
-        settings=settings,
-    )
+
+    async def _call_llm() -> list[str]:
+        return await generate_replies(
+            review_text,
+            rating,
+            tone,
+            count=3,
+            settings=settings,
+        )
+
+    variants = await run_llm_job(_call_llm)
 
     async with session_factory() as session:
         start_index = await _next_variant_index(session, review_id)
@@ -153,6 +161,8 @@ async def _build_variants_keyboard(
     can_publish = False
     if mp_flow:
         can_publish, _ = await can_api_publish(session, db_user.id)
+    user = await UserRepository(session).get_by_id(db_user.id)
+    templates = list_templates(user) if user else []
     return variants_keyboard(
         variant_count,
         selected_index,
@@ -161,17 +171,26 @@ async def _build_variants_keyboard(
         show_quick_templates=rating >= 4,
         has_next_in_queue=has_next,
         mp_mode=mp_flow,
+        user_templates=templates,
     )
 
 
-def _history_keyboard(reviews: list) -> InlineKeyboardMarkup:
+def _history_keyboard(reviews: list, reply_previews: dict[int, str]) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     for item in reviews[:12]:
-        preview = (item.text or "—")[:28].replace("\n", " ")
+        review_bit = (item.text or "—")[:18].replace("\n", " ")
+        answer_bit = reply_previews.get(item.id, "")
+        if answer_bit:
+            answer_bit = answer_bit[:22].replace("\n", " ")
+            label = f"⭐{item.rating or '?'} {review_bit} → {answer_bit}"
+        else:
+            label = f"⭐{item.rating or '?'} {review_bit}"
+        if len(label) > 60:
+            label = label[:57] + "…"
         rows.append(
             [
                 InlineKeyboardButton(
-                    text=f"⭐{item.rating or '?'} {preview}",
+                    text=label,
                     callback_data=f"review:history:item:{item.id}",
                 )
             ]
@@ -203,13 +222,16 @@ async def _render_history(
             account_id=account_id,
             limit=20,
         )
+        reply_previews = await ReplyRepository(session).latest_text_by_review_ids(
+            [r.id for r in reviews]
+        )
     if not reviews:
         text = "📚 История пуста — ответы появятся после копирования или publish."
         kb = reviews_menu_keyboard()
     else:
         label = {"all": "все", "published": "publish", "copied": "копия"}.get(filter_key, "все")
         text = f"📚 <b>История</b> ({label})\n\nНажмите на отзыв:"
-        kb = _history_keyboard(reviews)
+        kb = _history_keyboard(reviews, reply_previews)
         filter_kb = history_filter_keyboard(
             current=filter_key,
             account_id=account_id,
@@ -460,6 +482,43 @@ async def manual_quick_reply(callback: CallbackQuery, state: FSMContext, db_user
     await state.update_data(variants=variants)
     await callback.answer("Шаблон подставлен")
     session_factory = get_session_factory()
+    async with session_factory() as session:
+        remaining = await remaining_generations_today(session, db_user.id)
+        kb = await _build_variants_keyboard(session, db_user, state, len(variants), selected)
+    if callback.message:
+        await safe_edit_message(
+            callback.message,
+            _format_variants_message(variants, selected, remaining),
+            reply_markup=kb,
+        )
+
+
+@router.callback_query(F.data.startswith("review:user_tpl:"))
+async def apply_user_template(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    state_name = await state.get_state()
+    allowed = {
+        ManualReviewStates.viewing_variants.state,
+        MarketplaceReviewStates.viewing_variants.state,
+    }
+    if state_name not in allowed:
+        await callback.answer("Сначала сгенерируйте варианты")
+        return
+    template_id = callback.data.split(":")[-1]
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        tpl = template_by_id(user, template_id) if user else None
+    if not tpl:
+        await callback.answer("Шаблон не найден", show_alert=True)
+        return
+    data = await state.get_data()
+    variants: list[str] = data.get("variants") or ["", "", ""]
+    while len(variants) < 3:
+        variants.append("")
+    selected = int(data.get("selected_index", 0))
+    variants[selected] = tpl["text"]
+    await state.update_data(variants=variants)
+    await callback.answer(f"📝 {tpl['label']}")
     async with session_factory() as session:
         remaining = await remaining_generations_today(session, db_user.id)
         kb = await _build_variants_keyboard(session, db_user, state, len(variants), selected)

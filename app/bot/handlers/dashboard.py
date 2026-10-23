@@ -1,6 +1,6 @@
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.bot.keyboards.menu import dashboard_keyboard, main_menu_keyboard
 from app.bot.utils.callbacks import safe_edit_message
@@ -9,6 +9,7 @@ from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.services.dashboard import build_user_dashboard
+from app.services.dashboard_details import build_dashboard_details
 from app.services.pro_access import activate_trial_pro, has_paid_pro
 
 router = Router(name="dashboard")
@@ -63,6 +64,25 @@ async def menu_dashboard(callback: CallbackQuery, db_user: DbUser) -> None:
     await callback.answer()
     if callback.message:
         await _edit_dashboard(callback.message, db_user)
+
+
+@router.callback_query(F.data == "menu:dashboard:details")
+async def menu_dashboard_details(callback: CallbackQuery, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            await callback.answer("Ошибка")
+            return
+        text = await build_dashboard_details(session, user)
+    await callback.answer()
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:dashboard")],
+        ]
+    )
+    if callback.message:
+        await safe_edit_message(callback.message, text, reply_markup=kb)
 
 
 @router.callback_query(F.data == "menu:trial_pro")

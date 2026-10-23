@@ -28,7 +28,11 @@ async def sync_account_reviews(
     except MarketplaceAPIError as exc:
         if exc.status_code == 401:
             await AccountRepository(session).set_active(account.id, False)
+            account.last_sync_error = "API-ключ не принят"
             logger.warning("Deactivated account_id={} after 401", account.id)
+        else:
+            account.last_sync_error = str(exc)[:500]
+        await session.flush()
         raise
     finally:
         if own_client:
@@ -54,6 +58,7 @@ async def sync_account_reviews(
         created_reviews.append(review)
 
     account.last_sync_at = datetime.now(UTC)
+    account.last_sync_error = None
     await session.flush()
 
     logger.info(

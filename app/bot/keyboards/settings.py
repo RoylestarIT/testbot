@@ -9,6 +9,7 @@ def settings_menu_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="🏪  Кабинеты WB/Ozon", callback_data="settings:accounts")],
             [InlineKeyboardButton(text="🎨  Tone of voice", callback_data="settings:tone")],
             [InlineKeyboardButton(text="🔔  Уведомления", callback_data="settings:notifications")],
+            [InlineKeyboardButton(text="📝  Мои шаблоны", callback_data="settings:templates")],
             [
                 InlineKeyboardButton(
                     text="🚀  Авто-публикация (PRO)",
@@ -70,6 +71,14 @@ def account_detail_keyboard(
                 )
             ]
         )
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="🔄 Sync этого кабинета",
+                callback_data=f"settings:account_sync:{account_id}",
+            )
+        ]
+    )
     rows.append([InlineKeyboardButton(text="🏪 Кабинеты", callback_data="settings:accounts")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 

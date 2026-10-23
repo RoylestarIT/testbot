@@ -1,5 +1,5 @@
 from aiogram import F, Router
-from aiogram.filters import CommandStart
+from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.bot.copy import HELP_TEXT, TERMS_TEXT
@@ -76,6 +76,11 @@ async def menu_full(callback: CallbackQuery) -> None:
             "✨ <b>ReviewPilot</b>\n<i>👇 Выберите раздел:</i>",
             reply_markup=main_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
         )
+
+
+@router.message(Command("help"))
+async def cmd_help(message: Message) -> None:
+    await message.answer(HELP_TEXT, reply_markup=main_menu_keyboard())
 
 
 @router.callback_query(F.data == "menu:help")

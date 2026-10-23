@@ -33,7 +33,10 @@ def dashboard_keyboard(
     rows.extend(
         [
             [InlineKeyboardButton(text="📬  Очередь отзывов", callback_data="review:mp:list")],
-            [InlineKeyboardButton(text="🔄  Синхронизация", callback_data="review:sync")],
+            [
+                InlineKeyboardButton(text="📊  Подробнее", callback_data="menu:dashboard:details"),
+                InlineKeyboardButton(text="🔄  Sync", callback_data="review:sync"),
+            ],
             [InlineKeyboardButton(text="📋  Полное меню", callback_data="menu:full")],
         ]
     )

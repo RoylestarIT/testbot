@@ -14,7 +14,7 @@ from app.bot.keyboards.settings import (
     tone_detail_keyboard,
     tone_menu_keyboard,
 )
-from app.bot.states.settings import ConnectOzonStates, ConnectWbStates, ToneProfileStates
+from app.bot.states.settings import ConnectOzonStates, ConnectWbStates, ReplyTemplateStates, ToneProfileStates
 from app.core.security import EncryptionError
 from app.db.models import Marketplace, User as DbUser
 from app.db.repositories.account import AccountRepository
@@ -22,6 +22,8 @@ from app.db.repositories.user import UserRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.db.session import get_session_factory
 from app.services.marketplace.account_connect import test_and_create_ozon_account, test_and_create_wb_account
+from app.services.marketplace.sync_service import sync_account_reviews
+from app.services.reply_templates import add_template, list_templates, remove_template
 from app.services.generation_limit import is_pro_user
 from app.services.marketplace.base import MarketplaceAPIError
 from app.services.plans import (
@@ -257,11 +259,14 @@ async def settings_account_detail(callback: CallbackQuery, db_user: DbUser) -> N
     name = account.shop_name or f"{mp} #{account.id}"
     sync_hint = ""
     if account.last_sync_at:
-        sync_hint = f"\nПоследняя синхронизация: {account.last_sync_at.strftime('%d.%m.%Y %H:%M')} UTC"
+        sync_hint = f"\n🔄 Sync: {account.last_sync_at.strftime('%d.%m.%Y %H:%M')} UTC"
+    if account.last_sync_error:
+        sync_hint += f"\n⚠️ {account.last_sync_error[:200]}"
+    key_status = "✅ ключ OK" if account.is_active and not account.last_sync_error else "⚠️ проверьте ключ"
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(
-            f"<b>{name}</b>\nПлощадка: {mp}\nСтатус: {'активен' if account.is_active else 'отключён'}"
+            f"<b>{name}</b>\nПлощадка: {mp}\n{key_status}"
             f"{sync_hint}",
             reply_markup=account_detail_keyboard(
                 account.id,
@@ -531,8 +536,9 @@ async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> No
     await callback.answer()
     text = (
         "🔔 <b>Уведомления</b>\n\n"
-        "Push от фоновой синхронизации (poller). "
-        "«Только негатив» — уведомлять лишь о новых отзывах 1–3★."
+        "Push от фоновой синхронизации (poller).\n"
+        "«Только негатив» — только 1–3★.\n"
+        "«Утренний дайджест» — сводка раз в день (~9:00 Мinsk, UTC+3)."
     )
     if callback.message:
         await callback.message.edit_text(
@@ -540,6 +546,7 @@ async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> No
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
+                daily_digest=user.notify_daily_digest,
             ),
         )
 
@@ -566,6 +573,7 @@ async def settings_notify_toggle_new(callback: CallbackQuery, db_user: DbUser) -
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
+                daily_digest=user.notify_daily_digest,
             ),
         )
 
@@ -592,7 +600,143 @@ async def settings_notify_toggle_negative(callback: CallbackQuery, db_user: DbUs
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
+                daily_digest=user.notify_daily_digest,
             ),
+        )
+
+
+@router.callback_query(F.data == "settings:notify:toggle_digest")
+async def settings_notify_toggle_digest(callback: CallbackQuery, db_user: DbUser) -> None:
+    from app.bot.keyboards.notifications import notifications_keyboard
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            return
+        await UserRepository(session).set_notification_prefs(
+            db_user.id,
+            notify_daily_digest=not user.notify_daily_digest,
+        )
+        await session.commit()
+        user = await UserRepository(session).get_by_id(db_user.id)
+    await callback.answer("Сохранено")
+    if callback.message and user:
+        await callback.message.edit_text(
+            "🔔 <b>Уведомления</b>",
+            reply_markup=notifications_keyboard(
+                notify_new=user.notify_new_reviews,
+                negative_only=user.notify_negative_only,
+                daily_digest=user.notify_daily_digest,
+            ),
+        )
+
+
+@router.callback_query(F.data.regexp(r"^settings:account_sync:\d+$"))
+async def settings_account_sync(callback: CallbackQuery, db_user: DbUser) -> None:
+    account_id = int(callback.data.split(":")[-1])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        account = await AccountRepository(session).get_by_id(account_id)
+        if account is None or account.user_id != db_user.id:
+            await callback.answer("Кабинет не найден", show_alert=True)
+            return
+        try:
+            created, _, _ = await sync_account_reviews(session, account)
+            await session.commit()
+            msg = f"✅ Sync готов. Новых отзывов: <b>{created}</b>."
+        except MarketplaceAPIError as exc:
+            await session.commit()
+            msg = f"⚠️ Sync не удался:\n{exc}"
+    await callback.answer("Готово")
+    if callback.message:
+        await callback.message.answer(msg, reply_markup=settings_menu_keyboard())
+
+
+@router.callback_query(F.data == "settings:templates")
+async def settings_templates_menu(callback: CallbackQuery, db_user: DbUser) -> None:
+    from app.bot.keyboards.templates import templates_menu_keyboard
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        templates = list_templates(user) if user else []
+    lines = ["📝 <b>Мои шаблоны</b>", "", "До 5 фраз — кнопки на экране вариантов ответа.", ""]
+    if templates:
+        for tpl in templates:
+            lines.append(f"• <b>{tpl['label']}</b>: {tpl['text'][:80]}…" if len(tpl["text"]) > 80 else f"• <b>{tpl['label']}</b>: {tpl['text']}")
+    else:
+        lines.append("<i>Пока пусто — добавьте первый шаблон.</i>")
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            "\n".join(lines),
+            reply_markup=templates_menu_keyboard(templates),
+        )
+
+
+@router.callback_query(F.data == "settings:tpl:add")
+async def settings_tpl_add_start(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(ReplyTemplateStates.waiting_label)
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            "📝 Новый шаблон\n\nПришлите <b>короткое название</b> кнопки (до 24 символов):"
+        )
+
+
+@router.message(ReplyTemplateStates.waiting_label, F.text)
+async def settings_tpl_add_label(message: Message, state: FSMContext) -> None:
+    label = (message.text or "").strip()[:24]
+    if len(label) < 2:
+        await message.answer("Название слишком короткое.")
+        return
+    await state.update_data(tpl_label=label)
+    await state.set_state(ReplyTemplateStates.waiting_text)
+    await message.answer("Теперь пришлите <b>текст ответа</b> одним сообщением:")
+
+
+@router.message(ReplyTemplateStates.waiting_text, F.text)
+async def settings_tpl_add_text(message: Message, state: FSMContext, db_user: DbUser) -> None:
+    from app.bot.keyboards.templates import templates_menu_keyboard
+
+    data = await state.get_data()
+    label = str(data.get("tpl_label") or "Шаблон")
+    text = (message.text or "").strip()
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            await state.clear()
+            return
+        ok, err = add_template(user, label=label, text=text)
+        await session.commit()
+        templates = list_templates(user)
+    await state.clear()
+    if not ok:
+        await message.answer(err or "Не удалось сохранить.", reply_markup=settings_menu_keyboard())
+        return
+    await message.answer("✅ Шаблон сохранён.", reply_markup=templates_menu_keyboard(templates))
+
+
+@router.callback_query(F.data.startswith("settings:tpl:del:"))
+async def settings_tpl_delete(callback: CallbackQuery, db_user: DbUser) -> None:
+    from app.bot.keyboards.templates import templates_menu_keyboard
+
+    template_id = callback.data.split(":")[-1]
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            return
+        remove_template(user, template_id)
+        await session.commit()
+        templates = list_templates(user)
+    await callback.answer("Удалено")
+    if callback.message:
+        await callback.message.edit_text(
+            "📝 <b>Мои шаблоны</b>",
+            reply_markup=templates_menu_keyboard(templates),
         )
 
 

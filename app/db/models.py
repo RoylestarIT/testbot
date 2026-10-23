@@ -79,6 +79,12 @@ class User(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    notify_daily_digest: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    last_daily_digest_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    reply_templates: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True)
 
     marketplace_accounts: Mapped[list["MarketplaceAccount"]] = relationship(
         back_populates="user",
@@ -168,6 +174,7 @@ class MarketplaceAccount(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     auto_publish_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_sync_error: Mapped[str | None] = mapped_column(String(512), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     subscription_lite_usd_label: str = Field(default="10", validation_alias="SUBSCRIPTION_LITE_USD")
     subscription_pro_usd_label: str = Field(default="30", validation_alias="SUBSCRIPTION_PRO_USD")
     poll_interval_minutes: int = Field(default=15, validation_alias="POLL_INTERVAL_MINUTES")
+    digest_hour_utc: int = Field(default=6, validation_alias="DIGEST_HOUR_UTC")
+    llm_queue_workers: int = Field(default=2, validation_alias="LLM_QUEUE_WORKERS")
     trial_pro_days: int = Field(default=7, validation_alias="TRIAL_PRO_DAYS")
     free_api_publishes: int = Field(default=3, validation_alias="FREE_API_PUBLISHES")
     support_username: str = Field(default="", validation_alias="SUPPORT_USERNAME")

@@ -20,6 +20,7 @@ from app.services.plans import (
 )
 from app.services.subscription import get_effective_subscription
 from app.services.onboarding_checklist import build_onboarding_nudge
+from app.services.user_stats import build_mini_stats_line
 from app.tasks.poller import get_poller_status_line
 
 
@@ -95,7 +96,12 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
         focus = "📭  Новых отзывов нет"
         hint = "🔄 Нажмите «Синхронизация»"
 
-    details: list[str] = [f"{tier_icon}  Тариф: <b>{tier}</b>"]
+    mini = await build_mini_stats_line(session, user.id)
+    details: list[str] = []
+    if mini:
+        details.append(mini)
+        details.append("")
+    details.append(f"{tier_icon}  Тариф: <b>{tier}</b>")
 
     if remaining is not None:
         details.append(f"⚡  Генераций сегодня: <b>{remaining}</b> / 5")

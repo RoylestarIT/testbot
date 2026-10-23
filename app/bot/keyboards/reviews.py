@@ -65,6 +65,7 @@ def variants_keyboard(
     show_quick_templates: bool = False,
     has_next_in_queue: bool = False,
     mp_mode: bool = False,
+    user_templates: list[dict[str, str]] | None = None,
 ) -> InlineKeyboardMarkup:
     pick_buttons: list[InlineKeyboardButton] = []
     for index in range(variant_count):
@@ -87,6 +88,17 @@ def variants_keyboard(
                 InlineKeyboardButton(text="⚡ Рады!", callback_data="review:quick:glad"),
             ]
         )
+    if user_templates:
+        tpl_row: list[InlineKeyboardButton] = []
+        for tpl in user_templates[:3]:
+            tpl_row.append(
+                InlineKeyboardButton(
+                    text=f"📝 {tpl['label'][:14]}",
+                    callback_data=f"review:user_tpl:{tpl['id']}",
+                )
+            )
+        if tpl_row:
+            rows.append(tpl_row)
 
     copy_cb = "review:mp:copy" if mp_mode else "review:publish"
     edit_cb = "review:mp:edit" if mp_mode else "review:edit"

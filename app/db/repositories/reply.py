@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import GeneratedReply
@@ -39,3 +39,21 @@ class ReplyRepository:
         await self._session.flush()
         await self._session.refresh(reply)
         return reply
+
+    async def latest_text_by_review_ids(self, review_ids: list[int]) -> dict[int, str]:
+        if not review_ids:
+            return {}
+        subq = (
+            select(
+                GeneratedReply.review_id,
+                func.max(GeneratedReply.id).label("max_id"),
+            )
+            .where(GeneratedReply.review_id.in_(review_ids))
+            .group_by(GeneratedReply.review_id)
+            .subquery()
+        )
+        result = await self._session.execute(
+            select(GeneratedReply.review_id, GeneratedReply.text)
+            .join(subq, GeneratedReply.id == subq.c.max_id)
+        )
+        return {int(row[0]): str(row[1]) for row in result.all()}

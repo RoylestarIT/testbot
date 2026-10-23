@@ -33,7 +33,9 @@ python3 -m app.main
 
 - **Polling** (по умолчанию): если `WEBHOOK_URL` пуст.
 - **Webhook**: задайте `WEBHOOK_URL=https://your.host/webhook` и проксируйте на `WEBHOOK_PORT`.
-- **Health**: `GET http://localhost:8081/health` (если `HEALTH_PORT=8081`).
+- **Health**: `GET http://localhost:8081/health` (если `HEALTH_PORT=8081`) — проверка БД (`db: true/false`).
+- **Дайджест**: `DIGEST_HOUR_UTC=6` (~9:00 Europe/Minsk), вкл. в «🔔 Уведомления».
+- **LLM-очередь**: `LLM_QUEUE_WORKERS=2` — параллельные генерации без блокировки event loop.
 
 Перезапуск на VM: `./scripts/restart-bot.sh`  
 Бэкап SQLite: `./scripts/backup-db.sh`
@@ -52,6 +54,7 @@ python3 -m app.main
 
 - `/start` — сводка (дашборд), чеклист onboarding
 - `/dashboard` — то же
+- `/help` — справка
 - `/my_subscription` — статус тарифа
 - `/promo КОД` — промокод (trial PRO)
 - `/admin` — админ-панель (`ADMIN_IDS`)

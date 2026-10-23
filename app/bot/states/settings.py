@@ -17,3 +17,8 @@ class ToneProfileStates(StatesGroup):
     waiting_examples = State()
     waiting_edit_description = State()
     waiting_edit_examples = State()
+
+
+class ReplyTemplateStates(StatesGroup):
+    waiting_label = State()
+    waiting_text = State()
