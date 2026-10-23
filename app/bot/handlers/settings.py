@@ -14,15 +14,29 @@ from app.bot.keyboards.settings import (
     tone_detail_keyboard,
     tone_menu_keyboard,
 )
-from app.bot.states.settings import ConnectOzonStates, ConnectWbStates, ReplyTemplateStates, ToneProfileStates
+from app.bot.states.settings import (
+    ConnectOzonStates,
+    ConnectWbStates,
+    ReplyTemplateStates,
+    RotateOzonKeyStates,
+    RotateWbKeyStates,
+    ToneProfileStates,
+)
 from app.core.security import EncryptionError
 from app.db.models import Marketplace, User as DbUser
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.user import UserRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.db.session import get_session_factory
-from app.services.marketplace.account_connect import test_and_create_ozon_account, test_and_create_wb_account
+from app.services.marketplace.account_connect import (
+    test_and_create_ozon_account,
+    test_and_create_wb_account,
+    test_and_update_ozon_credentials,
+    test_and_update_wb_api_key,
+)
+from app.services.marketplace.connect_sync import connect_success_keyboard, sync_new_account_reviews
 from app.services.marketplace.sync_service import sync_account_reviews
+from app.tasks.poller import format_ui_time
 from app.services.reply_templates import add_template, list_templates, remove_template
 from app.services.generation_limit import is_pro_user
 from app.services.marketplace.base import MarketplaceAPIError
@@ -155,10 +169,23 @@ async def connect_wb_finish(message: Message, state: FSMContext, db_user: DbUser
         return
 
     await state.clear()
-    hint = "Тестовый запрос выполнен, отзывов пока нет." if sample is None else "Получен 1 отзыв — ключ работает."
+    hint = "Тестовый запрос выполнен." if sample is None else "Получен 1 отзыв — ключ работает."
+    sync_line = ""
+    try:
+        async with session_factory() as session:
+            acc = await AccountRepository(session).get_by_id(account.id)
+            if acc is not None:
+                new_n, auto_n, queue_n = await sync_new_account_reviews(session, acc)
+                await session.commit()
+                sync_line = (
+                    f"\n🔄 Первая синхронизация: новых <b>{new_n}</b>"
+                    f" (авто PRO: {auto_n}, в очереди: {queue_n})."
+                )
+    except MarketplaceAPIError as exc:
+        sync_line = f"\n⚠️ Sync: {exc}"
     await message.answer(
-        f"✅ Wildberries подключён (кабинет #{account.id}).\n{hint}",
-        reply_markup=settings_menu_keyboard(),
+        f"✅ Wildberries подключён (кабинет #{account.id}).\n{hint}{sync_line}",
+        reply_markup=connect_success_keyboard(),
     )
 
 
@@ -239,13 +266,26 @@ async def connect_ozon_finish(message: Message, state: FSMContext, db_user: DbUs
 
     await state.clear()
     hint = "Отзывов в выборке нет." if sample is None else "Получен отзыв — ключи работают."
+    sync_line = ""
+    try:
+        async with session_factory() as session:
+            acc = await AccountRepository(session).get_by_id(account.id)
+            if acc is not None:
+                new_n, auto_n, queue_n = await sync_new_account_reviews(session, acc)
+                await session.commit()
+                sync_line = (
+                    f"\n🔄 Первая синхронизация: новых <b>{new_n}</b>"
+                    f" (авто PRO: {auto_n}, в очереди: {queue_n})."
+                )
+    except MarketplaceAPIError as exc:
+        sync_line = f"\n⚠️ Sync: {exc}"
     await message.answer(
-        f"✅ Ozon подключён (кабинет #{account.id}).\n{hint}",
-        reply_markup=settings_menu_keyboard(),
+        f"✅ Ozon подключён (кабинет #{account.id}).\n{hint}{sync_line}",
+        reply_markup=connect_success_keyboard(),
     )
 
 
-@router.callback_query(F.data.startswith("settings:account:"))
+@router.callback_query(F.data.regexp(r"^settings:account:\d+$"))
 async def settings_account_detail(callback: CallbackQuery, db_user: DbUser) -> None:
     account_id = int(callback.data.split(":")[-1])
     session_factory = get_session_factory()
@@ -259,7 +299,7 @@ async def settings_account_detail(callback: CallbackQuery, db_user: DbUser) -> N
     name = account.shop_name or f"{mp} #{account.id}"
     sync_hint = ""
     if account.last_sync_at:
-        sync_hint = f"\n🔄 Sync: {account.last_sync_at.strftime('%d.%m.%Y %H:%M')} UTC"
+        sync_hint = f"\n🔄 Sync: {format_ui_time(account.last_sync_at)} (Минск)"
     if account.last_sync_error:
         sync_hint += f"\n⚠️ {account.last_sync_error[:200]}"
     key_status = "✅ ключ OK" if account.is_active and not account.last_sync_error else "⚠️ проверьте ключ"
@@ -329,6 +369,112 @@ async def settings_account_toggle(callback: CallbackQuery, db_user: DbUser) -> N
                 show_auto_publish=is_pro and account.marketplace in (Marketplace.WB, Marketplace.OZON),
             ),
         )
+
+
+@router.callback_query(F.data.regexp(r"^settings:account_rotate:\d+$"))
+async def settings_account_rotate_start(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    account_id = int(callback.data.split(":")[-1])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        account = await AccountRepository(session).get_by_id(account_id)
+    if account is None or account.user_id != db_user.id:
+        await callback.answer("Кабинет не найден", show_alert=True)
+        return
+    await state.update_data(rotate_account_id=account_id)
+    if account.marketplace == Marketplace.WB:
+        await state.set_state(RotateWbKeyStates.waiting_api_key)
+        prompt = "<b>Wildberries</b>\n\nПришлите новый API-ключ (категория «Вопросы и отзывы»)."
+    else:
+        await state.set_state(RotateOzonKeyStates.waiting_client_id)
+        prompt = "<b>Ozon</b>\n\nПришлите новый <b>Client-Id</b>."
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(prompt)
+
+
+@router.message(RotateWbKeyStates.waiting_api_key, F.text)
+async def rotate_wb_key_finish(message: Message, state: FSMContext, db_user: DbUser) -> None:
+    key = (message.text or "").strip()
+    if len(key) < 10:
+        await message.answer("Ключ слишком короткий.")
+        return
+    data = await state.get_data()
+    account_id = int(data.get("rotate_account_id", 0))
+    session_factory = get_session_factory()
+    try:
+        async with session_factory() as session:
+            account = await AccountRepository(session).get_by_id(account_id)
+            if account is None or account.user_id != db_user.id:
+                await message.answer("Кабинет не найден.", reply_markup=settings_menu_keyboard())
+                await state.clear()
+                return
+            await test_and_update_wb_api_key(session, account, api_key=key)
+            await session.commit()
+    except EncryptionError:
+        await message.answer("FERNET_KEY не настроен.", reply_markup=settings_menu_keyboard())
+        await state.clear()
+        return
+    except MarketplaceAPIError as exc:
+        await message.answer(f"Ключ не принят:\n\n{exc}", reply_markup=settings_menu_keyboard())
+        return
+    await state.clear()
+    await message.answer(
+        f"✅ Ключ WB обновлён (кабинет #{account_id}). Кабинет снова активен.",
+        reply_markup=settings_menu_keyboard(),
+    )
+
+
+@router.message(RotateOzonKeyStates.waiting_client_id, F.text)
+async def rotate_ozon_client_id(message: Message, state: FSMContext) -> None:
+    client_id = (message.text or "").strip()
+    if not client_id.isdigit():
+        await message.answer("Client-Id обычно числовой.")
+        return
+    await state.update_data(rotate_ozon_client_id=client_id)
+    await state.set_state(RotateOzonKeyStates.waiting_api_key)
+    await message.answer("Теперь пришлите новый <b>Api-Key</b> Ozon.")
+
+
+@router.message(RotateOzonKeyStates.waiting_api_key, F.text)
+async def rotate_ozon_key_finish(message: Message, state: FSMContext, db_user: DbUser) -> None:
+    api_key = (message.text or "").strip()
+    if len(api_key) < 8:
+        await message.answer("Api-Key слишком короткий.")
+        return
+    data = await state.get_data()
+    account_id = int(data.get("rotate_account_id", 0))
+    client_id = data.get("rotate_ozon_client_id")
+    if not client_id:
+        await state.clear()
+        await message.answer("Сессия сброшена.")
+        return
+    session_factory = get_session_factory()
+    try:
+        async with session_factory() as session:
+            account = await AccountRepository(session).get_by_id(account_id)
+            if account is None or account.user_id != db_user.id:
+                await message.answer("Кабинет не найден.", reply_markup=settings_menu_keyboard())
+                await state.clear()
+                return
+            await test_and_update_ozon_credentials(
+                session,
+                account,
+                client_id=str(client_id),
+                api_key=api_key,
+            )
+            await session.commit()
+    except EncryptionError:
+        await message.answer("FERNET_KEY не настроен.", reply_markup=settings_menu_keyboard())
+        await state.clear()
+        return
+    except MarketplaceAPIError as exc:
+        await message.answer(f"Ключи не приняты:\n\n{exc}", reply_markup=settings_menu_keyboard())
+        return
+    await state.clear()
+    await message.answer(
+        f"✅ Ключи Ozon обновлены (кабинет #{account_id}). Кабинет снова активен.",
+        reply_markup=settings_menu_keyboard(),
+    )
 
 
 @router.callback_query(F.data == "settings:tone")

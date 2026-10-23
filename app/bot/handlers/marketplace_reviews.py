@@ -43,10 +43,37 @@ from app.services.llm import LLMError
 from app.services.marketplace.base import MarketplaceAPIError
 from app.services.marketplace.publish_service import publish_reply_to_marketplace
 from app.services.marketplace.review_format import format_review_card
-from app.services.bulk_quick_reply import apply_bulk_template, list_bulk_eligible
+from app.bot.utils.reply_checks import validate_reply_for_user
+from app.core.config import get_settings
+from app.db.repositories.reply import ReplyRepository
+from app.services.bulk_quick_reply import (
+    apply_bulk_template,
+    apply_bulk_template_with_publish,
+    list_bulk_eligible,
+)
+from app.services.generation_limit import is_pro_user
+from app.services.marketplace.auto_publish import try_auto_publish_review
 from app.services.marketplace.sync_service import sync_account_reviews
+from app.tasks.poller import format_ui_time
 
 router = Router(name="marketplace_reviews")
+
+MP_LIST_PAGE_SIZE = 10
+
+
+async def _persist_selected_reply(
+    session,
+    review_id: int,
+    text: str,
+    *,
+    selected_index: int,
+) -> None:
+    await ReplyRepository(session).create(
+        review_id=review_id,
+        variant_index=100 + selected_index,
+        text=text,
+        model="user_edit",
+    )
 
 
 async def _queue_has_next(state: FSMContext, review_id: int | None) -> bool:
@@ -59,7 +86,12 @@ async def _queue_has_next(state: FSMContext, review_id: int | None) -> bool:
     return queue.index(int(review_id)) < len(queue) - 1
 
 
-def _mp_reviews_keyboard(reviews: list, *, bulk_count: int = 0) -> InlineKeyboardMarkup:
+def _mp_reviews_keyboard(
+    reviews: list,
+    *,
+    page: int = 0,
+    bulk_count: int = 0,
+) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     if bulk_count > 0:
         rows.append(
@@ -70,9 +102,13 @@ def _mp_reviews_keyboard(reviews: list, *, bulk_count: int = 0) -> InlineKeyboar
                 )
             ]
         )
-    for review in reviews[:10]:
+    start = page * MP_LIST_PAGE_SIZE
+    chunk = reviews[start : start + MP_LIST_PAGE_SIZE]
+    for review in chunk:
         preview = (review.text or "—")[:40].replace("\n", " ")
         rating = f"⭐{review.rating}" if review.rating else "⭐?"
+        if review.rating is not None and review.rating <= 3:
+            rating = f"⚠️{review.rating}"
         rows.append(
             [
                 InlineKeyboardButton(
@@ -81,6 +117,17 @@ def _mp_reviews_keyboard(reviews: list, *, bulk_count: int = 0) -> InlineKeyboar
                 )
             ]
         )
+    nav: list[InlineKeyboardButton] = []
+    if start > 0:
+        nav.append(
+            InlineKeyboardButton(text="◀️ Назад", callback_data=f"review:mp:list:{page - 1}")
+        )
+    if start + MP_LIST_PAGE_SIZE < len(reviews):
+        nav.append(
+            InlineKeyboardButton(text="Ещё ▶️", callback_data=f"review:mp:list:{page + 1}")
+        )
+    if nav:
+        rows.append(nav)
     rows.extend(nav_home_queue().inline_keyboard)
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -142,10 +189,15 @@ async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: l
             if a.marketplace in (Marketplace.WB, Marketplace.OZON)
             and (account_ids is None or a.id in account_ids)
         ]
+        settings = get_settings()
         for account in mp_accounts:
             try:
-                created, _, _ = await sync_account_reviews(session, account)
+                created, _, new_reviews = await sync_account_reviews(session, account)
                 total_new += created
+                for review in new_reviews:
+                    await try_auto_publish_review(
+                        session, account=account, review=review, settings=settings
+                    )
             except MarketplaceAPIError as exc:
                 logger.warning("Sync failed account_id={} err={}", account.id, exc)
                 msg = str(exc)
@@ -199,7 +251,11 @@ async def sync_reviews_one(callback: CallbackQuery, db_user: DbUser) -> None:
 
 
 @router.callback_query(F.data == "review:mp:list")
+@router.callback_query(F.data.regexp(r"^review:mp:list:\d+$"))
 async def list_mp_reviews(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
+    page = 0
+    if callback.data.startswith("review:mp:list:"):
+        page = max(0, int(callback.data.split(":")[-1]))
     session_factory = get_session_factory()
     async with session_factory() as session:
         accounts = await AccountRepository(session).list_by_user_id(db_user.id, active_only=True)
@@ -221,8 +277,13 @@ async def list_mp_reviews(callback: CallbackQuery, state: FSMContext, db_user: D
         text = MP_LIST_EMPTY
         kb = no_new_reviews_keyboard()
     else:
-        text = f"{MP_LIST_HEADER}\n\nВ очереди: <b>{len(reviews)}</b>"
-        kb = _mp_reviews_keyboard(reviews, bulk_count=len(bulk))
+        shown_from = page * MP_LIST_PAGE_SIZE + 1
+        shown_to = min(len(reviews), (page + 1) * MP_LIST_PAGE_SIZE)
+        text = (
+            f"{MP_LIST_HEADER}\n\n"
+            f"В очереди: <b>{len(reviews)}</b> · показаны {shown_from}–{shown_to}"
+        )
+        kb = _mp_reviews_keyboard(reviews, page=page, bulk_count=len(bulk))
     if callback.message:
         await safe_edit_message(callback.message, text, reply_markup=kb)
 
@@ -232,6 +293,8 @@ async def mp_bulk_preview(callback: CallbackQuery, db_user: DbUser) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
         eligible = await list_bulk_eligible(session, db_user.id)
+        pro = await is_pro_user(session, db_user.id)
+        can_pub, _ = await can_api_publish(session, db_user.id)
     if not eligible:
         await callback.answer("Нет подходящих отзывов", show_alert=True)
         return
@@ -239,17 +302,42 @@ async def mp_bulk_preview(callback: CallbackQuery, db_user: DbUser) -> None:
     text = (
         "⚡ <b>Пакетный ответ</b>\n\n"
         f"Подходит отзывов 4–5★ с коротким текстом: <b>{len(eligible)}</b>.\n"
-        "Будет подставлен шаблон «Спасибо» и статус «обработан» (копируйте в кабинет).\n\n"
-        "Publish в API <b>не</b> выполняется автоматически."
+        "Шаблон «Спасибо» — либо «обработан» для копирования, либо publish в API (PRO)."
     )
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="✅ Применить", callback_data="review:mp:bulk:run")],
-            [InlineKeyboardButton(text="📬 Очередь", callback_data="review:mp:list")],
-        ]
-    )
+    rows: list[list[InlineKeyboardButton]] = [
+        [InlineKeyboardButton(text="✅ Обработать (копия)", callback_data="review:mp:bulk:run")],
+    ]
+    if pro and can_pub:
+        rows.insert(
+            0,
+            [
+                InlineKeyboardButton(
+                    text="🚀 PRO: publish в API",
+                    callback_data="review:mp:bulk:run_api",
+                )
+            ],
+        )
+    rows.append([InlineKeyboardButton(text="📬 Очередь", callback_data="review:mp:list")])
+    kb = InlineKeyboardMarkup(inline_keyboard=rows)
     if callback.message:
         await safe_edit_message(callback.message, text, reply_markup=kb)
+
+
+@router.callback_query(F.data == "review:mp:bulk:run_api")
+async def mp_bulk_run_api(callback: CallbackQuery, db_user: DbUser) -> None:
+    template = QUICK_REPLY_TEMPLATES["thanks"]
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        published, _, failed = await apply_bulk_template_with_publish(
+            session, user_id=db_user.id, template_text=template
+        )
+        await session.commit()
+    await callback.answer("Готово")
+    if callback.message:
+        await callback.message.edit_text(
+            f"🚀 Publish: <b>{published}</b> · ошибок: <b>{failed}</b>.",
+            reply_markup=nav_home_queue(),
+        )
 
 
 @router.callback_query(F.data == "review:mp:bulk:run")
@@ -459,11 +547,17 @@ async def mp_copy_answer(callback: CallbackQuery, state: FSMContext, db_user: Db
         await callback.answer("Нет текста", show_alert=True)
         return
     text = variants[selected]
+    clean, err = validate_reply_for_user(text)
+    if err:
+        await callback.answer(err, show_alert=True)
+        return
+    text = clean or text
     rid = int(review_id) if review_id is not None else None
     has_next = await _queue_has_next(state, rid)
     if rid is not None:
         session_factory = get_session_factory()
         async with session_factory() as session:
+            await _persist_selected_reply(session, rid, text, selected_index=selected)
             await ReviewRepository(session).update_status(rid, ReviewStatus.PROCESSED)
             await session.commit()
     await callback.answer("Текст ниже — скопируйте")
@@ -534,6 +628,11 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
             )
             return
 
+    clean, err = validate_reply_for_user(str(text))
+    if err:
+        await callback.answer(err, show_alert=True)
+        return
+
     await callback.answer("Публикую…")
     try:
         async with session_factory() as session:
@@ -543,7 +642,9 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
             account = await AccountRepository(session).get_by_id(review.account_id)
             if account is None or account.user_id != db_user.id:
                 raise MarketplaceAPIError("Нет доступа к кабинету")
-            await publish_reply_to_marketplace(session, review, str(text))
+            selected = int(data.get("selected_index", 0))
+            await _persist_selected_reply(session, int(review_id), clean or str(text), selected_index=selected)
+            await publish_reply_to_marketplace(session, review, clean or str(text))
             await session.commit()
     except MarketplaceAPIError as exc:
         logger.warning("User publish failed review_id={} err={}", review_id, exc)
@@ -599,6 +700,11 @@ async def mp_edit_apply(message: Message, state: FSMContext, db_user: DbUser) ->
     if len(text) < 3:
         await message.answer("Слишком коротко.")
         return
+    clean, err = validate_reply_for_user(text)
+    if err:
+        await message.answer(err)
+        return
+    text = clean or text
     data = await state.get_data()
     variants: list[str] = data.get("variants") or []
     selected = int(data.get("selected_index", 0))
@@ -610,6 +716,9 @@ async def mp_edit_apply(message: Message, state: FSMContext, db_user: DbUser) ->
     await state.set_state(MarketplaceReviewStates.viewing_variants)
     review_id = int(data.get("review_id", 0))
     session_factory = get_session_factory()
+    async with session_factory() as session:
+        await _persist_selected_reply(session, review_id, text, selected_index=selected)
+        await session.commit()
     async with session_factory() as session:
         remaining = await remaining_generations_today(session, db_user.id)
         allowed, _ = await can_api_publish(session, db_user.id)
@@ -688,6 +797,6 @@ async def mp_snooze(callback: CallbackQuery, db_user: DbUser) -> None:
     await callback.answer("Отложено на 24 ч")
     if callback.message:
         await callback.message.edit_text(
-            f"⏰ Отзыв #{review_id} отложен до {until.strftime('%d.%m %H:%M')} UTC.",
+            f"⏰ Отзыв #{review_id} отложен до {format_ui_time(until)} (Минск).",
             reply_markup=nav_home_queue(),
         )

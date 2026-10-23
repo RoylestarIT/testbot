@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.bot.copy import DIFFERENTIATORS_DASHBOARD_LINE
 from app.bot.ui import dashboard_home, muted
 from app.constants import MANUAL_SHOP_NAME
 from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus, SubscriptionPlan, User
@@ -128,6 +129,9 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
     if nudge:
         details.append("")
         details.append(nudge)
+
+    details.append("")
+    details.append(DIFFERENTIATORS_DASHBOARD_LINE)
 
     if not await has_lite_or_higher(session, user.id):
         acc_n = await count_user_api_accounts(session, user.id)

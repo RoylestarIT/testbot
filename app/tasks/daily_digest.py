@@ -83,17 +83,16 @@ async def build_digest_text(session, user: User) -> str:
 
 async def send_digests_once(bot: Bot, settings: Settings | None = None) -> None:
     settings = settings or get_settings()
-    session_factory = get_session_factory()
     now = datetime.now(UTC)
-    target_hour = settings.digest_hour_utc
+    if now.hour != settings.digest_hour_utc:
+        return
 
+    session_factory = get_session_factory()
     async with session_factory() as session:
         result = await session.execute(select(User).where(User.notify_daily_digest.is_(True)))
         users = list(result.scalars().all())
 
     for user in users:
-        if now.hour != target_hour:
-            continue
         if user.last_daily_digest_at and user.last_daily_digest_at.date() == now.date():
             continue
         async with session_factory() as session:

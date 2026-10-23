@@ -9,6 +9,7 @@ from app.db.repositories.reply import ReplyRepository
 from app.services.generation_limit import is_pro_user
 from app.services.llm import LLMError, generate_replies
 from app.services.marketplace.base import MarketplaceAPIError
+from app.services.marketplace.auto_publish_types import AutoPublishOutcome
 from app.services.marketplace.product_context import product_context_for_llm
 from app.services.marketplace.publish_service import publish_reply_to_marketplace
 from app.services.tone_resolver import resolve_tone_input
@@ -22,14 +23,14 @@ async def try_auto_publish_review(
     account: MarketplaceAccount,
     review: Review,
     settings: Settings | None = None,
-) -> bool:
+) -> AutoPublishOutcome:
     """PRO + auto_publish: для 4–5★ генерирует один ответ и публикует без подтверждения."""
     if not account.auto_publish_enabled:
-        return False
+        return AutoPublishOutcome("skipped")
     if not await is_pro_user(session, account.user_id):
-        return False
+        return AutoPublishOutcome("skipped")
     if review.rating is not None and review.rating < AUTO_PUBLISH_MIN_RATING:
-        return False
+        return AutoPublishOutcome("skipped")
 
     settings = settings or get_settings()
     tone = await resolve_tone_input(session, account.user_id, "default")
@@ -45,10 +46,10 @@ async def try_auto_publish_review(
         )
     except LLMError as exc:
         logger.warning("Auto-publish LLM failed review_id={} err={}", review.id, exc)
-        return False
+        return AutoPublishOutcome("llm_failed")
 
     if not variants:
-        return False
+        return AutoPublishOutcome("llm_failed")
 
     text = variants[0]
     await ReplyRepository(session).create(
@@ -63,7 +64,10 @@ async def try_auto_publish_review(
         await publish_reply_to_marketplace(session, review, text)
     except MarketplaceAPIError as exc:
         logger.warning("Auto-publish API failed review_id={} err={}", review.id, exc)
-        return False
+        return AutoPublishOutcome("api_failed")
 
     logger.info("Auto-published review_id={} account_id={}", review.id, account.id)
-    return True
+    preview = text.strip()
+    if len(preview) > 120:
+        preview = preview[:117] + "…"
+    return AutoPublishOutcome("published", reply_preview=preview)

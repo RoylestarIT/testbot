@@ -6,6 +6,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand, ErrorEvent
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import CallbackQuery, Message
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from loguru import logger
 
@@ -100,13 +101,35 @@ async def main() -> None:
         token=settings.bot_token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
-    dp = Dispatcher(storage=MemoryStorage())
+    storage = MemoryStorage()
+    if settings.fsm_redis_url.strip():
+        from aiogram.fsm.storage.redis import RedisStorage
+
+        storage = RedisStorage.from_url(settings.fsm_redis_url.strip())
+        logger.info("FSM storage: Redis")
+    else:
+        logger.info("FSM storage: memory")
+
+    dp = Dispatcher(storage=storage)
     dp.update.middleware(UserContextMiddleware())
     dp.include_router(main_router)
 
     @dp.errors()
     async def on_error(event: ErrorEvent) -> None:
         logger.exception("Unhandled bot error: {}", event.exception)
+        update = event.update
+        hint = "⚠️ Что-то пошло не так. Попробуйте /start или повторите действие."
+        try:
+            if update.callback_query is not None:
+                cq: CallbackQuery = update.callback_query
+                await cq.answer("Ошибка. Попробуйте снова.", show_alert=True)
+                if cq.message is not None:
+                    await cq.message.answer(hint)
+            elif update.message is not None:
+                msg: Message = update.message
+                await msg.answer(hint)
+        except Exception:
+            logger.warning("Failed to send user-facing error hint")
 
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)

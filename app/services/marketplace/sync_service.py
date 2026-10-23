@@ -40,11 +40,10 @@ async def sync_account_reviews(
 
     repo = ReviewRepository(session)
     created_reviews: list[Review] = []
+    external_ids = [dto.external_id for dto in dtos if dto.external_id]
+    existing_ids = await repo.existing_external_ids(account.id, external_ids)
     for dto in dtos:
-        if not dto.external_id:
-            continue
-        existing = await repo.get_by_external_id(account.id, dto.external_id)
-        if existing is not None:
+        if not dto.external_id or dto.external_id in existing_ids:
             continue
         review = await repo.create(
             account_id=account.id,

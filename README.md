@@ -33,7 +33,8 @@ python3 -m app.main
 
 - **Polling** (по умолчанию): если `WEBHOOK_URL` пуст.
 - **Webhook**: задайте `WEBHOOK_URL=https://your.host/webhook` и проксируйте на `WEBHOOK_PORT`.
-- **Health**: `GET http://localhost:8081/health` (если `HEALTH_PORT=8081`) — проверка БД (`db: true/false`).
+- **Health**: `GET http://localhost:8081/health` (если `HEALTH_PORT=8081`) — БД и статус poller (`poller.last_ok_minsk`).
+- **FSM (prod)**: `FSM_REDIS_URL=redis://localhost:6379/0` — общее состояние диалогов для webhook/нескольких воркеров.
 - **Дайджест**: `DIGEST_HOUR_UTC=6` (~9:00 Europe/Minsk), вкл. в «🔔 Уведомления».
 - **LLM-очередь**: `LLM_QUEUE_WORKERS=2` — параллельные генерации без блокировки event loop.
 
@@ -46,7 +47,7 @@ python3 -m app.main
 |---|:---:|:---:|:---:|
 | Генерации/день | 5 | ∞ | ∞ |
 | Кабинеты / tone | 1 / 1 | ∞ | ∞ |
-| Publish в API | ✗ | ✗ | ✓ |
+| Publish в API | 3 пробных | копия в кабинет | ✓ без лимита |
 
 Подробно: **Подписка → Сравнение тарифов** в боте.
 

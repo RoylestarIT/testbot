@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Review, Subscription, SubscriptionPlan, SubscriptionStatus, User
+from app.db.models import (
+    Marketplace,
+    MarketplaceAccount,
+    Review,
+    ReviewStatus,
+    Subscription,
+    SubscriptionPlan,
+    SubscriptionStatus,
+    User,
+)
 
 
 async def build_stats_message(session: AsyncSession) -> str:
@@ -34,9 +45,36 @@ async def build_stats_message(session: AsyncSession) -> str:
         )
     ) or 0
 
+    with_cabinet = await session.scalar(
+        select(func.count(func.distinct(MarketplaceAccount.user_id)))
+        .select_from(MarketplaceAccount)
+        .where(MarketplaceAccount.marketplace.in_((Marketplace.WB, Marketplace.OZON)))
+    ) or 0
+
+    replied_users = await session.scalar(
+        select(func.count(func.distinct(MarketplaceAccount.user_id)))
+        .select_from(Review)
+        .join(MarketplaceAccount, Review.account_id == MarketplaceAccount.id)
+        .where(Review.status.in_((ReviewStatus.PROCESSED, ReviewStatus.PUBLISHED)))
+    ) or 0
+
+    week_ago = datetime.now(UTC) - timedelta(days=7)
+    stuck_queue = await session.scalar(
+        select(func.count(func.distinct(MarketplaceAccount.user_id)))
+        .select_from(Review)
+        .join(MarketplaceAccount, Review.account_id == MarketplaceAccount.id)
+        .where(
+            Review.status == ReviewStatus.NEW,
+            Review.created_at <= week_ago,
+        )
+    ) or 0
+
     return (
-        "<b>Статистика ReviewPilot</b>\n\n"
+        "<b>Статистика Голос бренда</b>\n\n"
         f"Пользователей: <b>{users_count}</b>\n"
+        f"С кабинетом WB/Ozon: <b>{with_cabinet}</b>\n"
+        f"Ответили хотя бы раз: <b>{replied_users}</b>\n"
+        f"Очередь &gt;7 дней (юзеров): <b>{stuck_queue}</b>\n\n"
         f"Отзывов в БД: <b>{reviews_count}</b>\n"
         f"Подписки Lite (active): <b>{active_lite}</b>\n"
         f"Подписки PRO (active): <b>{active_pro}</b>\n"

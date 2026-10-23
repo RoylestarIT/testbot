@@ -23,6 +23,17 @@ class ReviewRepository:
         )
         return result.scalar_one_or_none()
 
+    async def existing_external_ids(self, account_id: int, external_ids: list[str]) -> set[str]:
+        if not external_ids:
+            return set()
+        result = await self._session.execute(
+            select(Review.external_id).where(
+                Review.account_id == account_id,
+                Review.external_id.in_(external_ids),
+            )
+        )
+        return {str(row[0]) for row in result.all()}
+
     async def list_by_account(
         self,
         account_id: int,
@@ -112,7 +123,7 @@ class ReviewRepository:
                 Review.status == ReviewStatus.NEW,
                 or_(Review.snoozed_until.is_(None), Review.snoozed_until <= now),
             )
-            .order_by(Review.created_at.desc())
+            .order_by(Review.rating.asc().nulls_last(), Review.created_at.asc())
             .limit(limit)
         )
         result = await self._session.execute(stmt)

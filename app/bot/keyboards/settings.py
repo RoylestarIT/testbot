@@ -79,6 +79,14 @@ def account_detail_keyboard(
             )
         ]
     )
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="🔑 Обновить ключ",
+                callback_data=f"settings:account_rotate:{account_id}",
+            )
+        ]
+    )
     rows.append([InlineKeyboardButton(text="🏪 Кабинеты", callback_data="settings:accounts")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 

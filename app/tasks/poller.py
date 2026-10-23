@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
+from collections import defaultdict
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
@@ -9,17 +10,17 @@ from zoneinfo import ZoneInfo
 UI_TIMEZONE = ZoneInfo("Europe/Minsk")
 
 from aiogram import Bot
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from loguru import logger
 
 from app.bot.keyboards.empty_states import poller_notify_keyboard
-from app.bot.ui import BRAND, ICON
 from app.core.config import Settings, get_settings
+from app.db.models import ReviewStatus
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.user import UserRepository
 from app.services.marketplace.auto_publish import try_auto_publish_review
 from app.services.marketplace.base import MarketplaceAPIError
 from app.services.marketplace.sync_service import sync_account_reviews
+from app.services.poller_notify import PollerUserNotify, build_poller_notify_text
 from app.db.session import get_session_factory
 
 _last_poller_ok_at: datetime | None = None
@@ -42,13 +43,22 @@ def get_poller_status_line() -> str:
     return f"sync {ts} (Минск) · ✅ OK"
 
 
+def get_poller_health() -> dict[str, object]:
+    payload: dict[str, object] = {
+        "last_ok_at": _last_poller_ok_at.isoformat() if _last_poller_ok_at else None,
+        "last_error": _last_poller_error,
+    }
+    if _last_poller_ok_at is not None:
+        payload["last_ok_minsk"] = format_ui_time(_last_poller_ok_at)
+    return payload
+
+
 async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = None) -> None:
     global _last_poller_ok_at, _last_poller_error
     """Один проход: активные кабинеты → новые отзывы в БД → уведомление селлеру."""
     settings = settings or get_settings()
     session_factory = get_session_factory()
-    user_new_counts: dict[int, int] = {}
-    user_new_negative: dict[int, int] = {}
+    user_stats: dict[int, PollerUserNotify] = defaultdict(PollerUserNotify)
     auth_failed_accounts: list[tuple[int, int]] = []
 
     async with session_factory() as session:
@@ -56,64 +66,71 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
 
         for account in accounts:
             try:
-                created, _, new_reviews = await sync_account_reviews(session, account)
+                _, _, new_reviews = await sync_account_reviews(session, account)
             except MarketplaceAPIError as exc:
                 logger.warning("Poller sync failed account_id={} err={}", account.id, exc)
                 if exc.status_code == 401:
                     auth_failed_accounts.append((account.user_id, account.id))
                 continue
 
+            stats = user_stats[account.user_id]
             for review in new_reviews:
-                await try_auto_publish_review(session, account=account, review=review, settings=settings)
-
-            if created > 0:
-                user_new_counts[account.user_id] = user_new_counts.get(account.user_id, 0) + created
-                for review in new_reviews:
+                outcome = await try_auto_publish_review(
+                    session, account=account, review=review, settings=settings
+                )
+                if outcome.status == "published":
+                    stats.auto_published += 1
+                    if outcome.reply_preview:
+                        stats.auto_previews.append(outcome.reply_preview)
+                elif outcome.status in ("llm_failed", "api_failed"):
+                    if account.auto_publish_enabled and (
+                        review.rating is None or review.rating >= 4
+                    ):
+                        stats.auto_failed += 1
+                await session.refresh(review)
+                if review.status == ReviewStatus.NEW:
+                    stats.queue_new += 1
                     if review.rating is not None and review.rating <= 3:
-                        user_new_negative[account.user_id] = user_new_negative.get(account.user_id, 0) + 1
+                        stats.queue_negative += 1
 
         await session.commit()
 
     _last_poller_ok_at = datetime.now(UTC)
     _last_poller_error = None
 
-    for user_id, count in user_new_counts.items():
+    if user_stats:
         async with session_factory() as session:
-            user = await UserRepository(session).get_by_id(user_id)
-        if user is None:
+            users = await UserRepository(session).map_by_ids(list(user_stats.keys()))
+    else:
+        users = {}
+
+    for user_id, stats in user_stats.items():
+        user = users.get(user_id)
+        if user is None or not user.notify_new_reviews:
             continue
-        if not user.notify_new_reviews:
+        notify_text = build_poller_notify_text(
+            stats=stats,
+            negative_only=user.notify_negative_only,
+        )
+        if notify_text is None:
             continue
-        if user.notify_negative_only:
-            count = user_new_negative.get(user_id, 0)
-            if count <= 0:
-                continue
-            notify_text = (
-                f"{ICON} <b>{BRAND}</b>\n"
-                f"⚠️ Негативных отзывов (1–3★): <b>{count}</b>\n"
-                "<i>Рекомендуем ответить в первую очередь.</i>"
-            )
-        else:
-            notify_text = (
-                f"{ICON} <b>{BRAND}</b>\n"
-                f"📬 Новых отзывов: <b>{count}</b>\n"
-                "<i>Откройте очередь и ответьте в выбранном тоне.</i>"
-            )
         try:
             await bot.send_message(user.tg_id, notify_text, reply_markup=poller_notify_keyboard())
         except Exception:
             logger.warning("Failed to notify user_id={} about new reviews", user_id)
 
     for user_id, account_id in auth_failed_accounts:
-        async with session_factory() as session:
-            user = await UserRepository(session).get_by_id(user_id)
+        user = users.get(user_id)
+        if user is None:
+            async with session_factory() as session:
+                user = await UserRepository(session).get_by_id(user_id)
         if user is None:
             continue
         try:
             await bot.send_message(
                 user.tg_id,
                 f"⚠️ Кабинет #{account_id}: API-ключ не принят. "
-                "Кабинет отключён — обновите ключ в «Настройках».",
+                "Кабинет отключён — обновите ключ в «Настройках» → кабинет → «Обновить ключ».",
             )
         except Exception:
             logger.warning("Failed to notify user_id={} about auth failure", user_id)

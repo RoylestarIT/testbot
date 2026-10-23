@@ -73,3 +73,30 @@ class AccountRepository:
         account.auto_publish_enabled = enabled
         await self._session.flush()
         return account
+
+    async def update_wb_api_key(self, account_id: int, encrypted_api_key: str) -> MarketplaceAccount | None:
+        account = await self.get_by_id(account_id)
+        if account is None or account.marketplace != Marketplace.WB:
+            return None
+        account.encrypted_api_key = encrypted_api_key
+        account.is_active = True
+        account.last_sync_error = None
+        await self._session.flush()
+        return account
+
+    async def update_ozon_credentials(
+        self,
+        account_id: int,
+        *,
+        encrypted_api_key: str,
+        encrypted_client_id: str,
+    ) -> MarketplaceAccount | None:
+        account = await self.get_by_id(account_id)
+        if account is None or account.marketplace != Marketplace.OZON:
+            return None
+        account.encrypted_api_key = encrypted_api_key
+        account.encrypted_client_id = encrypted_client_id
+        account.is_active = True
+        account.last_sync_error = None
+        await self._session.flush()
+        return account

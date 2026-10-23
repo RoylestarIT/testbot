@@ -13,6 +13,12 @@ class UserRepository:
     async def get_by_id(self, user_id: int) -> User | None:
         return await self._session.get(User, user_id)
 
+    async def map_by_ids(self, user_ids: list[int]) -> dict[int, User]:
+        if not user_ids:
+            return {}
+        result = await self._session.execute(select(User).where(User.id.in_(user_ids)))
+        return {user.id: user for user in result.scalars().all()}
+
     async def get_by_tg_id(self, tg_id: int) -> User | None:
         result = await self._session.execute(select(User).where(User.tg_id == tg_id))
         return result.scalar_one_or_none()

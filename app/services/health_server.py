@@ -19,7 +19,14 @@ async def _health_handler(_request: web.Request) -> web.Response:
         db_ok = False
         db_error = str(exc)[:200]
 
-    payload: dict[str, object] = {"status": "ok" if db_ok else "degraded", "service": "reviewpilot", "db": db_ok}
+    from app.tasks.poller import get_poller_health
+
+    payload: dict[str, object] = {
+        "status": "ok" if db_ok else "degraded",
+        "service": "reviewpilot",
+        "db": db_ok,
+        "poller": get_poller_health(),
+    }
     if db_error:
         payload["db_error"] = db_error
     status = 200 if db_ok else 503
