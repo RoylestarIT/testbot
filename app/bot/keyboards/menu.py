@@ -11,6 +11,7 @@ def more_menu_keyboard(*, show_admin: bool = False) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🆘 Поддержка", callback_data="menu:support"),
             InlineKeyboardButton(text="📖 Справка", callback_data="menu:help"),
         ],
+        [InlineKeyboardButton(text="📜 Документы", callback_data="menu:legal")],
         [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
     ]
     if show_admin:
