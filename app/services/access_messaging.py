@@ -9,6 +9,19 @@ from app.db.models import Subscription, SubscriptionPlan, SubscriptionStatus, Us
 from app.services.pro_access import is_trial_pro_active
 
 
+def trial_ended_screen_text(user: User) -> str:
+    reserve = user.free_api_publishes_remaining
+    return (
+        "⏱ <b>Trial PRO завершён</b>\n\n"
+        "Что изменилось:\n"
+        "· Publish в WB/Ozon из бота — только с тарифом <b>PRO</b>\n"
+        "· На <b>Free</b> — до 5 генераций/день, ответ <b>копированием</b> в кабинет\n"
+        "· <b>Lite</b> — ∞ генераций, тоже копия (без publish в API)\n\n"
+        f"Пробных publish на Free (если не тратили): <b>{reserve}</b>\n\n"
+        "<i>Негатив 1–3★ по-прежнему только вы · авто 4–5★ было на PRO.</i>"
+    )
+
+
 def trial_pro_activated_text(user: User, settings: Settings | None = None) -> str:
     settings = settings or get_settings()
     until = user.trial_pro_until.strftime("%d.%m.%Y") if user.trial_pro_until else "—"

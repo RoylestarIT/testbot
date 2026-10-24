@@ -22,6 +22,7 @@ from app.services.plans import (
 from app.services.subscription import get_effective_subscription
 from app.bot.product_news import build_product_news_banner, user_should_see_product_news
 from app.services.access_messaging import build_dashboard_publish_line
+from app.services.trial_banner import user_should_see_trial_ended_banner
 from app.services.onboarding_checklist import build_onboarding_checklist_block, build_onboarding_nudge
 from app.services.period_analytics import build_publish_activity_line
 from app.services.user_stats import avg_rating_new_reviews, build_dashboard_today_line
@@ -171,6 +172,10 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
         nudge_line = muted(nudge)
     else:
         nudge_line = None
+
+    if user_should_see_trial_ended_banner(user):
+        trial_hint = muted("⏱ Trial PRO завершён — нажмите «Что изменилось» на сводке.")
+        nudge_line = f"{trial_hint}\n\n{nudge_line}" if nudge_line else trial_hint
 
     if not await has_lite_or_higher(session, user.id):
         acc_n = await count_user_api_accounts(session, user.id)

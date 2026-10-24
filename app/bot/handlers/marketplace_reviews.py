@@ -229,9 +229,17 @@ async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: l
     if errors:
         lines.append("\nОшибки:\n" + "\n".join(f"• {e}" for e in errors[:5]))
     if callback.message:
+        extra = []
+        if errors:
+            extra.append(
+                [
+                    InlineKeyboardButton(text="🩺 Здоровье", callback_data="menu:service_status"),
+                    InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu:settings"),
+                ]
+            )
         await callback.message.edit_text(
             "\n".join(lines),
-            reply_markup=nav_home_queue(),
+            reply_markup=nav_home_queue(extra=extra or None),
         )
 
 

@@ -24,18 +24,23 @@ def wb_questions_keyboard(
             [
                 InlineKeyboardButton(
                     text=f"⏰ {preview}",
-                    callback_data=f"wb:q:snooze:{acc.id}:{qid}",
+                    callback_data=f"mp:q:snooze:{acc.id}:{qid}",
                 )
             ]
         )
     nav: list[InlineKeyboardButton] = []
     if page > 0:
-        nav.append(InlineKeyboardButton(text="◀️", callback_data=f"wb:questions:{page - 1}"))
+        nav.append(InlineKeyboardButton(text="◀️", callback_data=f"mp:questions:{page - 1}"))
     if has_more:
-        nav.append(InlineKeyboardButton(text="▶️", callback_data=f"wb:questions:{page + 1}"))
+        nav.append(InlineKeyboardButton(text="▶️", callback_data=f"mp:questions:{page + 1}"))
     if nav:
         rows.append(nav)
-    rows.append([InlineKeyboardButton(text="🌐 Кабинет WB", url="https://seller.wildberries.ru/")])
+    rows.append(
+        [
+            InlineKeyboardButton(text="🟣 WB", url="https://seller.wildberries.ru/"),
+            InlineKeyboardButton(text="🔵 Ozon", url="https://seller.ozon.ru/"),
+        ]
+    )
     rows.append(
         [
             InlineKeyboardButton(text="◀️ Ещё", callback_data="menu:more"),

@@ -96,6 +96,19 @@ class User(Base):
     product_news_seen_version: Mapped[str] = mapped_column(String(32), default="", nullable=False)
     calc_preset_volume: Mapped[int | None] = mapped_column(Integer, nullable=True)
     wb_question_snoozes: Mapped[dict[str, str] | None] = mapped_column(JSON, nullable=True)
+    start_source_counts: Mapped[dict[str, int] | None] = mapped_column(JSON, nullable=True)
+    onboarding_stuck_nudge_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    trial_ended_notice_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    trial_ended_ack_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     ui_timezone: Mapped[str] = mapped_column(String(64), default="Europe/Minsk", nullable=False)
     ui_language: Mapped[str] = mapped_column(String(8), default="ru", nullable=False)
     publish_actions_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -192,6 +205,7 @@ class MarketplaceAccount(Base):
     auto_publish_min_rating: Mapped[int] = mapped_column(Integer, default=4, nullable=False)
     auto_publish_stars_only: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     cached_unanswered_questions: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    cached_unanswered_ozon_questions: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     auto_publish_stop_words: Mapped[str | None] = mapped_column(String(512), nullable=True)
     last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_sync_error: Mapped[str | None] = mapped_column(String(512), nullable=True)

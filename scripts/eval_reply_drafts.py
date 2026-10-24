@@ -31,6 +31,21 @@ async def main() -> int:
     from app.services.llm import ToneProfileInput, generate_replies
 
     tone = ToneProfileInput(description="Вежливо, от имени бренда, лаконично")
+    def _check(sample: dict, variants: list[str]) -> list[str]:
+        expect = sample.get("expect") or {}
+        errs: list[str] = []
+        if not variants:
+            return ["no variants"]
+        for i, v in enumerate(variants):
+            if expect.get("min_len") and len(v) < int(expect["min_len"]):
+                errs.append(f"v{i+1} too short ({len(v)})")
+            if expect.get("max_len") and len(v) > int(expect["max_len"]):
+                errs.append(f"v{i+1} too long ({len(v)})")
+            for word in expect.get("forbidden") or []:
+                if word.lower() in v.lower():
+                    errs.append(f"v{i+1} forbidden {word!r}")
+        return errs
+
     ok = 0
     for s in samples:
         text = (s.get("text") or "").strip() or "Оценка без текста"
@@ -41,8 +56,11 @@ async def main() -> int:
                 tone,
                 product_context=s.get("product") or "Товар",
             )
-            n = len(variants) if variants else 0
-            print(f"OK {s['id']}: {n} variant(s), first len={len(variants[0]) if variants else 0}")
+            errs = _check(s, variants)
+            if errs:
+                print(f"WARN {s['id']}: {', '.join(errs)}")
+            else:
+                print(f"OK {s['id']}: {len(variants)} variant(s)")
             ok += 1
         except Exception as exc:
             print(f"FAIL {s['id']}: {exc}")

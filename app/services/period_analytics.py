@@ -146,7 +146,8 @@ async def build_period_analytics_block(session: AsyncSession, user_id: int) -> s
 
     pub7 = await count_reviews_by_status(session, user_id, ReviewStatus.PUBLISHED, days=7)
     copy7 = await count_reviews_by_status(session, user_id, ReviewStatus.PROCESSED, days=7)
-    median_h = await median_hours_to_first_reply(session, user_id, days=30)
+    median_h30 = await median_hours_to_first_reply(session, user_id, days=30)
+    median_h7 = await median_hours_to_first_reply(session, user_id, days=7)
 
     lines = ["<b>📈 Активность</b>"]
     lines.append(
@@ -155,8 +156,10 @@ async def build_period_analytics_block(session: AsyncSession, user_id: int) -> s
     if pub7 or copy7:
         lines.append(f"· Publish в API: <b>{pub7}</b> · копия/ручная отправка: <b>{copy7}</b>")
     lines.append(f"· 30 дней: генерации по <b>{w30_gen}</b> отзывам")
-    if median_h is not None:
-        lines.append(f"· Медиана до 1-го ответа (30 дн.): <b>{median_h:g}</b> ч")
+    if median_h7 is not None:
+        lines.append(f"· ⏱ До 1-го ответа (7 дн.): <b>{median_h7:g}</b> ч (медиана)")
+    if median_h30 is not None:
+        lines.append(f"· ⏱ До 1-го ответа (30 дн.): <b>{median_h30:g}</b> ч (медиана)")
     if queue:
         pct = round(100 * low / queue) if queue else 0
         avg_s = f" · средняя ⭐ <b>{avg}</b>" if avg is not None else ""

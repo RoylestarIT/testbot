@@ -18,8 +18,9 @@ from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.services.dashboard import build_user_dashboard
 from app.services.dashboard_details import build_dashboard_details
-from app.services.access_messaging import trial_pro_activated_text
+from app.services.access_messaging import trial_ended_screen_text, trial_pro_activated_text
 from app.services.pro_access import activate_trial_pro, has_paid_pro
+from app.services.trial_banner import user_should_see_trial_ended_banner
 
 router = Router(name="dashboard")
 
@@ -37,6 +38,7 @@ async def _dashboard_ui(session, db_user: DbUser, tg_id: int) -> tuple[str, obje
     settings = get_settings()
     kb = dashboard_keyboard(
         show_trial=not user.trial_pro_used and not paid_pro,
+        show_trial_ended=user_should_see_trial_ended_banner(user),
         show_onboarding=user.onboarding_completed_at is None,
         show_admin=_show_admin(tg_id),
         show_product_news=user_should_see_product_news(user, settings),
@@ -155,6 +157,38 @@ async def menu_dashboard_details(callback: CallbackQuery, db_user: DbUser) -> No
     )
     if callback.message:
         await safe_edit_message(callback.message, text, reply_markup=kb)
+
+
+@router.callback_query(F.data == "menu:trial_ended:ack")
+async def trial_ended_ack(callback: CallbackQuery, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        await UserRepository(session).ack_trial_ended(db_user.id)
+        await session.commit()
+    await callback.answer("Сохранили")
+    if callback.message:
+        await _edit_dashboard(callback.message, db_user)
+
+
+@router.callback_query(F.data == "menu:trial_ended")
+async def menu_trial_ended(callback: CallbackQuery, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+    if user is None:
+        await callback.answer("Ошибка")
+        return
+    await callback.answer()
+    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✓ Понятно", callback_data="menu:trial_ended:ack")],
+            [InlineKeyboardButton(text="💎 Подписка", callback_data="menu:subscription")],
+        ]
+    )
+    if callback.message:
+        await safe_edit_message(callback.message, trial_ended_screen_text(user), reply_markup=kb)
 
 
 @router.callback_query(F.data == "menu:trial_pro")

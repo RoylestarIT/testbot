@@ -25,6 +25,8 @@ from app.tasks.stale_review_reminder import stale_review_reminder_loop
 from app.tasks.poller import marketplace_poller_loop
 from app.tasks.subscription_reminder import subscription_reminder_loop
 from app.tasks.poller_health_alert import poller_health_alert_loop
+from app.tasks.onboarding_stuck_nudge import onboarding_stuck_nudge_loop
+from app.tasks.trial_ended_notice import trial_ended_notice_loop
 
 _poller_task: asyncio.Task[None] | None = None
 _reminder_task: asyncio.Task[None] | None = None
@@ -32,11 +34,13 @@ _digest_task: asyncio.Task[None] | None = None
 _stale_reminder_task: asyncio.Task[None] | None = None
 _crypto_poller_task: asyncio.Task[None] | None = None
 _poller_health_task: asyncio.Task[None] | None = None
+_onboarding_nudge_task: asyncio.Task[None] | None = None
+_trial_ended_task: asyncio.Task[None] | None = None
 _health_runner: web.AppRunner | None = None
 
 
 async def on_startup(bot: Bot) -> None:
-    global _poller_task, _reminder_task, _digest_task, _stale_reminder_task, _crypto_poller_task, _poller_health_task, _health_runner
+    global _poller_task, _reminder_task, _digest_task, _stale_reminder_task, _crypto_poller_task, _poller_health_task, _health_runner, _onboarding_nudge_task, _trial_ended_task
     settings = get_settings()
     await init_db()
     logger.info("Database initialized")
@@ -59,12 +63,14 @@ async def on_startup(bot: Bot) -> None:
     _stale_reminder_task = asyncio.create_task(stale_review_reminder_loop(bot))
     _crypto_poller_task = asyncio.create_task(crypto_pay_poller_loop(bot))
     _poller_health_task = asyncio.create_task(poller_health_alert_loop(bot))
+    _onboarding_nudge_task = asyncio.create_task(onboarding_stuck_nudge_loop(bot))
+    _trial_ended_task = asyncio.create_task(trial_ended_notice_loop(bot))
     if settings.health_port > 0:
         _health_runner = await start_health_server(settings.webhook_host, settings.health_port, bot=bot)
 
 
 async def on_shutdown(*_args: object, **_kwargs: object) -> None:
-    global _poller_task, _reminder_task, _digest_task, _stale_reminder_task, _crypto_poller_task, _poller_health_task, _health_runner
+    global _poller_task, _reminder_task, _digest_task, _stale_reminder_task, _crypto_poller_task, _poller_health_task, _health_runner, _onboarding_nudge_task, _trial_ended_task
     await stop_llm_workers()
     for task in (
         _poller_task,
@@ -73,6 +79,8 @@ async def on_shutdown(*_args: object, **_kwargs: object) -> None:
         _stale_reminder_task,
         _crypto_poller_task,
         _poller_health_task,
+        _onboarding_nudge_task,
+        _trial_ended_task,
     ):
         if task is not None:
             task.cancel()
@@ -86,6 +94,8 @@ async def on_shutdown(*_args: object, **_kwargs: object) -> None:
     _stale_reminder_task = None
     _crypto_poller_task = None
     _poller_health_task = None
+    _onboarding_nudge_task = None
+    _trial_ended_task = None
     if _health_runner is not None:
         await _health_runner.cleanup()
         _health_runner = None
@@ -164,6 +174,10 @@ async def main() -> None:
             await on_shutdown()
     else:
         logger.info("Starting ReviewPilot bot (polling)")
+        if not settings.fsm_redis_url.strip():
+            logger.warning(
+                "Polling without FSM_REDIS_URL — для prod задайте Redis и WEBHOOK_URL (см. README)"
+            )
         await bot.delete_webhook(drop_pending_updates=False)
         logger.info("Webhook cleared (polling mode)")
         await dp.start_polling(bot, handle_as_tasks=True)

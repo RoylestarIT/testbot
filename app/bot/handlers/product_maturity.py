@@ -13,6 +13,7 @@ from app.db.repositories.account import AccountRepository
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.services.marketplace.base import MarketplaceAPIError
+from app.services.marketplace.ozon import OzonClient
 from app.services.marketplace.wildberries import WildberriesClient
 from app.services.monthly_report import build_monthly_report_text
 from app.services.service_status import build_service_status_text
@@ -41,7 +42,7 @@ def _back_more() -> InlineKeyboardMarkup:
     )
 
 
-@router.callback_query(F.data == "menu:service_status")
+@router.callback_query(F.data.in_({"menu:service_status", "menu:account_health"}))
 async def menu_service_status(callback: CallbackQuery, db_user: DbUser) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
@@ -66,8 +67,8 @@ async def _render_wb_questions(callback: CallbackQuery, db_user: DbUser, page: i
     session_factory = get_session_factory()
     page = max(0, page)
     lines = [
-        "❓ <b>Вопросы покупателей (WB)</b>",
-        muted("Очередь как у отзывов: ⏰ — отложить на 24 ч. Ответ — в кабинете WB."),
+        "❓ <b>Вопросы покупателей</b> (WB / Ozon)",
+        muted("⏰ — отложить на 24 ч. Ответ — в кабинете маркетплейса."),
         "",
     ]
     flat: list[tuple] = []
@@ -78,33 +79,52 @@ async def _render_wb_questions(callback: CallbackQuery, db_user: DbUser, page: i
             return
         accounts = await AccountRepository(session).list_by_user_id(db_user.id, active_only=True)
         wb_accounts = [a for a in accounts if a.marketplace == Marketplace.WB]
-        if not wb_accounts:
-            lines.append("Подключите 🟣 WB в ⚙️ Настройки.")
+        oz_accounts = [a for a in accounts if a.marketplace == Marketplace.OZON]
+        if not wb_accounts and not oz_accounts:
+            lines.append("Подключите 🟣 WB или 🔵 Ozon в ⚙️ Настройки.")
             await answer_and_edit(callback, "\n".join(lines), reply_markup=_back_more())
             return
 
-        client = WildberriesClient()
+        wb_client = WildberriesClient()
+        oz_client = OzonClient()
         try:
             for acc in wb_accounts[:5]:
                 name = acc.shop_name or f"#{acc.id}"
                 try:
-                    raw = await client.list_unanswered_questions(acc, limit=20)
+                    raw = await wb_client.list_unanswered_questions(acc, limit=20)
                     visible = filter_visible_questions(user, acc, raw)
                 except MarketplaceAPIError as exc:
                     err = user_error_from_exception(exc)
                     lines.append(f"🟣 <b>{name}</b> — {err.html[:200]}")
                     continue
-                except Exception as exc:
-                    err = user_error_from_exception(exc)
+                except Exception:
                     lines.append(f"🟣 <b>{name}</b> — ⚠️")
                     continue
                 total = acc.cached_unanswered_questions
                 lines.append(f"🟣 <b>{name}</b> — без ответа: <b>{total}</b> (в очереди: {len(visible)})")
                 for item in visible:
                     flat.append((acc, item))
+            for acc in oz_accounts[:5]:
+                name = acc.shop_name or f"#{acc.id}"
+                try:
+                    raw = await oz_client.list_unanswered_questions(acc, limit=20)
+                    visible = filter_visible_questions(user, acc, raw)
+                    acc.cached_unanswered_ozon_questions = len(raw)
+                except MarketplaceAPIError as exc:
+                    err = user_error_from_exception(exc)
+                    lines.append(f"🔵 <b>{name}</b> — {err.html[:120]}")
+                    continue
+                except Exception:
+                    lines.append(f"🔵 <b>{name}</b> — ⚠️ API вопросов")
+                    continue
+                total = acc.cached_unanswered_ozon_questions
+                lines.append(f"🔵 <b>{name}</b> — без ответа: <b>{total}</b> (в очереди: {len(visible)})")
+                for item in visible:
+                    flat.append((acc, item))
             await session.commit()
         finally:
-            await client.aclose()
+            await wb_client.aclose()
+            await oz_client.aclose()
 
     start = page * WB_QUESTIONS_PAGE_SIZE
     chunk = flat[start : start + WB_QUESTIONS_PAGE_SIZE]
@@ -127,13 +147,13 @@ async def menu_wb_questions(callback: CallbackQuery, db_user: DbUser) -> None:
     await _render_wb_questions(callback, db_user, page=0)
 
 
-@router.callback_query(F.data.regexp(r"^wb:questions:\d+$"))
+@router.callback_query(F.data.regexp(r"^(wb:questions|mp:questions):\d+$"))
 async def wb_questions_page(callback: CallbackQuery, db_user: DbUser) -> None:
     page = int(callback.data.split(":")[-1])
     await _render_wb_questions(callback, db_user, page=page)
 
 
-@router.callback_query(F.data.regexp(r"^wb:q:snooze:\d+:.+$"))
+@router.callback_query(F.data.regexp(r"^(wb:q:snooze|mp:q:snooze):\d+:.+$"))
 async def wb_question_snooze(callback: CallbackQuery, db_user: DbUser) -> None:
     parts = callback.data.split(":", 4)
     if len(parts) < 5:

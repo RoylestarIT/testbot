@@ -130,6 +130,14 @@ class UserRepository:
         await self._session.flush()
         return user
 
+    async def ack_trial_ended(self, user_id: int) -> User | None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            return None
+        user.trial_ended_ack_at = datetime.now(UTC)
+        await self._session.flush()
+        return user
+
     async def get_or_create(
         self,
         *,

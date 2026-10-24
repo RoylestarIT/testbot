@@ -2,6 +2,8 @@ from aiogram import F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
+from app.services.start_sources import increment_start_source, normalize_start_payload
+
 from app.bot.copy import HELP_TEXT, TERMS_TEXT
 from app.bot.keyboards.terms import terms_acceptance_keyboard
 from app.bot.ui import BRAND, ICON
@@ -39,8 +41,26 @@ async def _home_keyboard(db_user_id: int, tg_id: int) -> InlineKeyboardMarkup:
     )
 
 
+def _start_payload(message: Message) -> str:
+    text = (message.text or "").strip()
+    parts = text.split(maxsplit=1)
+    return normalize_start_payload(parts[1] if len(parts) > 1 else None)
+
+
+async def _record_start_source(db_user_id: int, source: str) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user_id)
+        if user is None:
+            return
+        increment_start_source(user, source)
+        await session.commit()
+
+
 @router.message(CommandStart())
 async def cmd_start(message: Message, db_user: DbUser) -> None:
+    source = _start_payload(message)
+    await _record_start_source(db_user.id, source)
     if _needs_terms(db_user):
         await message.answer(TERMS_TEXT, reply_markup=terms_acceptance_keyboard())
         return

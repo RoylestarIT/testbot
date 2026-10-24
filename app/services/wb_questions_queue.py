@@ -82,11 +82,36 @@ def filter_visible_questions(
 
 
 def question_id_from_item(item: dict[str, Any]) -> str:
-    return str(item.get("id") or "")
+    for key in ("id", "question_id", "questionId"):
+        val = item.get(key)
+        if val is not None and str(val).strip():
+            return str(val)
+    return ""
+
+
+def question_product_label(item: dict[str, Any]) -> str:
+    for key in ("productName", "product_name", "productTitle", "name"):
+        val = item.get(key)
+        if isinstance(val, str) and val.strip():
+            return val.strip()[:60]
+    product = item.get("product")
+    if isinstance(product, dict):
+        for key in ("name", "title"):
+            val = product.get(key)
+            if isinstance(val, str) and val.strip():
+                return val.strip()[:60]
+    nm = item.get("nmId") or item.get("sku") or item.get("product_id")
+    if nm is not None:
+        return f"арт. {nm}"
+    return ""
 
 
 def format_question_preview(item: dict[str, Any], *, max_len: int = 100) -> str:
+    product = question_product_label(item)
     text = (item.get("text") or "").strip().replace("\n", " ")
     if len(text) > max_len:
-        return text[: max_len - 1] + "…"
-    return text or "—"
+        text = text[: max_len - 1] + "…"
+    body = text or "—"
+    if product:
+        return f"«{product}» — {body}"
+    return body
