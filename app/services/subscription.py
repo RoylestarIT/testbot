@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import (
@@ -90,14 +91,25 @@ async def activate_from_telegram_invoice(
     telegram_payment_charge_id: str,
     payment_method: PaymentMethod,
 ) -> Subscription:
+    """Idempotent per charge id: a redelivered successful_payment returns the existing row."""
     repo = SubscriptionRepository(session)
-    subscription = await repo.create(
-        user_id=user_id,
-        plan=plan,
-        status=SubscriptionStatus.PENDING,
-        payment_method=payment_method,
-        external_payment_id=telegram_payment_charge_id,
-    )
+    existing = await repo.get_by_telegram_charge_id(telegram_payment_charge_id)
+    if existing is not None:
+        return existing
+    try:
+        async with session.begin_nested():
+            subscription = await repo.create(
+                user_id=user_id,
+                plan=plan,
+                status=SubscriptionStatus.PENDING,
+                payment_method=payment_method,
+                external_payment_id=telegram_payment_charge_id,
+            )
+    except IntegrityError:
+        existing = await repo.get_by_telegram_charge_id(telegram_payment_charge_id)
+        if existing is None:
+            raise
+        return existing
     return await activate_subscription(
         session,
         subscription,
