@@ -11,7 +11,7 @@ def calculator_volumes_keyboard() -> InlineKeyboardMarkup:
         chunk.append(
             InlineKeyboardButton(text=f"{vol} отв.", callback_data=f"sub:calc:{vol}")
         )
-        if len(chunk) == 3:
+        if len(chunk) == 2:
             rows.append(chunk)
             chunk = []
     if chunk:

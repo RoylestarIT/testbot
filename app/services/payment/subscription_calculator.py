@@ -43,6 +43,20 @@ def _best_plan_hint(
     return ""
 
 
+def _volume_overview_line(vol: int, *, lite_rub: int, pro_rub: int) -> str:
+    low = _pay_per_answer_total(vol, PER_ANSWER_RUB_LOW)
+    high = _pay_per_answer_total(vol, PER_ANSWER_RUB_HIGH)
+    mid = _pay_per_answer_total(vol, PER_ANSWER_RUB_MID)
+    hint = ""
+    if mid > lite_rub:
+        hint = " → ✨ Lite"
+    elif mid > pro_rub:
+        hint = " → 🚀 PRO"
+    return bullet(
+        f"<b>{vol}</b> отв./мес · рынок {_fmt_rub(low)}–{_fmt_rub(high)}{hint}"
+    )
+
+
 def build_calculator_table(pricing: SubscriptionPricing) -> str:
     lite_rub = pricing.rub_for(pricing.lite_usd)
     pro_rub = pricing.rub_for(pricing.pro_usd)
@@ -51,25 +65,30 @@ def build_calculator_table(pricing: SubscriptionPricing) -> str:
     lines = [
         brand_title("Калькулятор", tagline="Подписка vs ₽ за ответ", icon="🧮").strip(),
         SUBSCRIPTION_SEP,
+        "",
+        section("Фикс в месяц", icon="💎"),
+        "",
+        bullet(f"Lite — <b>{_fmt_rub(lite_rub)}</b>"),
+        bullet(f"PRO — <b>{_fmt_rub(pro_rub)}</b>"),
+        "",
+        section("Pay-per-answer на рынке", icon="💸"),
+        "",
         muted(
-            f"Рынок ~{PER_ANSWER_RUB_LOW:g}–{PER_ANSWER_RUB_HIGH:g} ₽/ответ · "
-            f"Lite {_fmt_rub(lite_rub)} · PRO {_fmt_rub(pro_rub)} / мес"
+            f"Ориентир: ~{PER_ANSWER_RUB_LOW:g}–{PER_ANSWER_RUB_HIGH:g} ₽ за один ответ "
+            f"(умножаем на объём)."
         ),
         "",
-        "<pre>",
-        " ответов │  ~1₽/шт │  ~2₽/шт │  ~3₽/шт │  Lite  │  PRO",
-        "─────────┼─────────┼─────────┼─────────┼────────┼──────",
+        section("Сравнение по объёму", icon="📊"),
+        "",
     ]
     for vol in PRESET_VOLUMES:
-        p1 = _pay_per_answer_total(vol, PER_ANSWER_RUB_LOW)
-        p2 = _pay_per_answer_total(vol, PER_ANSWER_RUB_MID)
-        p3 = _pay_per_answer_total(vol, PER_ANSWER_RUB_HIGH)
-        lines.append(
-            f" {vol:>7} │ {p1:>6} ₽ │ {p2:>6} ₽ │ {p3:>6} ₽ │ {lite_rub:>5} │ {pro_rub:>4}"
-        )
-    lines.append("</pre>")
-    lines.append("")
-    lines.append(muted("👇 Выберите объём ответов в месяц."))
+        lines.append(_volume_overview_line(vol, lite_rub=lite_rub, pro_rub=pro_rub))
+    lines.extend(
+        [
+            "",
+            muted("👇 Нажмите объём — детальный расчёт и кнопка оплаты."),
+        ]
+    )
     return "\n".join(lines)
 
 

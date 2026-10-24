@@ -15,8 +15,10 @@ def test_calculator_table_contains_lite_pro_rub() -> None:
     )
     text = build_calculator_table(pricing)
     assert "900" in text
-    assert "1800" in text
+    assert "1 800" in text or "1800" in text
     assert "Калькулятор" in text
+    assert "<pre>" not in text
+    assert "500</b> отв." in text
 
 
 def test_calculator_detail_high_volume_favors_subscription() -> None:
