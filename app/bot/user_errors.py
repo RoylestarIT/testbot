@@ -31,7 +31,7 @@ def user_error_from_exception(exc: BaseException) -> UserFacingError:
             "Ключ сохранён в другом окружении или повреждён. "
             "Подключите кабинет заново в ⚙️ Настройки.",
             reply_markup=_kb(
-                [("⚙️ Настройки", "menu:settings")],
+                [("⚙️ Настройки", "menu:settings"), ("🩺 Здоровье", "menu:service_status")],
                 [("🆘 Поддержка", "menu:support")],
             ),
         )
