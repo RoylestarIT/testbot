@@ -1,24 +1,20 @@
 from __future__ import annotations
 
 import asyncio
-
 from collections import defaultdict
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
-# Время в футере сводки — для селлеров РФ/РБ (совпадает с DIGEST ~9:00 Мinsk)
-UI_TIMEZONE = ZoneInfo("Europe/Minsk")
-
 from aiogram import Bot
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.keyboards.empty_states import poller_notify_keyboard
 from app.core.config import Settings, get_settings
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.db.models import Marketplace, MarketplaceAccount, ReviewStatus
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.user import UserRepository
+from app.db.session import get_session_factory
 from app.services.marketplace.auto_publish import try_auto_publish_review
 from app.services.marketplace.base import MarketplaceAPIError
 from app.services.marketplace.questions_poll import (
@@ -29,7 +25,9 @@ from app.services.marketplace.questions_poll import (
 from app.services.marketplace.sync_service import sync_account_reviews
 from app.services.marketplace.wildberries import WildberriesClient
 from app.services.poller_notify import PollerUserNotify, build_poller_notify_text
-from app.db.session import get_session_factory
+
+# Время в футере сводки — для селлеров РФ/РБ (совпадает с DIGEST ~9:00 Минск)
+UI_TIMEZONE = ZoneInfo("Europe/Minsk")
 
 _last_poller_ok_at: datetime | None = None
 _last_poller_error: str | None = None
@@ -225,6 +223,7 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
 
 
 async def marketplace_poller_loop(bot: Bot, settings: Settings | None = None) -> None:
+    global _last_poller_error
     settings = settings or get_settings()
     interval_sec = max(1, settings.poll_interval_minutes) * 60
     logger.info("Marketplace poller started interval_min={}", settings.poll_interval_minutes)
@@ -234,7 +233,6 @@ async def marketplace_poller_loop(bot: Bot, settings: Settings | None = None) ->
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            global _last_poller_error
             _last_poller_error = str(exc)[:200]
             logger.exception("Marketplace poller iteration failed")
         await asyncio.sleep(interval_sec)
