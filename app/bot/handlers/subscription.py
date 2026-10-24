@@ -27,7 +27,9 @@ from app.services.pro_access import has_paid_pro
 from app.core.config import get_settings
 from app.bot.keyboards.subscription_calc import calculator_detail_keyboard, calculator_volumes_keyboard
 from app.services.payment.subscription_calculator import (
+    StarsPair,
     build_calculator_detail,
+    build_calculator_hub,
     build_calculator_table,
 )
 from app.bot.utils.callbacks import answer_and_edit, safe_edit_message
@@ -165,9 +167,19 @@ async def subscription_compare(callback: CallbackQuery) -> None:
     )
 
 
+def _calculator_stars_pair(settings) -> StarsPair | None:
+    if not stars_payments_enabled(settings):
+        return None
+    return (
+        effective_stars_amount(settings, SubscriptionPlan.LITE),
+        effective_stars_amount(settings, SubscriptionPlan.PRO),
+    )
+
+
 @router.callback_query(F.data == "sub:calc")
-async def subscription_calculator_table(callback: CallbackQuery, db_user: DbUser) -> None:
+async def subscription_calculator_hub(callback: CallbackQuery, db_user: DbUser) -> None:
     pricing = await get_subscription_pricing()
+    settings = get_settings()
     session_factory = get_session_factory()
     last_volume: int | None = None
     async with session_factory() as session:
@@ -176,7 +188,32 @@ async def subscription_calculator_table(callback: CallbackQuery, db_user: DbUser
             last_volume = user.calc_preset_volume
     await answer_and_edit(
         callback,
-        build_calculator_table(pricing),
+        build_calculator_hub(
+            pricing,
+            user_volume=last_volume,
+            stars=_calculator_stars_pair(settings),
+        ),
+        reply_markup=calculator_volumes_keyboard(last_volume=last_volume),
+    )
+
+
+@router.callback_query(F.data == "sub:calc:table")
+async def subscription_calculator_table(callback: CallbackQuery, db_user: DbUser) -> None:
+    pricing = await get_subscription_pricing()
+    settings = get_settings()
+    session_factory = get_session_factory()
+    last_volume: int | None = None
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is not None:
+            last_volume = user.calc_preset_volume
+    await answer_and_edit(
+        callback,
+        build_calculator_table(
+            pricing,
+            user_volume=last_volume,
+            stars=_calculator_stars_pair(settings),
+        ),
         reply_markup=calculator_volumes_keyboard(last_volume=last_volume),
     )
 
@@ -185,13 +222,18 @@ async def subscription_calculator_table(callback: CallbackQuery, db_user: DbUser
 async def subscription_calculator_volume(callback: CallbackQuery, db_user: DbUser) -> None:
     volume = int(callback.data.split(":")[-1])
     pricing = await get_subscription_pricing()
+    settings = get_settings()
     session_factory = get_session_factory()
     async with session_factory() as session:
         await UserRepository(session).set_calc_preset_volume(db_user.id, volume)
         await session.commit()
     await answer_and_edit(
         callback,
-        build_calculator_detail(pricing, volume),
+        build_calculator_detail(
+            pricing,
+            volume,
+            stars=_calculator_stars_pair(settings),
+        ),
         reply_markup=calculator_detail_keyboard(volume=volume, pricing=pricing),
     )
 
