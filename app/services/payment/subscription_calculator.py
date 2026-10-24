@@ -27,20 +27,74 @@ def _pay_per_answer_total(volume: int, rub_per_answer: float) -> int:
     return int(round(volume * rub_per_answer))
 
 
-def _best_plan_hint(
-    volume: int,
-    *,
-    lite_rub: int,
-    pro_rub: int,
-) -> str:
-    mid_market = _pay_per_answer_total(volume, PER_ANSWER_RUB_MID)
+def _market_mid_total(volume: int) -> int:
+    return _pay_per_answer_total(volume, PER_ANSWER_RUB_MID)
+
+
+def _motivation_lines(volume: int, *, lite_rub: int, pro_rub: int) -> list[str]:
+    """Мягкие аргументы при выгодной подписке — без агрессивных сравнений."""
+    mid = _market_mid_total(volume)
+    lines: list[str] = []
+
+    if mid <= lite_rub:
+        lines.extend(
+            [
+                section("Если объём небольшой", icon="💡"),
+                "",
+                bullet(
+                    "Оплата «за ответ» на рынке иногда выходит дешевле — "
+                    "мы не скрываем цифры."
+                ),
+                bullet(
+                    "Фикс всё равно удобен, когда ответов станет больше: "
+                    "бюджет известен заранее, без сюрпризов в конце месяца."
+                ),
+                bullet(muted("📱 Весь цикл в Telegram — sync, 3 варианта, вы решаете финальный текст.")),
+            ]
+        )
+        return lines
+
+    save_lite = mid - lite_rub
+    save_pro = mid - pro_rub
+    lines.extend(
+        [
+            section("Почему здесь смотреть на подписку", icon="💡"),
+            "",
+            bullet(
+                f"При ~{volume} отв./мес и ~{PER_ANSWER_RUB_MID:g} ₽/ответ на рынке "
+                f"выходит ~<b>{_fmt_rub(mid)}</b> — ✨ Lite <b>{_fmt_rub(lite_rub)}</b> "
+                f"(ориентир экономии ~<b>{_fmt_rub(save_lite)}</b>)."
+            ),
+        ]
+    )
+    if save_pro > 0 and volume >= 300:
+        lines.append(
+            bullet(
+                f"🚀 PRO <b>{_fmt_rub(pro_rub)}</b> — если нужен publish в WB/Ozon и авто 4–5★; "
+                f"на этом объёме тоже ниже типичного «за ответ» (~{_fmt_rub(save_pro)})."
+            )
+        )
+    lines.extend(
+        [
+            "",
+            muted("Плюс к цене — без отдельного кабинета:"),
+            bullet("⏱ Ответы из Telegram, не «весь день в маркетплейсе»"),
+            bullet("✋ Негатив 1–3★ не уходит в автомат — только вы"),
+            bullet("🎨 Три варианта текста и правка перед отправкой"),
+        ]
+    )
+    if volume >= 500:
+        lines.append(bullet("📈 На растущем объёме фикс не «раздувается» с каждым новым отзывом"))
+    return lines
+
+
+def _best_plan_hint(volume: int, *, lite_rub: int, pro_rub: int) -> str:
+    mid_market = _market_mid_total(volume)
     if mid_market <= lite_rub:
-        return "На этом объёме pay-per-answer часто дешевле — мы честно показываем цифры."
-    if lite_rub < mid_market:
-        if pro_rub < _pay_per_answer_total(volume, PER_ANSWER_RUB_HIGH):
-            return f"✨ <b>Lite</b> выгоднее рынка ~{PER_ANSWER_RUB_MID:g} ₽/ответ; 🚀 <b>PRO</b> — при объёме и publish."
-        return f"✨ <b>Lite</b> выгоднее pay-per-answer при ~{volume} ответах/мес."
-    return ""
+        return muted("Честно: на этом объёме pay-per-answer может быть ниже — см. блок выше.")
+    if pro_rub < mid_market and volume >= 400:
+        return muted(f"Подсказка: при {volume} отв./мес чаще смотрят на 🚀 PRO (publish + авто).")
+    return muted(f"Подсказка: ✨ Lite уже выгоднее ~{PER_ANSWER_RUB_MID:g} ₽/ответ на этом объёме.")
 
 
 def _volume_overview_line(vol: int, *, lite_rub: int, pro_rub: int) -> str:
@@ -49,7 +103,8 @@ def _volume_overview_line(vol: int, *, lite_rub: int, pro_rub: int) -> str:
     mid = _pay_per_answer_total(vol, PER_ANSWER_RUB_MID)
     hint = ""
     if mid > lite_rub:
-        hint = " → ✨ Lite"
+        save = mid - lite_rub
+        hint = f" → ✨ Lite (~−{_fmt_rub(save)} vs 2₽/отв.)"
     elif mid > pro_rub:
         hint = " → 🚀 PRO"
     return bullet(
@@ -100,6 +155,7 @@ def build_calculator_detail(pricing: SubscriptionPricing, volume: int) -> str:
     mid = _pay_per_answer_total(volume, PER_ANSWER_RUB_MID)
     high = _pay_per_answer_total(volume, PER_ANSWER_RUB_HIGH)
     hint = _best_plan_hint(volume, lite_rub=lite_rub, pro_rub=pro_rub)
+    motivation = _motivation_lines(volume, lite_rub=lite_rub, pro_rub=pro_rub)
 
     lines = [
         brand_title(f"{volume} ответов / мес", tagline="Примерный расчёт", icon="🧮"),
@@ -112,7 +168,9 @@ def build_calculator_detail(pricing: SubscriptionPricing, volume: int) -> str:
         "",
         bullet(f"Lite (фикс) → <b>{_fmt_rub(lite_rub)}</b> / мес"),
         bullet(f"PRO (фикс) → <b>{_fmt_rub(pro_rub)}</b> / мес"),
+        "",
     ]
+    lines.extend(motivation)
     if hint:
         lines.extend(["", hint])
     lines.extend(

@@ -32,3 +32,18 @@ def test_calculator_detail_high_volume_favors_subscription() -> None:
     text = build_calculator_detail(pricing, 1000)
     assert "1000" in text
     assert "Lite" in text or "PRO" in text
+    assert "Почему здесь смотреть на подписку" in text
+    assert "Telegram" in text
+
+
+def test_calculator_detail_low_volume_honest() -> None:
+    pricing = SubscriptionPricing(
+        lite_rub=800,
+        pro_rub=1600,
+        lite_byn=30.0,
+        pro_byn=60.0,
+        source="test",
+    )
+    text = build_calculator_detail(pricing, 100)
+    assert "Если объём небольшой" in text
+    assert "не скрываем" in text
