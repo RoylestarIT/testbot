@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "build:gh-pages": "GITHUB_PAGES=1 NEXT_PUBLIC_SITE_URL=https://roylestarit.github.io/testbot npm run build",
-    "deploy:gh-pages": "npm run build:gh-pages && gh-pages -d out -t true -m \"Deploy landing\""
+    "deploy:gh-pages": "npm run build:gh-pages && touch out/.nojekyll && gh-pages -d out --nojekyll -m \"Deploy landing [skip ci]\""
   },
   "dependencies": {
     "next": "^16.4.3",

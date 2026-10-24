@@ -35,5 +35,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          npx gh-pages -d out -t true -m "Deploy landing [skip ci]" \
+          touch out/.nojekyll
+          npx gh-pages -d out --nojekyll -m "Deploy landing [skip ci]" \
             -r "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
