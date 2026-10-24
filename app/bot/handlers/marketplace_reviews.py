@@ -14,6 +14,7 @@ from app.bot.copy import (
     COPY_HINT,
     MP_LIST_EMPTY,
     MP_LIST_HEADER,
+    MP_NO_CABINETS,
     NEGATIVE_PUBLISH_WARN,
     PRO_PUBLISH_REQUIRED,
     PUBLISH_SUCCESS,
@@ -268,7 +269,7 @@ async def list_mp_reviews(callback: CallbackQuery, state: FSMContext, db_user: D
             if callback.message:
                 await safe_edit_message(
                     callback.message,
-                    MP_LIST_EMPTY,
+                    MP_NO_CABINETS,
                     reply_markup=no_cabinets_keyboard(),
                 )
             return

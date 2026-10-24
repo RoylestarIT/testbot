@@ -167,7 +167,7 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
                 + "\n"
                 + muted(
                     f"🔒 Free: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} каб., "
-                    f"{tone_n}/{FREE_MAX_TONE_PROFILES} tone"
+                    f"{tone_n}/{FREE_MAX_TONE_PROFILES} тон"
                 )
             )
         else:

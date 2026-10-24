@@ -4,7 +4,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from app.bot.copy import SETTINGS_INTRO as SETTINGS_TEXT
+from app.bot.copy import NOTIFICATIONS_INTRO, SETTINGS_INTRO as SETTINGS_TEXT
 from app.bot.utils.callbacks import safe_edit_message
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.autopublish import autopublish_detail_keyboard
@@ -55,6 +55,10 @@ from app.services.plans import (
 )
 
 router = Router(name="settings")
+
+
+def _notifications_screen_text() -> str:
+    return NOTIFICATIONS_INTRO
 
 
 @router.callback_query(F.data == "menu:settings")
@@ -651,7 +655,7 @@ async def settings_tone_list(callback: CallbackQuery, db_user: DbUser) -> None:
         tone_count = await count_user_tone_profiles(session, db_user.id)
     await callback.answer()
     if lite_plus:
-        limit_line = "Можно создать несколько профилей tone."
+        limit_line = "Можно создать несколько профилей тона ответа."
     else:
         limit_line = (
             f"Бесплатно: <b>{tone_count}/{FREE_MAX_TONE_PROFILES}</b> профиль. "
@@ -660,7 +664,7 @@ async def settings_tone_list(callback: CallbackQuery, db_user: DbUser) -> None:
     if callback.message:
         await safe_edit_message(
             callback.message,
-            f"<b>Tone of voice</b>\n\n{limit_line}",
+            f"<b>Тон ответа</b>\n\n{limit_line}",
             reply_markup=tone_menu_keyboard(profiles),
         )
 
@@ -671,7 +675,7 @@ async def settings_tone_add(callback: CallbackQuery, state: FSMContext, db_user:
     async with session_factory() as session:
         allowed, msg = await can_add_tone_profile(session, db_user.id)
     if not allowed:
-        await callback.answer(msg or "Лимит tone-профилей", show_alert=True)
+        await callback.answer(msg or "Лимит профилей тона", show_alert=True)
         return
     await state.set_state(ToneProfileStates.waiting_description)
     await callback.answer()
@@ -714,7 +718,7 @@ async def settings_tone_examples(message: Message, state: FSMContext, db_user: D
         allowed, limit_msg = await can_add_tone_profile(session, db_user.id)
         if not allowed:
             await state.clear()
-            await message.answer(limit_msg or "Лимит tone-профилей.", reply_markup=settings_menu_keyboard())
+            await message.answer(limit_msg or "Лимит профилей тона.", reply_markup=settings_menu_keyboard())
             return
         profile = await ToneProfileRepository(session).create(
             user_id=db_user.id,
@@ -725,7 +729,7 @@ async def settings_tone_examples(message: Message, state: FSMContext, db_user: D
 
     await state.clear()
     await message.answer(
-        f"✅ Профиль tone #{profile.id} сохранён.",
+        f"✅ Профиль тона #{profile.id} сохранён.",
         reply_markup=settings_menu_keyboard(),
     )
 
@@ -786,7 +790,7 @@ async def settings_tone_edit_start(callback: CallbackQuery, state: FSMContext, d
     if callback.message:
         await safe_edit_message(
             callback.message,
-            f"Новое описание tone для профиля #{profile_id}:\n\n"
+            f"Новое описание тона для профиля #{profile_id}:\n\n"
             f"Текущее: {profile.description}"
         )
 
@@ -850,19 +854,10 @@ async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> No
         await callback.answer("Ошибка")
         return
     await callback.answer()
-    text = (
-        "🔔 <b>Уведомления</b>\n\n"
-        "Push от фоновой синхронизации (poller).\n"
-        "«Только негатив» — только 1–3★.\n"
-        "«Утренний дайджест» — сводка раз в день (~9:00 Минск, UTC+3).\n"
-        "«Напоминание об очереди» — если отзывы без ответа дольше 24 ч (~18:00 Минск).\n"
-        "«Вопросы в кабинете» — push, если на WB появились новые вопросы без ответа.\n"
-        "«Мягкая рекомендация» — одна ненавязчивая фраза о линейке в ИИ-ответах (Lite/PRO)."
-    )
     if callback.message:
         await safe_edit_message(
             callback.message,
-            text,
+            _notifications_screen_text(),
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
@@ -893,7 +888,7 @@ async def settings_notify_toggle_new(callback: CallbackQuery, db_user: DbUser) -
     if callback.message and user:
         await safe_edit_message(
             callback.message,
-            "🔔 <b>Уведомления</b>",
+            _notifications_screen_text(),
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
@@ -924,7 +919,7 @@ async def settings_notify_toggle_negative(callback: CallbackQuery, db_user: DbUs
     if callback.message and user:
         await safe_edit_message(
             callback.message,
-            "🔔 <b>Уведомления</b>",
+            _notifications_screen_text(),
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
@@ -955,7 +950,7 @@ async def settings_notify_toggle_questions(callback: CallbackQuery, db_user: DbU
     if callback.message and user is not None:
         await safe_edit_message(
             callback.message,
-            callback.message.text or "🔔 Уведомления",
+            _notifications_screen_text(),
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
@@ -986,7 +981,7 @@ async def settings_notify_toggle_digest(callback: CallbackQuery, db_user: DbUser
     if callback.message and user:
         await safe_edit_message(
             callback.message,
-            "🔔 <b>Уведомления</b>",
+            _notifications_screen_text(),
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
@@ -1017,7 +1012,7 @@ async def settings_notify_toggle_stale(callback: CallbackQuery, db_user: DbUser)
     if callback.message and user:
         await safe_edit_message(
             callback.message,
-            "🔔 <b>Уведомления</b>",
+            _notifications_screen_text(),
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
@@ -1048,7 +1043,7 @@ async def settings_notify_toggle_recommend(callback: CallbackQuery, db_user: DbU
     if callback.message and user:
         await safe_edit_message(
             callback.message,
-            "🔔 <b>Уведомления</b>",
+            _notifications_screen_text(),
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
@@ -1183,6 +1178,6 @@ async def settings_tone_delete(callback: CallbackQuery, db_user: DbUser) -> None
     if callback.message:
         await safe_edit_message(
             callback.message,
-            "<b>Tone of voice</b>",
+            "<b>Тон ответа</b>",
             reply_markup=tone_menu_keyboard(profiles),
         )

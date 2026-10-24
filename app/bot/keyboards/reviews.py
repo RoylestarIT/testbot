@@ -54,7 +54,7 @@ def tone_keyboard(profiles: list[ToneProfile]) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     if not profiles:
         rows.append(
-            [InlineKeyboardButton(text="➕ Создать tone", callback_data="settings:tone:add")]
+            [InlineKeyboardButton(text="➕ Тон ответа в настройках", callback_data="settings:tone:add")]
         )
     for profile in profiles:
         label = profile.description[:40] if profile.description else f"Профиль #{profile.id}"

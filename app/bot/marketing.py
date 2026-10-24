@@ -64,7 +64,7 @@ def feature_roadmap_text() -> str:
         + "\n"
         + bullet("WB + Ozon, sync и уведомления")
         + "\n"
-        + bullet("ИИ: 3 варианта, tone, шаблоны 4–5★")
+        + bullet("ИИ: 3 варианта, тон ответа, шаблоны 4–5★")
         + "\n"
         + bullet("Publish в API (PRO) и копия (Lite)")
         + "\n"

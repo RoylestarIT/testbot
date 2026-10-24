@@ -79,7 +79,7 @@ async def build_dashboard_details(session: AsyncSession, user: User) -> str:
                 "",
                 "<b>🔒 Лимиты Free</b>",
                 bullet(f"Кабинеты: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS}"),
-                bullet(f"Tone: {tone_n}/{FREE_MAX_TONE_PROFILES}"),
+                bullet(f"Тон ответа: {tone_n}/{FREE_MAX_TONE_PROFILES}"),
             ]
         )
     elif subscription and subscription.status.value == "active":
