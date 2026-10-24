@@ -1,0 +1,3 @@
+# Install: crontab -e
+# Daily PostgreSQL backup at 06:00 Europe/Minsk (03:00 UTC)
+0 3 * * * cd /workspace && ./scripts/backup-db.sh /workspace/backups >> /tmp/reviewpilot-backup.log 2>&1

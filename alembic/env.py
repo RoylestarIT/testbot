@@ -19,7 +19,11 @@ def _database_url() -> str:
     if url and not url.startswith("driver://"):
         return url
     async_url = get_settings().database_url
-    return async_url.replace("+aiosqlite", "", 1)
+    if "+aiosqlite" in async_url:
+        return async_url.replace("+aiosqlite", "", 1)
+    if "+asyncpg" in async_url:
+        return async_url.replace("+asyncpg", "+psycopg2", 1)
+    return async_url
 
 
 def run_migrations_offline() -> None:

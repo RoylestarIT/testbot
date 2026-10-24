@@ -2,6 +2,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+bash "$(dirname "$0")/ensure-datastores.sh"
+
 echo "Applying DB migrations…"
 python3 -m alembic upgrade head
 

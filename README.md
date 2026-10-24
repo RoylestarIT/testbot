@@ -118,7 +118,9 @@ CRYPTO_PRO_AMOUNT_USD=20
 DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/reviewpilot
 ```
 
-Установите драйвер `asyncpg`, выполните мигraции на чистой БД.
+Установите `asyncpg` (см. `requirements.txt`), выполните `alembic upgrade head` на чистой БД.  
+Перенос с SQLite: `./scripts/migrate_sqlite_to_postgres.py` (после миграций на PostgreSQL).  
+Бэкап: `./scripts/backup-db.sh` (SQLite или `pg_dump` по `DATABASE_URL`). На VM без systemd: `./scripts/ensure-datastores.sh` перед рестартом.
 
 ## Структура
 

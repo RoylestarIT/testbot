@@ -12,6 +12,8 @@ _ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 def _sync_database_url(async_url: str) -> str:
     if "+aiosqlite" in async_url:
         return async_url.replace("+aiosqlite", "", 1)
+    if "+asyncpg" in async_url:
+        return async_url.replace("+asyncpg", "+psycopg2", 1)
     return async_url
 
 
