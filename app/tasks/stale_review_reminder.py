@@ -8,7 +8,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from loguru import logger
 from sqlalchemy import select
 
-from app.bot.ui import BRAND, ICON
+from app.bot.ui import BRAND, ICON, REVIEWS_HUB_BUTTON
 from app.core.config import Settings, get_settings
 from app.db.models import User
 from app.db.repositories.review import ReviewRepository
@@ -19,7 +19,7 @@ from app.db.session import get_session_factory
 def _stale_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="📬 Очередь отзывов", callback_data="review:mp:list")],
+            [InlineKeyboardButton(text=REVIEWS_HUB_BUTTON, callback_data="review:mp:list")],
             [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
         ]
     )

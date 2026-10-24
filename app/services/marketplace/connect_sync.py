@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from app.bot.ui import REVIEWS_HUB_BUTTON
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -13,7 +15,7 @@ from app.services.marketplace.sync_service import sync_account_reviews
 def connect_success_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="📬 Очередь отзывов", callback_data="review:mp:list")],
+            [InlineKeyboardButton(text=REVIEWS_HUB_BUTTON, callback_data="review:mp:list")],
             [InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu:settings")],
         ]
     )

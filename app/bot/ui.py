@@ -5,6 +5,10 @@ from __future__ import annotations
 BRAND = "Голос бренда"
 ICON = "✨"
 
+# Единая формулировка раздела ответов (не «очередь» / «ответить» по отдельности)
+REVIEWS_HUB_BUTTON = "📬 Ответы на отзывы"
+REVIEW_CARD_STEPS = "Шаг 1: тон → Шаг 2: вариант → Шаг 3: отправить"
+
 
 def muted(text: str) -> str:
     return f"<i>{text}</i>"

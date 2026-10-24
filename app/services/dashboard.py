@@ -6,7 +6,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.copy import DIFFERENTIATORS_DASHBOARD_LINE
-from app.bot.ui import dashboard_home, muted
+from app.bot.ui import REVIEWS_HUB_BUTTON, dashboard_home, muted
+from app.core.config import get_settings
 from app.constants import MANUAL_SHOP_NAME
 from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus, SubscriptionPlan, User
 from app.db.repositories.account import AccountRepository
@@ -90,12 +91,13 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
     else:
         tier_icon = "🆓"
 
+    poll_min = get_settings().poll_interval_minutes
     if new_count > 0:
         focus = f"📬  <b>{new_count}</b> {_review_word(new_count)} ждёт ответа"
-        hint = "👇 Кнопка «Очередь отзывов»"
+        hint = f"👇 {REVIEWS_HUB_BUTTON}"
     else:
         focus = "📭  Новых отзывов нет"
-        hint = "🔄 Нажмите «Sync» на сводке"
+        hint = f"👇 {REVIEWS_HUB_BUTTON} или 🔄 Sync, если нужно сейчас"
 
     mini = await build_mini_stats_line(session, user.id)
     details: list[str] = []
@@ -122,6 +124,12 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
             names.append(f"{mp} {label}")
         tail = f" (+{len(api_accounts) - 3})" if len(api_accounts) > 3 else ""
         details.append(f"🏪  {', '.join(names)}{tail}")
+        details.append(
+            muted(
+                f"🔄 Sync каждые <b>{poll_min}</b> мин автоматически; "
+                "кнопка «Sync» — если нужно подтянуть отзывы сейчас."
+            )
+        )
     else:
         details.append("🏪  Кабинеты: <b>не подключены</b>")
 

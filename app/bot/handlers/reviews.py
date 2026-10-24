@@ -618,7 +618,7 @@ async def more_variants(callback: CallbackQuery, state: FSMContext, db_user: DbU
     tone_key = data.get("tone_key", "default")
     review_id = data.get("review_id")
     if not review_text or rating is None:
-        await callback.answer("Начните с «Ответить на отзыв»", show_alert=True)
+        await callback.answer("Откройте «Ответы на отзывы»", show_alert=True)
         return
 
     await callback.answer("Генерирую…")

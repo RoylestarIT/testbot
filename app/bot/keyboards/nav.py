@@ -1,6 +1,8 @@
-"""Единая навигация — меньше «вкладок», всегда понятный выход домой и в очередь."""
+"""Единая навигация — меньше «вкладок», всегда понятный выход домой и в ответы."""
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+from app.bot.ui import REVIEWS_HUB_BUTTON
 
 
 def nav_home_queue(*, extra: list[list[InlineKeyboardButton]] | None = None) -> InlineKeyboardMarkup:
@@ -8,7 +10,7 @@ def nav_home_queue(*, extra: list[list[InlineKeyboardButton]] | None = None) -> 
     rows.append(
         [
             InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard"),
-            InlineKeyboardButton(text="📬 Очередь", callback_data="review:mp:list"),
+            InlineKeyboardButton(text=REVIEWS_HUB_BUTTON, callback_data="review:mp:list"),
         ]
     )
     return InlineKeyboardMarkup(inline_keyboard=rows)
@@ -32,7 +34,7 @@ def after_review_action_keyboard(*, has_next: bool = False) -> InlineKeyboardMar
     rows.append(
         [
             InlineKeyboardButton(text="✍️ Ручной", callback_data="review:manual:start"),
-            InlineKeyboardButton(text="📬 Очередь", callback_data="review:mp:list"),
+            InlineKeyboardButton(text=REVIEWS_HUB_BUTTON, callback_data="review:mp:list"),
         ]
     )
     rows.append([InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")])

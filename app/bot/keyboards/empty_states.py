@@ -29,7 +29,7 @@ def no_new_reviews_keyboard() -> InlineKeyboardMarkup:
 def poller_notify_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="📬  Очередь отзывов", callback_data="review:mp:list")],
+            [InlineKeyboardButton(text="📬  Ответы на отзывы", callback_data="review:mp:list")],
             [InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:dashboard")],
         ]
     )

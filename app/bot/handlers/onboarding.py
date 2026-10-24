@@ -25,7 +25,7 @@ STEPS = [
     + "\n"
     + progress_bar(3, 3)
     + "\n\n"
-    + muted("📬 Очередь WB/Ozon или ручной ввод → 🎨 тон → варианты ответа."),
+    + muted("📬 «Ответы на отзывы» → 🎨 тон → варианты → отправить."),
 ]
 
 
@@ -38,7 +38,7 @@ def _step_keyboard(step: int) -> InlineKeyboardMarkup:
         action = [InlineKeyboardButton(text="🔄 Синхронизировать", callback_data="review:sync")]
     else:
         next_data = "onboarding:done"
-        action = [InlineKeyboardButton(text="📬 Новые отзывы", callback_data="review:mp:list")]
+        action = [InlineKeyboardButton(text="📬 Ответы на отзывы", callback_data="review:mp:list")]
     rows = [action, [InlineKeyboardButton(text="➡️ Далее", callback_data=next_data)]]
     if step > 0:
         rows.append([InlineKeyboardButton(text="◀️ Назад", callback_data=f"onboarding:step:{step - 1}")])

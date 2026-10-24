@@ -21,6 +21,7 @@ def test_review_card_shows_pro_badge_when_no_api_publish() -> None:
     )
     body = format_review_card(review, account, can_publish_via_api=False)
     assert "скопируйте" in body.lower()
+    assert "Шаг 1:" in body
 
 
 def test_review_card_shows_publish_available() -> None:

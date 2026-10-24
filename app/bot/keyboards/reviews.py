@@ -2,6 +2,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.db.models import ToneProfile
 from app.bot.keyboards.nav import nav_home_queue
+from app.bot.ui import REVIEWS_HUB_BUTTON
 
 
 def reviews_queue_toolbar() -> list[InlineKeyboardButton]:
@@ -14,7 +15,7 @@ def reviews_queue_toolbar() -> list[InlineKeyboardButton]:
 def manual_entry_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="◀️ Очередь отзывов", callback_data="review:mp:list")],
+            [InlineKeyboardButton(text=f"◀️ {REVIEWS_HUB_BUTTON.removeprefix('📬 ')}", callback_data="review:mp:list")],
             [InlineKeyboardButton(text="❌ Отмена", callback_data="review:cancel")],
         ]
     )
@@ -24,7 +25,7 @@ def reviews_menu_keyboard() -> InlineKeyboardMarkup:
     """После отмены — обратно в раздел «Ответы на отзывы»."""
     return nav_home_queue(
         extra=[
-            [InlineKeyboardButton(text="📬 Очередь отзывов", callback_data="review:mp:list")],
+            [InlineKeyboardButton(text=REVIEWS_HUB_BUTTON, callback_data="review:mp:list")],
             reviews_queue_toolbar(),
             [
                 InlineKeyboardButton(text="🔄 Sync", callback_data="review:sync"),

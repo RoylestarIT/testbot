@@ -12,14 +12,14 @@ from app.core.config import Settings, get_settings
 from app.db.models import MarketplaceAccount, Review, ReviewStatus, User
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
-from app.bot.ui import BRAND, ICON
+from app.bot.ui import BRAND, ICON, REVIEWS_HUB_BUTTON
 from app.services.subscription import get_effective_subscription, plan_label
 
 
 def _digest_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="📬 Очередь отзывов", callback_data="review:mp:list")],
+            [InlineKeyboardButton(text=REVIEWS_HUB_BUTTON, callback_data="review:mp:list")],
             [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
         ]
     )

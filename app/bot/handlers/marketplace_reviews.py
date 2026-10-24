@@ -29,6 +29,7 @@ from app.bot.handlers.reviews import (
 )
 from app.bot.keyboards.nav import after_review_action_keyboard, nav_home_queue
 from app.bot.keyboards.reviews import reviews_menu_keyboard, reviews_queue_toolbar, tone_keyboard, variants_keyboard
+from app.bot.ui import REVIEWS_HUB_BUTTON
 from app.bot.keyboards.settings import sync_accounts_keyboard
 from app.bot.states.marketplace_review import MarketplaceReviewStates
 from app.bot.states.review import ManualReviewStates
@@ -318,7 +319,7 @@ async def mp_bulk_preview(callback: CallbackQuery, db_user: DbUser) -> None:
                 )
             ],
         )
-    rows.append([InlineKeyboardButton(text="📬 Очередь", callback_data="review:mp:list")])
+    rows.append([InlineKeyboardButton(text=REVIEWS_HUB_BUTTON, callback_data="review:mp:list")])
     kb = InlineKeyboardMarkup(inline_keyboard=rows)
     if callback.message:
         await safe_edit_message(callback.message, text, reply_markup=kb)
@@ -778,7 +779,7 @@ async def mp_next_review(callback: CallbackQuery, state: FSMContext, db_user: Db
     if next_id is None and queue:
         next_id = queue[0]
     if next_id is None:
-        await callback.answer("Очередь пуста", show_alert=True)
+        await callback.answer("Нет отзывов в списке", show_alert=True)
         return
     await callback.answer()
     await _open_mp_review(next_id, callback, state, db_user)

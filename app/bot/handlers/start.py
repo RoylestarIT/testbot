@@ -5,7 +5,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 from app.bot.copy import HELP_TEXT, TERMS_TEXT
 from app.bot.ui import BRAND, ICON
 from app.bot.handlers.dashboard import _edit_dashboard, _send_dashboard
-from app.bot.keyboards.menu import main_menu_keyboard
+from app.bot.keyboards.menu import main_menu_keyboard, more_menu_keyboard
 from app.core.config import get_settings
 from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
@@ -75,8 +75,8 @@ async def menu_more(callback: CallbackQuery) -> None:
         await safe_edit_message(
             callback.message,
             f"{ICON} <b>{BRAND}</b>\n"
-            "<i>Отзывы WB/Ozon под вашим контролем.</i>",
-            reply_markup=main_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
+            "<i>Справка и поддержка. Основные действия — на сводке.</i>",
+            reply_markup=more_menu_keyboard(show_admin=_show_admin_menu(tg_id)),
         )
 
 

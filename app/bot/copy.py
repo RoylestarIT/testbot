@@ -72,12 +72,12 @@ HELP_TEXT = (
     + "\n"
     + bullet("🏠 /start — сводка и быстрые кнопки")
     + "\n"
-    + bullet("📬 «Ответить на отзывы» — сразу в очередь")
+    + bullet("📬 «Ответы на отзывы» — главный раздел на сводке")
     + section("Отзывы", icon="💬")
     + "\n"
-    + bullet("📬 очередь WB/Ozon и «Следующий отзыв»")
+    + bullet("📬 WB/Ozon, ручной ввод и «Следующий отзыв»")
     + "\n"
-    + bullet("✍️ ручной ответ — внутри «Очередь отзывов»")
+    + bullet("✍️ ручной ответ — внутри «Ответы на отзывы»")
     + "\n"
     + bullet("⚡ готовые фразы для 4–5★")
     + "\n"
@@ -92,6 +92,8 @@ HELP_TEXT = (
     + bullet("🔵 Ozon — Client-Id + Api-Key")
     + section("Ещё", icon="➕")
     + "\n"
+    + bullet("⋯ на сводке — только справка и поддержка")
+    + "\n"
     + bullet("🔔 уведомления в Настройках")
     + "\n"
     + bullet("🎟 /promo — промокод")
@@ -100,7 +102,7 @@ HELP_TEXT = (
 )
 
 REVIEWS_MENU_TEXT = (
-    brand_title("Отзывы", tagline="Ручной ввод, sync и очередь", icon="💬")
+    brand_title("Отзывы", tagline="Ответы на отзывы WB/Ozon", icon="💬")
     + "\n"
     + muted("👇 Выберите действие на клавиатуре")
 )
@@ -120,12 +122,12 @@ SYNC_INTRO = brand_title("Синхронизация", icon="🔄") + "\n" + mut
 SYNC_DONE = brand_title("Готово", icon="✅") + "\n" + "📬 Новых отзывов: <b>{count}</b>"
 
 MP_LIST_EMPTY = (
-    brand_title("Очередь пуста", icon="📭")
+    brand_title("Нет новых отзывов", icon="📭")
     + "\n"
-    + muted("🔄 Sync · 🏪 кабинет · ✍️ или ответьте на отзыв вручную")
+    + muted("🔄 Sync (или ждите авто-sync) · ✍️ ручной ответ на этом экране")
 )
 
-MP_LIST_HEADER = brand_title("Ответы на отзывы", tagline="Очередь WB/Ozon · ручной ввод", icon="📬")
+MP_LIST_HEADER = brand_title("Ответы на отзывы", tagline="WB/Ozon · ручной ввод", icon="📬")
 
 PUBLISH_SUCCESS = brand_title("Опубликовано", icon="✅") + "\n" + "🚀 Ответ ушёл на маркетплейс"
 
