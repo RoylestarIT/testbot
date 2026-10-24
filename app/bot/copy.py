@@ -116,13 +116,15 @@ HELP_TEXT = (
     + "\n"
     + bullet("ℹ️ «Почему мы» — сравнение с рынком и карта функций")
     + "\n"
-    + bullet("⋯ на сводке — только справка и поддержка")
+    + bullet("⋯ на сводке — справка, поддержка, 📜 документы")
+    + "\n"
+    + bullet("📜 /legal — политика конфиденциальности и условия сервиса")
     + "\n"
     + bullet("🔔 уведомления в Настройках")
     + "\n"
     + bullet("🎟 /promo — промокод")
     + differentiators_section(compact=True)
-    + footer_hint("⌨️ /start · /dashboard · /my_subscription")
+    + footer_hint("⌨️ /start · /dashboard · /legal · /my_subscription")
 )
 
 REVIEWS_MENU_TEXT = (

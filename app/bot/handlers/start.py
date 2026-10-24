@@ -53,7 +53,7 @@ async def onboarding_accept(callback: CallbackQuery, db_user: DbUser) -> None:
     async with session_factory() as session:
         await UserRepository(session).accept_terms(db_user.id)
         await session.commit()
-    await callback.answer("Спасибо!")
+    await callback.answer("Спасибо! На сводке — «Быстрый старт» и документы в «⋯ Ещё».")
     if callback.message:
         await _edit_dashboard(callback.message, db_user)
 

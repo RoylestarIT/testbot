@@ -26,7 +26,9 @@ def qr_instructions(
         f"<b>Перевод (РФ / РБ) — {plan_name}</b>\n\n"
         f"{sum_line}{rate_note}\n"
         f"{settings.qr_payment_instructions.strip()}\n\n"
-        "После оплаты нажмите «Я оплатил». Администратор проверит перевод и активирует подписку."
+        f"После оплаты нажмите «Я оплатил». Активация — обычно до "
+        f"<b>{settings.payment_activation_sla_hours}</b> ч (рабочее время).\n"
+        "Администратор сверит перевод и включит тариф."
     )
 
 
@@ -53,5 +55,6 @@ def legal_payment_instructions(
         f"<b>Безнал · юр. лицо — {plan_name}</b>\n\n"
         f"{sum_line}{rate_note}\n"
         f"{settings.legal_payment_instructions.strip()}\n\n"
-        "После оплаты по счёту нажмите «Я оплатил» — администратор сверит платёж и включит доступ."
+        f"После оплаты по счёту нажмите «Я оплатил». Активация — до "
+        f"<b>{settings.payment_activation_sla_hours}</b> ч после поступления средств."
     )

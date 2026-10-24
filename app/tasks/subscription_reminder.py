@@ -17,7 +17,10 @@ from app.services.subscription import plan_label
 def _renewal_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="💳 Оплатить", callback_data="sub:pay:menu")],
+            [
+                InlineKeyboardButton(text="💳 Оплатить", callback_data="sub:pay:menu"),
+                InlineKeyboardButton(text="🧮 Калькулятор", callback_data="sub:calc"),
+            ],
             [InlineKeyboardButton(text="💎 Подписка", callback_data="menu:subscription")],
         ]
     )
@@ -53,7 +56,8 @@ async def subscription_reminder_once(bot: Bot, settings: Settings | None = None)
             text = (
                 f"⏳ Подписка <b>{plan_label(subscription.plan)}</b> заканчивается через "
                 f"<b>{days_left}</b> дн. (до {subscription.expires_at.strftime('%d.%m.%Y')}).\n"
-                "Продлите сейчас — доступ сохранится без паузы."
+                "Продлите сейчас — PRO publish и лимиты сохранятся без паузы.\n"
+                "<i>Не уверены в тарифе? Откройте «Калькулятор» ниже.</i>"
             )
             try:
                 await bot.send_message(user.tg_id, text, reply_markup=_renewal_keyboard())
@@ -77,8 +81,9 @@ async def subscription_reminder_once(bot: Bot, settings: Settings | None = None)
             try:
                 await bot.send_message(
                     user.tg_id,
-                    "📭 Подписка закончилась — вы на <b>бесплатном</b> режиме "
-                    "(5 генераций/день, 1 кабинет).",
+                    "📭 Подписка закончилась — вы на <b>Free</b> "
+                    "(5 генераций/день, 1 кабинет, ответы вручную в кабинете).\n"
+                    "<i>🧮 Калькулятор — подобрать Lite или PRO под ваш объём.</i>",
                     reply_markup=_renewal_keyboard(),
                 )
             except Exception:

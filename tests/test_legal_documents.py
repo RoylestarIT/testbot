@@ -34,6 +34,7 @@ def test_terms_pages_within_telegram_limit() -> None:
         page = document_page(LegalDocKind.TERMS, i, settings)
         assert page is not None
         assert len(page) <= 4096
+        assert "LEGAL_OPERATOR_NAME" not in page
         assert "Wildberries" in page or "WB" in page
 
 

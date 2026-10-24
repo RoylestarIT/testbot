@@ -39,6 +39,7 @@ def dashboard_keyboard(
     show_trial: bool,
     show_onboarding: bool,
     show_admin: bool,
+    show_product_news: bool = False,
 ) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     if show_onboarding:
@@ -47,6 +48,13 @@ def dashboard_keyboard(
         days = get_settings().trial_pro_days
         rows.append(
             [InlineKeyboardButton(text=f"🎁 Trial PRO · {days} дн.", callback_data="menu:trial_pro")]
+        )
+    if show_product_news:
+        rows.append(
+            [
+                InlineKeyboardButton(text="✓ Понятно", callback_data="news:dismiss"),
+                InlineKeyboardButton(text="📜 Документы", callback_data="menu:legal"),
+            ]
         )
 
     rows.extend(

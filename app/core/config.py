@@ -69,6 +69,16 @@ class Settings(BaseSettings):
         validation_alias="LEGAL_OPERATOR_NAME",
         description="Наименование оператора ПДн / исполнителя в юридических текстах бота",
     )
+    product_news_version: str = Field(
+        default="2025-10-v1",
+        validation_alias="PRODUCT_NEWS_VERSION",
+        description="Версия блока «Что нового» на сводке; смените строку — баннер снова покажется",
+    )
+    payment_activation_sla_hours: int = Field(
+        default=24,
+        validation_alias="PAYMENT_ACTIVATION_SLA_HOURS",
+        description="SLA ручной активации подписки (QR / счёт), часы",
+    )
     privacy_policy_url: str = Field(default="", validation_alias="PRIVACY_POLICY_URL")
     terms_of_service_url: str = Field(default="", validation_alias="TERMS_OF_SERVICE_URL")
     webhook_url: str = Field(default="", validation_alias="WEBHOOK_URL")
@@ -80,17 +90,17 @@ class Settings(BaseSettings):
     sentry_dsn: str = Field(default="", validation_alias="SENTRY_DSN")
     qr_payment_instructions: str = Field(
         default=(
-            "1. Отсканируйте QR-код вашего банка (ERIP / перевод по номеру телефона — реквизиты уточняйте у поддержки).\n"
-            "2. В комментарии укажите ваш Telegram @username или ID.\n"
-            "3. Сохраните чек об оплате."
+            "1. Перевод по QR / ERIP / на карту — реквизиты запросите в разделе «Поддержка».\n"
+            "2. В комментарии к платежу укажите Telegram @username и тариф (Lite / PRO).\n"
+            "3. Сохраните чек и нажмите «Я оплатил» в боте."
         ),
         validation_alias="QR_PAYMENT_INSTRUCTIONS",
     )
     legal_payment_instructions: str = Field(
         default=(
-            "1. Напишите в поддержку название организации, УНП/ИНН и нужный тариф (Lite / PRO).\n"
+            "1. Напишите в поддержку: название организации, УНП/ИНН, тариф Lite или PRO, email для счёта.\n"
             "2. Мы выставим счёт на безналичную оплату (РФ / РБ).\n"
-            "3. После поступления средств активируем подписку на указанный срок."
+            "3. После поступления средств активируем подписку — обычно в течение рабочих суток."
         ),
         validation_alias="LEGAL_PAYMENT_INSTRUCTIONS",
     )

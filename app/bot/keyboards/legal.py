@@ -86,6 +86,18 @@ def legal_document_keyboard(
     if link_row:
         rows.append(link_row)
 
+    if page_index == total - 1:
+        other = LegalDocKind.TERMS if kind is LegalDocKind.PRIVACY else LegalDocKind.PRIVACY
+        other_label = "📜 Полные условия" if other is LegalDocKind.TERMS else "🔒 Конфиденциальность"
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=other_label,
+                    callback_data=_page_callback(other, 0, back),
+                )
+            ]
+        )
+
     if back == _BACK_ACCEPT:
         rows.append([InlineKeyboardButton(text="◀️ К экрану принятия", callback_data="legal:back:accept")])
     elif back == _BACK_SUPPORT:
