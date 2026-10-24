@@ -16,6 +16,7 @@ from app.bot.keyboards.subscription import (
     payment_methods_keyboard,
     qr_paid_keyboard,
     qr_plan_keyboard,
+    stars_plan_keyboard,
     subscription_hub_keyboard,
     subscription_menu_keyboard,
     subscription_subscreen_keyboard,
@@ -37,13 +38,14 @@ from app.services.generation_limit import remaining_generations_today
 from app.services.payment.crypto_pay import (
     CryptoPayError,
     create_subscription_invoice,
-    crypto_amount_for_plan,
     crypto_pay_enabled,
+    crypto_price_label,
 )
 from app.services.payment.fx_rates import SubscriptionPricing, get_subscription_pricing
 from app.services.payment.manual_qr import legal_payment_instructions, qr_instructions
 from app.services.payment.payment_options import card_payments_enabled, stars_payments_enabled
 from app.services.payment.telegram_stars import (
+    effective_stars_amount,
     invoice_currency,
     invoice_description,
     invoice_payload,
@@ -51,8 +53,9 @@ from app.services.payment.telegram_stars import (
     invoice_provider_token,
     invoice_title,
     parse_invoice_payload,
-    payment_method_for_invoice,
+    payment_method_for_currency,
     payment_mode_label,
+    payment_mode_label_for_currency,
 )
 from app.services.plans import PLANS_COMPARISON_TEXT, describe_access_tier
 from app.services.subscription import (
@@ -205,15 +208,39 @@ async def payment_methods_menu(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "sub:pay:crypto")
 async def payment_crypto_plans(callback: CallbackQuery) -> None:
-    pricing = await get_subscription_pricing()
     settings = get_settings()
     if not crypto_pay_enabled(settings):
         await callback.answer("Crypto Bot не настроен", show_alert=True)
         return
+    lite = crypto_price_label(settings, SubscriptionPlan.LITE)
+    pro = crypto_price_label(settings, SubscriptionPlan.PRO)
     await answer_and_edit(
         callback,
-        "🪙 <b>Crypto Bot</b>\n\nВыберите тариф. Оплата в @CryptoBot (USDT, TON и др.).",
-        reply_markup=crypto_plan_keyboard(pricing),
+        "🪙 <b>Crypto Bot</b>\n\n"
+        f"✨ Lite — <b>{lite}</b>\n"
+        f"🚀 PRO — <b>{pro}</b>\n\n"
+        "Выберите тариф. В @CryptoBot можно оплатить USDT, TON и др.",
+        reply_markup=crypto_plan_keyboard(settings),
+    )
+
+
+@router.callback_query(F.data == "sub:pay:stars")
+async def payment_stars_plans(callback: CallbackQuery) -> None:
+    settings = get_settings()
+    if not stars_payments_enabled(settings):
+        await callback.answer("Оплата Stars не включена", show_alert=True)
+        return
+    lite = effective_stars_amount(settings, SubscriptionPlan.LITE)
+    pro = effective_stars_amount(settings, SubscriptionPlan.PRO)
+    markup = settings.subscription_stars_markup_percent
+    await answer_and_edit(
+        callback,
+        "⭐ <b>Telegram Stars</b>\n\n"
+        f"✨ Lite — <b>{lite}</b> ⭐\n"
+        f"🚀 PRO — <b>{pro}</b> ⭐\n\n"
+        f"{muted(f'К цене +{markup:g}% — запас на комиссию Telegram при выводе Stars.')}\n\n"
+        "<i>Оплата внутри Telegram, без банковской карты в боте.</i>",
+        reply_markup=stars_plan_keyboard(settings),
     )
 
 
@@ -221,22 +248,19 @@ async def payment_crypto_plans(callback: CallbackQuery) -> None:
 async def payment_card_hub(callback: CallbackQuery) -> None:
     pricing = await get_subscription_pricing()
     settings = get_settings()
-    if stars_payments_enabled(settings):
+    if card_payments_enabled(settings):
         body = (
             "💳 <b>Карта · РФ / РБ</b>\n\n"
-            "Оплата через Telegram Stars или перевод по реквизитам (СБП / ERIP)."
-        )
-    elif card_payments_enabled(settings):
-        body = (
-            "💳 <b>Карта · РФ / РБ</b>\n\n"
-            f"Оплата картой в Telegram ({payment_mode_label(settings)}) "
-            "или перевод физ. лица по реквизитам."
+            f"Оплата картой в Telegram ({payment_mode_label(settings, for_stars=False)}) "
+            "или перевод физ. лица по реквизитам (СБП / ERIP)."
         )
     else:
         body = (
             "💳 <b>Карта · РФ / РБ</b>\n\n"
             "Перевод с карты / СБП / ERIP по реквизитам. После оплаты — «Я оплатил»."
         )
+        if stars_payments_enabled(settings):
+            body += "\n\n" + muted("⭐ Stars — отдельным пунктом в «Способы оплаты».")
     await answer_and_edit(callback, body, reply_markup=card_payment_keyboard(pricing))
 
 
@@ -262,27 +286,67 @@ async def payment_legal_plans(callback: CallbackQuery) -> None:
     )
 
 
+async def _send_telegram_invoice(
+    *,
+    bot: Bot,
+    chat_id: int,
+    db_user: DbUser,
+    plan: SubscriptionPlan,
+    for_stars: bool,
+) -> None:
+    settings = get_settings()
+    await bot.send_invoice(
+        chat_id=chat_id,
+        title=invoice_title(plan),
+        description=invoice_description(plan, settings, for_stars=for_stars),
+        payload=invoice_payload(plan, db_user.id),
+        currency=invoice_currency(for_stars=for_stars, settings=settings),
+        prices=invoice_prices(settings, plan, for_stars=for_stars),
+        provider_token=invoice_provider_token(for_stars=for_stars, settings=settings),
+    )
+
+
 @router.callback_query(F.data.in_({"sub:stars:lite", "sub:stars:pro"}))
 async def send_stars_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUser) -> None:
     plan = SubscriptionPlan.PRO if callback.data.endswith(":pro") else SubscriptionPlan.LITE
     settings = get_settings()
-    if not stars_payments_enabled(settings) and not card_payments_enabled(settings):
+    if not stars_payments_enabled(settings):
         await callback.answer(
-            "Оплата картой/Stars не настроена. Используйте 🪙 Crypto Bot или перевод.",
+            "Оплата Stars не настроена. Используйте карту, Crypto Bot или перевод.",
             show_alert=True,
         )
         return
     await callback.answer()
     if not callback.message:
         return
-    await bot.send_invoice(
+    await _send_telegram_invoice(
+        bot=bot,
         chat_id=callback.message.chat.id,
-        title=invoice_title(plan),
-        description=invoice_description(plan, settings),
-        payload=invoice_payload(plan, db_user.id),
-        currency=invoice_currency(settings),
-        prices=invoice_prices(settings, plan),
-        provider_token=invoice_provider_token(settings),
+        db_user=db_user,
+        plan=plan,
+        for_stars=True,
+    )
+
+
+@router.callback_query(F.data.in_({"sub:card:lite", "sub:card:pro"}))
+async def send_card_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUser) -> None:
+    plan = SubscriptionPlan.PRO if callback.data.endswith(":pro") else SubscriptionPlan.LITE
+    settings = get_settings()
+    if not card_payments_enabled(settings):
+        await callback.answer(
+            "Оплата картой в Telegram не настроена. Используйте перевод или Stars.",
+            show_alert=True,
+        )
+        return
+    await callback.answer()
+    if not callback.message:
+        return
+    await _send_telegram_invoice(
+        bot=bot,
+        chat_id=callback.message.chat.id,
+        db_user=db_user,
+        plan=plan,
+        for_stars=False,
     )
 
 
@@ -318,6 +382,7 @@ async def successful_payment_handler(message: Message, db_user: DbUser) -> None:
 
     charge_id = payment.telegram_payment_charge_id
     settings = get_settings()
+    pay_label = payment_mode_label_for_currency(payment.currency, settings)
     session_factory = get_session_factory()
     async with session_factory() as session:
         await activate_from_telegram_invoice(
@@ -325,7 +390,7 @@ async def successful_payment_handler(message: Message, db_user: DbUser) -> None:
             user_id=db_user.id,
             plan=plan,
             telegram_payment_charge_id=charge_id,
-            payment_method=payment_method_for_invoice(settings),
+            payment_method=payment_method_for_currency(payment.currency),
         )
         await session.commit()
         subscription = await get_effective_subscription(session, db_user.id)
@@ -333,7 +398,7 @@ async def successful_payment_handler(message: Message, db_user: DbUser) -> None:
     plan_name = "PRO" if plan == SubscriptionPlan.PRO else "Lite"
     expires = subscription.expires_at.strftime("%d.%m.%Y") if subscription and subscription.expires_at else "—"
     await message.answer(
-        f"✅ Оплата принята ({payment_mode_label(settings)})!\n\n"
+        f"✅ Оплата принята ({pay_label})!\n\n"
         f"Тариф: <b>{plan_name}</b>\n"
         f"Действует до: <b>{expires}</b>\n\n"
         "Спасибо за подписку!",
@@ -375,9 +440,8 @@ async def crypto_create_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUs
     if not pay_url:
         await callback.answer("Нет ссылки на оплату", show_alert=True)
         return
-    pricing = await get_subscription_pricing()
     plan_name = "PRO" if plan == SubscriptionPlan.PRO else "Lite"
-    amount_label = pricing.pro_price_label() if plan == SubscriptionPlan.PRO else pricing.lite_price_label()
+    amount_label = crypto_price_label(settings, plan)
     await callback.answer()
     if callback.message:
         await safe_edit_message(

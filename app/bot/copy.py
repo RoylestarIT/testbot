@@ -35,7 +35,7 @@ def differentiators_section(*, compact: bool = False) -> str:
         + "\n"
         + bullet("💵 Фикс 800 ₽ (Lite) / 1 600 ₽ (PRO) и 30 / 60 BYN в месяц")
         + "\n"
-        + bullet("🪙 Crypto Bot и перевод РФ/РБ — без Stars и без ИП у селлера")
+        + bullet("⭐ Telegram Stars, 🪙 Crypto Bot и перевод РФ/РБ — без ИП у селлера")
         + "\n"
         + bullet("🎯 Только отзывы WB/Ozon — без лишних модулей, быстрее разобраться")
     )

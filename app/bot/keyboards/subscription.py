@@ -1,17 +1,11 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.core.config import get_settings
-from app.services.payment.crypto_pay import crypto_pay_enabled
+from app.services.payment.crypto_pay import crypto_pay_enabled, crypto_price_label
 from app.services.payment.fx_rates import SubscriptionPricing
 from app.services.payment.payment_options import card_payments_enabled, stars_payments_enabled
-from app.services.payment.telegram_stars import uses_telegram_stars
-
-
-def _pay_label() -> str:
-    settings = get_settings()
-    if uses_telegram_stars(settings):
-        return "Stars"
-    return settings.payment_currency.upper()
+from app.services.payment.telegram_stars import effective_stars_amount
+from app.db.models import SubscriptionPlan
 
 
 def _truncate_btn(text: str, limit: int = 64) -> str:
@@ -58,21 +52,44 @@ def payment_methods_keyboard() -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     if crypto_pay_enabled(settings):
         rows.append([InlineKeyboardButton(text="🪙 Crypto Bot", callback_data="sub:pay:crypto")])
+    if stars_payments_enabled(settings):
+        rows.append([InlineKeyboardButton(text="⭐ Telegram Stars", callback_data="sub:pay:stars")])
     rows.append([InlineKeyboardButton(text="💳 Карта РФ / РБ", callback_data="sub:pay:card")])
     rows.append([InlineKeyboardButton(text="◀️ Подписка", callback_data="menu:subscription")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def stars_plan_keyboard(settings=None) -> InlineKeyboardMarkup:
+    settings = settings or get_settings()
+    lite = effective_stars_amount(settings, SubscriptionPlan.LITE)
+    pro = effective_stars_amount(settings, SubscriptionPlan.PRO)
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=f"✨ Lite · {lite} ⭐",
+                    callback_data="sub:stars:lite",
+                ),
+                InlineKeyboardButton(
+                    text=f"🚀 PRO · {pro} ⭐",
+                    callback_data="sub:stars:pro",
+                ),
+            ],
+            [InlineKeyboardButton(text="◀️ Способы оплаты", callback_data="sub:pay:menu")],
+        ]
+    )
+
+
 def card_payment_keyboard(pricing: SubscriptionPricing) -> InlineKeyboardMarkup:
     settings = get_settings()
     rows: list[list[InlineKeyboardButton]] = []
-    if stars_payments_enabled(settings) or card_payments_enabled(settings):
-        pay = _pay_label()
+    if card_payments_enabled(settings):
+        cur = settings.payment_currency.upper()
         rows.extend(
             [
                 [
-                    InlineKeyboardButton(text=f"✨ Lite · {pay}", callback_data="sub:stars:lite"),
-                    InlineKeyboardButton(text=f"🚀 PRO · {pay}", callback_data="sub:stars:pro"),
+                    InlineKeyboardButton(text=f"✨ Lite · {cur}", callback_data="sub:card:lite"),
+                    InlineKeyboardButton(text=f"🚀 PRO · {cur}", callback_data="sub:card:pro"),
                 ],
             ]
         )
@@ -83,18 +100,21 @@ def card_payment_keyboard(pricing: SubscriptionPricing) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def crypto_plan_keyboard(pricing: SubscriptionPricing) -> InlineKeyboardMarkup:
+def crypto_plan_keyboard(settings=None) -> InlineKeyboardMarkup:
+    settings = settings or get_settings()
+    lite = crypto_price_label(settings, SubscriptionPlan.LITE)
+    pro = crypto_price_label(settings, SubscriptionPlan.PRO)
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=_truncate_btn(f"✨ {pricing.lite_price_label()}"),
+                    text=_truncate_btn(f"✨ Lite · {lite}"),
                     callback_data="sub:crypto:lite",
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text=_truncate_btn(f"🚀 {pricing.pro_price_label()}"),
+                    text=_truncate_btn(f"🚀 PRO · {pro}"),
                     callback_data="sub:crypto:pro",
                 ),
             ],

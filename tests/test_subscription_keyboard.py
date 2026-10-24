@@ -37,3 +37,10 @@ def test_payment_methods_lists_crypto_and_card() -> None:
     assert "sub:pay:crypto" in callbacks
     assert "sub:pay:card" in callbacks
     assert "sub:pay:legal" not in callbacks
+
+
+def test_payment_methods_shows_stars_when_enabled() -> None:
+    with patch("app.bot.keyboards.subscription.stars_payments_enabled", return_value=True):
+        kb = payment_methods_keyboard()
+    callbacks = [b.callback_data for row in kb.inline_keyboard for b in row]
+    assert "sub:pay:stars" in callbacks
