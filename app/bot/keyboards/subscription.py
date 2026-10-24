@@ -87,13 +87,13 @@ def crypto_plan_keyboard(pricing: SubscriptionPricing) -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=_truncate_btn(f"✨ {pricing.format_usd_line(pricing.lite_usd)}"),
+                    text=_truncate_btn(f"✨ {pricing.lite_price_label()}"),
                     callback_data="sub:crypto:lite",
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text=_truncate_btn(f"🚀 {pricing.format_usd_line(pricing.pro_usd)}"),
+                    text=_truncate_btn(f"🚀 {pricing.pro_price_label()}"),
                     callback_data="sub:crypto:pro",
                 ),
             ],
@@ -107,11 +107,11 @@ def qr_plan_keyboard(pricing: SubscriptionPricing) -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=_truncate_btn(f"✨ {pricing.format_usd_line(pricing.lite_usd)}"),
+                    text=_truncate_btn(f"✨ {pricing.lite_price_label()}"),
                     callback_data="sub:qr:lite",
                 ),
                 InlineKeyboardButton(
-                    text=_truncate_btn(f"🚀 {pricing.format_usd_line(pricing.pro_usd)}"),
+                    text=_truncate_btn(f"🚀 {pricing.pro_price_label()}"),
                     callback_data="sub:qr:pro",
                 ),
             ],
@@ -125,11 +125,11 @@ def legal_plan_keyboard(pricing: SubscriptionPricing) -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=_truncate_btn(f"✨ {pricing.format_usd_line(pricing.lite_usd)}"),
+                    text=_truncate_btn(f"✨ {pricing.lite_price_label()}"),
                     callback_data="sub:legal:lite",
                 ),
                 InlineKeyboardButton(
-                    text=_truncate_btn(f"🚀 {pricing.format_usd_line(pricing.pro_usd)}"),
+                    text=_truncate_btn(f"🚀 {pricing.pro_price_label()}"),
                     callback_data="sub:legal:pro",
                 ),
             ],

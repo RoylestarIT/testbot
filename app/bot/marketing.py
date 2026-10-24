@@ -6,8 +6,8 @@ from app.core.config import get_settings
 
 def market_compare_text() -> str:
     settings = get_settings()
-    lite = settings.subscription_lite_usd_label
-    pro = settings.subscription_pro_usd_label
+    lite_rub = settings.subscription_lite_price_rub
+    pro_rub = settings.subscription_pro_price_rub
     return (
         brand_title("Сравнение с рынком", tagline="Без названий — по типичным предложениям", icon="📊")
         + section("Формат", icon="📱")
@@ -17,7 +17,7 @@ def market_compare_text() -> str:
         + bullet("⚪ Часто: отдельный <b>сайт</b> или только <b>WB</b> без Ozon")
         + section("Оплата", icon="💵")
         + "\n"
-        + bullet(f"✅ Мы: <b>~${lite}</b> / <b>~${pro}</b> в месяц, без счёта «за каждый ответ»")
+        + bullet(f"✅ Мы: <b>{lite_rub} ₽</b> / <b>{pro_rub} ₽</b> в месяц, без счёта «за каждый ответ»")
         + "\n"
         + bullet("⚪ Часто: 1–3 ₽ за ответ или тарифы от 2500–12000 ₽/мес")
         + section("Контроль", icon="✋")

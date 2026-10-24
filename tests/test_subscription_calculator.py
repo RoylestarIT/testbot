@@ -7,15 +7,15 @@ from app.services.payment.subscription_calculator import (
 
 def test_calculator_table_contains_lite_pro_rub() -> None:
     pricing = SubscriptionPricing(
-        lite_usd=10,
-        pro_usd=20,
-        rub_per_usd=90,
-        byn_per_usd=3.3,
+        lite_rub=800,
+        pro_rub=1600,
+        lite_byn=30.0,
+        pro_byn=60.0,
         source="test",
     )
     text = build_calculator_table(pricing)
-    assert "900" in text
-    assert "1 800" in text or "1800" in text
+    assert "800" in text
+    assert "1 600" in text
     assert "Калькулятор" in text
     assert "<pre>" not in text
     assert "500</b> отв." in text
@@ -23,10 +23,10 @@ def test_calculator_table_contains_lite_pro_rub() -> None:
 
 def test_calculator_detail_high_volume_favors_subscription() -> None:
     pricing = SubscriptionPricing(
-        lite_usd=10,
-        pro_usd=20,
-        rub_per_usd=90,
-        byn_per_usd=3.3,
+        lite_rub=800,
+        pro_rub=1600,
+        lite_byn=30.0,
+        pro_byn=60.0,
         source="test",
     )
     text = build_calculator_detail(pricing, 1000)

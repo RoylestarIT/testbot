@@ -16,22 +16,19 @@ def build_subscription_hub(
     access_line: str,
     trial_line: str | None = None,
 ) -> str:
-    lite = pricing.format_usd_line(pricing.lite_usd)
-    pro = pricing.format_usd_line(pricing.pro_usd)
     lines = [
         f"{brand_title('Подписка', tagline='Фикс в месяц · WB/Ozon', icon='💎').strip()}",
         SUBSCRIPTION_SEP,
         "",
         quote(f"👤  {access_line}"),
         "",
-        f"✨  Lite — {lite}",
-        f"🚀  PRO — {pro}",
+        f"✨  Lite — {pricing.lite_price_label()}",
+        f"🚀  PRO — {pricing.pro_price_label()}",
         "",
         muted("Оплата: крипта · карта РФ/РБ · СБП/перевод"),
     ]
     if trial_line:
         lines.extend(["", trial_line])
-    lines.extend(["", muted("Промокод: /promo КОД")])
     return "\n".join(lines)
 
 
@@ -39,8 +36,8 @@ def build_payment_hub(pricing: SubscriptionPricing) -> str:
     return (
         f"{brand_title('Оплата', tagline='Выберите способ', icon='💳').strip()}\n"
         f"{SUBSCRIPTION_SEP}\n\n"
-        f"✨  Lite — {pricing.format_usd_line(pricing.lite_usd)}\n"
-        f"🚀  PRO — {pricing.format_usd_line(pricing.pro_usd)}\n\n"
+        f"✨  Lite — {pricing.lite_price_label()}\n"
+        f"🚀  PRO — {pricing.pro_price_label()}\n\n"
         f"{muted('После оплаты проверьте «Мой доступ».')}"
     )
 

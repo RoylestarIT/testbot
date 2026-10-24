@@ -9,11 +9,13 @@ from app.services.payment.fx_rates import SubscriptionPricing
 async def test_subscription_hub_text_new_user_no_name_error() -> None:
     user = User(id=1, tg_id=999001, username="newbie")
     pricing = SubscriptionPricing(
-        lite_usd=10.0,
-        pro_usd=20.0,
-        rub_per_usd=90.0,
-        byn_per_usd=3.3,
+        lite_rub=800,
+        pro_rub=1600,
+        lite_byn=30.0,
+        pro_byn=60.0,
         source="test",
     )
     text = await _subscription_hub_text(user, pricing)
-    assert "Подписка" in text or "Lite" in text or "💎" in text
+    assert "800" in text
+    assert "1 600" in text
+    assert "промокод" not in text.lower()

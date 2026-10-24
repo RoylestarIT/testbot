@@ -13,8 +13,8 @@ PRESET_VOLUMES = (100, 200, 300, 500, 800, 1000)
 
 def suggest_plan_for_volume(volume: int, pricing: SubscriptionPricing) -> str:
     """lite | pro — подсказка для кнопок оплаты."""
-    lite_rub = pricing.rub_for(pricing.lite_usd)
-    pro_rub = pricing.rub_for(pricing.pro_usd)
+    lite_rub = pricing.lite_rub
+    pro_rub = pricing.pro_rub
     mid_market = _pay_per_answer_total(volume, PER_ANSWER_RUB_MID)
     if mid_market > pro_rub or volume >= 800:
         return "pro"
@@ -58,8 +58,8 @@ def _volume_overview_line(vol: int, *, lite_rub: int, pro_rub: int) -> str:
 
 
 def build_calculator_table(pricing: SubscriptionPricing) -> str:
-    lite_rub = pricing.rub_for(pricing.lite_usd)
-    pro_rub = pricing.rub_for(pricing.pro_usd)
+    lite_rub = pricing.lite_rub
+    pro_rub = pricing.pro_rub
     from app.bot.subscription_ui import SUBSCRIPTION_SEP
 
     lines = [
@@ -94,8 +94,8 @@ def build_calculator_table(pricing: SubscriptionPricing) -> str:
 
 def build_calculator_detail(pricing: SubscriptionPricing, volume: int) -> str:
     volume = max(1, min(volume, 50_000))
-    lite_rub = pricing.rub_for(pricing.lite_usd)
-    pro_rub = pricing.rub_for(pricing.pro_usd)
+    lite_rub = pricing.lite_rub
+    pro_rub = pricing.pro_rub
     low = _pay_per_answer_total(volume, PER_ANSWER_RUB_LOW)
     mid = _pay_per_answer_total(volume, PER_ANSWER_RUB_MID)
     high = _pay_per_answer_total(volume, PER_ANSWER_RUB_HIGH)

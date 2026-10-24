@@ -72,12 +72,14 @@ def invoice_title(plan: SubscriptionPlan) -> str:
 def invoice_description(plan: SubscriptionPlan, settings: Settings) -> str:
     if plan == SubscriptionPlan.PRO:
         return (
-            f"PRO на 1 месяц (~${settings.subscription_pro_usd_label}/мес). "
-            "Без лимита генераций, отправка ответа в WB/Ozon, авто-ответы 4–5★."
+            f"PRO на 1 месяц — {settings.subscription_pro_price_rub} ₽ / "
+            f"{settings.subscription_pro_price_byn:g} BYN. "
+            "Без лимита генераций, publish в WB/Ozon, авто-ответы 4–5★."
         )
     return (
-        f"Lite на 1 месяц (~${settings.subscription_lite_usd_label}/мес). "
-        "Без лимита генераций; публикация — копированием в кабинет (не через API бота)."
+        f"Lite на 1 месяц — {settings.subscription_lite_price_rub} ₽ / "
+        f"{settings.subscription_lite_price_byn:g} BYN. "
+        "Без лимита генераций; ответ в кабинет — копированием."
     )
 
 

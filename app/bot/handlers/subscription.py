@@ -373,13 +373,13 @@ async def crypto_create_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUs
         return
     pricing = await get_subscription_pricing()
     plan_name = "PRO" if plan == SubscriptionPlan.PRO else "Lite"
-    usd = pricing.pro_usd if plan == SubscriptionPlan.PRO else pricing.lite_usd
+    amount_label = pricing.pro_price_label() if plan == SubscriptionPlan.PRO else pricing.lite_price_label()
     await callback.answer()
     if callback.message:
         await safe_edit_message(
             callback.message,
             f"🪙 <b>Оплата {plan_name}</b>\n\n"
-            f"Сумма: <b>{pricing.format_usd_line(usd)}</b>\n"
+            f"Сумма: <b>{amount_label}</b>\n"
             "<i>Оплата USDT, TON и др. в @CryptoBot</i>\n\n"
             "После оплаты доступ включится автоматически (до 2 минут).",
             reply_markup=crypto_pay_keyboard(str(pay_url)),
