@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.bot.ui import REVIEWS_HUB_BUTTON
+from app.core.config import get_settings
 
 
 def more_menu_keyboard(*, show_admin: bool = False) -> InlineKeyboardMarkup:
@@ -42,7 +43,10 @@ def dashboard_keyboard(
     if show_onboarding:
         rows.append([InlineKeyboardButton(text="🚀 Начать настройку", callback_data="menu:onboarding")])
     if show_trial:
-        rows.append([InlineKeyboardButton(text="🎁 Trial PRO · 7 дней", callback_data="menu:trial_pro")])
+        days = get_settings().trial_pro_days
+        rows.append(
+            [InlineKeyboardButton(text=f"🎁 Trial PRO · {days} дн.", callback_data="menu:trial_pro")]
+        )
 
     rows.extend(
         [

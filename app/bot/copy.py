@@ -21,6 +21,8 @@ def differentiators_section(*, compact: bool = False) -> str:
             + bullet("✋ 1–3★ только вручную; авто-ответы — 4–5★ на PRO")
             + "\n"
             + bullet("💵 Подписка ~$10 / ~$20, не пакеты «за каждый ответ»")
+            + "\n"
+            + bullet("📊 «Почему мы» → сравнение с рынком и карта функций")
         )
     return (
         section(f"Почему {BRAND}", icon="⚡")
@@ -91,6 +93,8 @@ HELP_TEXT = (
     + "\n"
     + bullet("🔵 Ozon — Client-Id + Api-Key")
     + section("Ещё", icon="➕")
+    + "\n"
+    + bullet("ℹ️ «Почему мы» — сравнение с рынком и карта функций")
     + "\n"
     + bullet("⋯ на сводке — только справка и поддержка")
     + "\n"

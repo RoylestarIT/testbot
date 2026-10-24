@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     stale_review_hours: int = Field(default=24, validation_alias="STALE_REVIEW_HOURS")
     stale_reminder_hour_utc: int = Field(default=15, validation_alias="STALE_REMINDER_HOUR_UTC")
     llm_queue_workers: int = Field(default=2, validation_alias="LLM_QUEUE_WORKERS")
-    trial_pro_days: int = Field(default=7, validation_alias="TRIAL_PRO_DAYS")
+    trial_pro_days: int = Field(default=14, validation_alias="TRIAL_PRO_DAYS")
     free_api_publishes: int = Field(default=3, validation_alias="FREE_API_PUBLISHES")
     support_username: str = Field(default="", validation_alias="SUPPORT_USERNAME")
     webhook_url: str = Field(default="", validation_alias="WEBHOOK_URL")

@@ -15,6 +15,7 @@ from app.services.plans import (
     describe_access_tier,
     has_lite_or_higher,
 )
+from app.services.period_analytics import build_period_analytics_block
 from app.services.subscription import get_effective_subscription
 
 
@@ -38,10 +39,13 @@ def _sync_line(account) -> str:
 async def build_dashboard_details(session: AsyncSession, user: User) -> str:
     subscription = await get_effective_subscription(session, user.id)
     tier = await describe_access_tier(session, user, subscription)
+    analytics = await build_period_analytics_block(session, user.id)
     lines = [
-        brand_title("Подробнее", tagline="Тариф и кабинеты", icon="📊"),
+        brand_title("Подробнее", tagline="Тариф, аналитика, кабинеты", icon="📊"),
         bullet(f"💎 Тариф: <b>{tier}</b>"),
         bullet(f"🚀 Publish-квота: <b>{user.free_api_publishes_remaining}</b>"),
+        "",
+        analytics,
         "",
         "<b>🏪 Кабинеты</b>",
     ]
