@@ -15,7 +15,7 @@ def calculator_volumes_keyboard() -> InlineKeyboardMarkup:
             chunk = []
     if chunk:
         rows.append(chunk)
-    rows.append([InlineKeyboardButton(text="◀️ Подписка", callback_data="menu:subscription")])
+    rows.append([InlineKeyboardButton(text="◀️ Подписка", callback_data="menu:subscription")])  # hub
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 

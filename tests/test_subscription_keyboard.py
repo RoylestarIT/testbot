@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from app.bot.keyboards.subscription import (
     payment_methods_keyboard,
-    subscription_menu_keyboard,
+    subscription_hub_keyboard,
 )
 from app.services.payment.fx_rates import SubscriptionPricing
 
@@ -17,14 +17,14 @@ def _sample_pricing() -> SubscriptionPricing:
     )
 
 
-def test_subscription_menu_has_four_core_buttons() -> None:
-    kb = subscription_menu_keyboard(_sample_pricing())
+def test_subscription_hub_compact_layout() -> None:
+    kb = subscription_hub_keyboard(_sample_pricing())
     texts = [b.text for row in kb.inline_keyboard for b in row]
     callbacks = [b.callback_data for row in kb.inline_keyboard for b in row]
-    assert "📊  Сравнение тарифов" in texts
-    assert "💳  Способ оплаты" in texts
-    assert "👤  Мой доступ" in texts
-    assert "🏠  Сводка" in texts
+    assert texts[0] == "💳 Оплатить"
+    assert "🧮 Калькулятор" in texts
+    assert "📊 Тарифы" in texts
+    assert len(kb.inline_keyboard) == 3
     assert "sub:pay:menu" in callbacks
     assert "sub:stars:lite" not in callbacks
 

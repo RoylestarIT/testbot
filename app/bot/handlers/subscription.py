@@ -12,8 +12,11 @@ from app.bot.keyboards.subscription import (
     payment_methods_keyboard,
     qr_paid_keyboard,
     qr_plan_keyboard,
+    subscription_hub_keyboard,
     subscription_menu_keyboard,
+    subscription_subscreen_keyboard,
 )
+from app.bot.subscription_ui import build_payment_hub, build_subscription_hub
 from app.bot.keyboards.subscription_calc import calculator_detail_keyboard, calculator_volumes_keyboard
 from app.services.payment.subscription_calculator import (
     build_calculator_detail,
@@ -45,8 +48,7 @@ from app.services.payment.telegram_stars import (
     payment_method_for_invoice,
     payment_mode_label,
 )
-from app.bot.copy import differentiators_section
-from app.services.plans import LITE_VS_PRO_SHORT, PLANS_COMPARISON_TEXT, describe_access_tier
+from app.services.plans import PLANS_COMPARISON_TEXT, describe_access_tier
 from app.services.subscription import (
     activate_from_telegram_invoice,
     create_crypto_pending,
@@ -58,55 +60,19 @@ from app.tasks.crypto_pay_poller import process_crypto_pending_once
 
 router = Router(name="subscription")
 
-def _subscription_menu_text(pricing: SubscriptionPricing) -> str:
-    from app.bot.ui import brand_title, bullet, footer_hint, muted, section
-
-    return (
-        brand_title("Подписка", tagline="Lite ~$10 · PRO ~$20 в месяц", icon="💎")
-        + section("Цены", icon="💱")
-        + "\n"
-        + bullet(pricing.lite_line())
-        + "\n"
-        + bullet(pricing.pro_line())
-        + "\n"
-        + muted(f"Курс: {pricing.source}.")
-        + differentiators_section(compact=True)
-        + section("Дальше", icon="👇")
-        + "\n"
-        + muted(LITE_VS_PRO_SHORT)
-        + "\n"
-        + muted("Оплатить: «Способ оплаты» — крипта, карта РФ/РБ или безнал для юр. лиц.")
-        + footer_hint("Сравнение тарифов и калькулятор ₽/ответ — кнопки ниже.")
-    )
+async def _subscription_access_line(db_user: DbUser) -> str:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        subscription = await get_effective_subscription(session, db_user.id)
+        if user is None:
+            return "—"
+        return await describe_access_tier(session, user, subscription)
 
 
-def _payment_methods_text(pricing: SubscriptionPricing) -> str:
-    from app.bot.ui import brand_title, bullet, muted, section
-
-    settings = get_settings()
-    lines: list[str] = [
-        brand_title("Способ оплаты", tagline="Выберите удобный вариант", icon="💳"),
-        section("Тарифы", icon="💱"),
-        "",
-        bullet(pricing.lite_line()),
-        bullet(pricing.pro_line()),
-        "",
-        section("Варианты", icon="🧾"),
-        "",
-    ]
-    if crypto_pay_enabled(settings):
-        lines.append(bullet("🪙 Криптовалюта — Crypto Bot (USDT, TON и др.)"))
-    card_note = payment_mode_label(settings) if card_payments_enabled(settings) else None
-    if stars_payments_enabled(settings):
-        lines.append(bullet("💳 Карта · РФ / РБ — оплата Telegram Stars"))
-    elif card_note:
-        lines.append(bullet(f"💳 Карта · РФ / РБ — {card_note}"))
-    else:
-        lines.append(bullet("💳 Карта · РФ / РБ — СБП / перевод по реквизитам"))
-    lines.append(bullet("🏦 Безнал — счёт для юридических лиц (РФ / РБ)"))
-    lines.append("")
-    lines.append(muted("После оплаты статус — «Мой доступ»."))
-    return "\n".join(lines)
+async def _subscription_hub_text(db_user: DbUser, pricing: SubscriptionPricing) -> str:
+    access = await _subscription_access_line(db_user)
+    return build_subscription_hub(pricing, access_line=access)
 
 
 async def _subscription_status_text(db_user: DbUser) -> str:
@@ -155,35 +121,29 @@ async def _notify_admins_qr(
 @router.message(Command("my_subscription"))
 async def cmd_my_subscription(message: Message, db_user: DbUser) -> None:
     pricing = await get_subscription_pricing()
-    text = await _subscription_status_text(db_user)
-    await message.answer(text, reply_markup=subscription_menu_keyboard(pricing))
+    text = await _subscription_hub_text(db_user, pricing)
+    await message.answer(text, reply_markup=subscription_hub_keyboard(pricing))
 
 
 @router.callback_query(F.data == "menu:subscription")
 async def menu_subscription(callback: CallbackQuery, db_user: DbUser) -> None:
     pricing = await get_subscription_pricing()
-    text = await _subscription_status_text(db_user)
-    await answer_and_edit(
-        callback,
-        f"{_subscription_menu_text(pricing)}\n\n{text}",
-        reply_markup=subscription_menu_keyboard(pricing),
-    )
+    text = await _subscription_hub_text(db_user, pricing)
+    await answer_and_edit(callback, text, reply_markup=subscription_hub_keyboard(pricing))
 
 
 @router.callback_query(F.data == "sub:status")
 async def subscription_status(callback: CallbackQuery, db_user: DbUser) -> None:
-    pricing = await get_subscription_pricing()
     text = await _subscription_status_text(db_user)
-    await answer_and_edit(callback, text, reply_markup=subscription_menu_keyboard(pricing))
+    await answer_and_edit(callback, text, reply_markup=subscription_subscreen_keyboard())
 
 
 @router.callback_query(F.data == "sub:compare")
 async def subscription_compare(callback: CallbackQuery) -> None:
-    pricing = await get_subscription_pricing()
     await answer_and_edit(
         callback,
         PLANS_COMPARISON_TEXT,
-        reply_markup=subscription_menu_keyboard(pricing),
+        reply_markup=subscription_subscreen_keyboard(),
     )
 
 
@@ -213,7 +173,7 @@ async def payment_methods_menu(callback: CallbackQuery) -> None:
     pricing = await get_subscription_pricing()
     await answer_and_edit(
         callback,
-        _payment_methods_text(pricing),
+        build_payment_hub(pricing),
         reply_markup=payment_methods_keyboard(),
     )
 

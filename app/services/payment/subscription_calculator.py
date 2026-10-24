@@ -34,14 +34,15 @@ def _best_plan_hint(
 def build_calculator_table(pricing: SubscriptionPricing) -> str:
     lite_rub = pricing.rub_for(pricing.lite_usd)
     pro_rub = pricing.rub_for(pricing.pro_usd)
+    from app.bot.subscription_ui import SUBSCRIPTION_SEP
+
     lines = [
-        brand_title("Калькулятор", tagline="Подписка vs оплата за каждый ответ", icon="🧮"),
+        brand_title("Калькулятор", tagline="Подписка vs ₽ за ответ", icon="🧮").strip(),
+        SUBSCRIPTION_SEP,
         muted(
-            f"Ориентир рынка: {PER_ANSWER_RUB_LOW:g}–{PER_ANSWER_RUB_HIGH:g} ₽ за ответ. "
-            f"Наши тарифы: Lite {_fmt_rub(lite_rub)}, PRO {_fmt_rub(pro_rub)} / мес "
-            f"({pricing.source})."
+            f"Рынок ~{PER_ANSWER_RUB_LOW:g}–{PER_ANSWER_RUB_HIGH:g} ₽/ответ · "
+            f"Lite {_fmt_rub(lite_rub)} · PRO {_fmt_rub(pro_rub)} / мес"
         ),
-        section("Сравнение по объёму", icon="📊"),
         "",
         "<pre>",
         " ответов │  ~1₽/шт │  ~2₽/шт │  ~3₽/шт │  Lite  │  PRO",
@@ -55,15 +56,8 @@ def build_calculator_table(pricing: SubscriptionPricing) -> str:
             f" {vol:>7} │ {p1:>6} ₽ │ {p2:>6} ₽ │ {p3:>6} ₽ │ {lite_rub:>5} │ {pro_rub:>4}"
         )
     lines.append("</pre>")
-    lines.extend(
-        [
-            "",
-            bullet("Фикс-подписка не растёт с каждым новым отзывом — предсказуемый бюджет."),
-            bullet("PRO добавляет publish в API и авто 4–5★ — это не только «генерации»."),
-            "",
-            muted("👇 Выберите свой объём для короткого вывода."),
-        ]
-    )
+    lines.append("")
+    lines.append(muted("👇 Выберите объём ответов в месяц."))
     return "\n".join(lines)
 
 

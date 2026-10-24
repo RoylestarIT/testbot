@@ -238,7 +238,7 @@ def format_subscription_summary(
                 "Publish в WB/Ozon из бота: <b>только PRO</b> (или trial / бесплатная квота)",
                 "",
                 "Лимиты бесплатного тарифа: 1 кабинет WB/Ozon, 1 tone-профиль.\n"
-                "Оформите Lite или PRO — кнопка «Сравнение тарифов».",
+                "Оформите Lite или PRO — «Подписка → Оплатить».",
             ]
         )
         return "\n".join(lines)
