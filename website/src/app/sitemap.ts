@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { SITE_URL } from "@/content/constants";
+import { CONTENT_UPDATED, SITE_URL } from "@/content/constants";
 
 export const dynamic = "force-static";
 
@@ -20,7 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = SITE_URL.replace(/\/$/, "");
   return paths.map((path) => ({
     url: `${base}${path}`,
-    lastModified: new Date(),
+    lastModified: CONTENT_UPDATED,
     changeFrequency: path === "" ? "weekly" : "monthly",
     priority: path === "" ? 1 : 0.7,
   }));
