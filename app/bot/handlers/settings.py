@@ -63,8 +63,10 @@ from app.services.plans import (
 router = Router(name="settings")
 
 
-def _notifications_screen_text() -> str:
-    return NOTIFICATIONS_INTRO
+def _notifications_screen_text(*, preview_block: str | None = None) -> str:
+    if not preview_block:
+        return NOTIFICATIONS_INTRO
+    return f"{NOTIFICATIONS_INTRO}\n\n───────────────\n{preview_block}"
 
 
 @router.callback_query(F.data == "menu:settings")
@@ -930,10 +932,6 @@ async def settings_profile_lang(callback: CallbackQuery) -> None:
     await callback.answer("Пока доступен только русский интерфейс.", show_alert=True)
 
 
-async def _send_notify_preview(message: Message, preview_html: str) -> None:
-    await message.answer(preview_html)
-
-
 @router.callback_query(F.data == "settings:notifications")
 async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> None:
     from app.bot.keyboards.notifications import notifications_keyboard
@@ -978,9 +976,10 @@ async def settings_notify_toggle_new(callback: CallbackQuery, db_user: DbUser) -
         user = await UserRepository(session).get_by_id(db_user.id)
     await callback.answer("Сохранено")
     if callback.message and user:
+        preview = preview_new_reviews(negative_only=user.notify_negative_only) if new_val else None
         await safe_edit_message(
             callback.message,
-            _notifications_screen_text(),
+            _notifications_screen_text(preview_block=preview),
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
@@ -990,11 +989,6 @@ async def settings_notify_toggle_new(callback: CallbackQuery, db_user: DbUser) -
                 soft_recommend=user.soft_product_recommend,
             ),
         )
-        if new_val:
-            await _send_notify_preview(
-                callback.message,
-                preview_new_reviews(negative_only=user.notify_negative_only),
-            )
 
 
 @router.callback_query(F.data == "settings:notify:toggle_negative")
@@ -1046,9 +1040,10 @@ async def settings_notify_toggle_questions(callback: CallbackQuery, db_user: DbU
         user = await UserRepository(session).get_by_id(db_user.id)
     await callback.answer("Сохранено")
     if callback.message and user is not None:
+        preview = preview_buyer_questions() if new_val else None
         await safe_edit_message(
             callback.message,
-            _notifications_screen_text(),
+            _notifications_screen_text(preview_block=preview),
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
@@ -1058,8 +1053,6 @@ async def settings_notify_toggle_questions(callback: CallbackQuery, db_user: DbU
                 soft_recommend=user.soft_product_recommend,
             ),
         )
-        if new_val:
-            await _send_notify_preview(callback.message, preview_buyer_questions())
 
 
 @router.callback_query(F.data == "settings:notify:toggle_digest")
@@ -1080,9 +1073,10 @@ async def settings_notify_toggle_digest(callback: CallbackQuery, db_user: DbUser
         user = await UserRepository(session).get_by_id(db_user.id)
     await callback.answer("Сохранено")
     if callback.message and user:
+        preview = preview_daily_digest() if new_val else None
         await safe_edit_message(
             callback.message,
-            _notifications_screen_text(),
+            _notifications_screen_text(preview_block=preview),
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
@@ -1092,8 +1086,6 @@ async def settings_notify_toggle_digest(callback: CallbackQuery, db_user: DbUser
                 soft_recommend=user.soft_product_recommend,
             ),
         )
-        if new_val:
-            await _send_notify_preview(callback.message, preview_daily_digest())
 
 
 @router.callback_query(F.data == "settings:notify:toggle_stale")
@@ -1114,9 +1106,10 @@ async def settings_notify_toggle_stale(callback: CallbackQuery, db_user: DbUser)
         user = await UserRepository(session).get_by_id(db_user.id)
     await callback.answer("Сохранено")
     if callback.message and user:
+        preview = preview_stale_reviews() if new_val else None
         await safe_edit_message(
             callback.message,
-            _notifications_screen_text(),
+            _notifications_screen_text(preview_block=preview),
             reply_markup=notifications_keyboard(
                 notify_new=user.notify_new_reviews,
                 negative_only=user.notify_negative_only,
@@ -1126,8 +1119,6 @@ async def settings_notify_toggle_stale(callback: CallbackQuery, db_user: DbUser)
                 soft_recommend=user.soft_product_recommend,
             ),
         )
-        if new_val:
-            await _send_notify_preview(callback.message, preview_stale_reviews())
 
 
 @router.callback_query(F.data == "settings:notify:toggle_recommend")
