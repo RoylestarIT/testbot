@@ -27,7 +27,7 @@ jobs:
           cache-dependency-path: website/package-lock.json
       - name: Build static site (GitHub Pages basePath)
         working-directory: website
-        run: npm ci && npm run build:gh-pages
+        run: npm ci && npm run lint && npm run build:gh-pages
       - name: Push to gh-pages branch
         working-directory: website
         env:
