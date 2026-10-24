@@ -3,14 +3,10 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
+  --background: #f8f9fc;
   --foreground: #0f172a;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --accent: #0ea5e9;
   --muted: #64748b;
-  --card: #ffffff;
-  --border: #e2e8f0;
+  --border: #e8ecf4;
 }
 
 body {
@@ -21,5 +17,31 @@ body {
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@layer components {
+  .section-y {
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+
+  .container-page {
+    @apply mx-auto max-w-6xl px-4 sm:px-6;
+  }
+
+  .card {
+    @apply rounded-2xl border border-slate-200/80 bg-white shadow-card transition-shadow duration-300;
+  }
+
+  .card-hover {
+    @apply card hover:border-brand-200/80 hover:shadow-card-hover;
+  }
+
+  .link-arrow {
+    @apply inline-flex items-center gap-1 font-semibold text-brand-600 transition hover:text-brand-700 hover:gap-2;
+  }
+
+  .badge-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/90 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm backdrop-blur-sm;
   }
 }
