@@ -29,10 +29,10 @@ def test_subscription_hub_compact_layout() -> None:
     assert "sub:stars:lite" not in callbacks
 
 
-def test_payment_methods_lists_crypto_card_legal() -> None:
+def test_payment_methods_lists_crypto_and_card() -> None:
     with patch("app.bot.keyboards.subscription.crypto_pay_enabled", return_value=True):
         kb = payment_methods_keyboard()
     callbacks = [b.callback_data for row in kb.inline_keyboard for b in row]
     assert "sub:pay:crypto" in callbacks
     assert "sub:pay:card" in callbacks
-    assert "sub:pay:legal" in callbacks
+    assert "sub:pay:legal" not in callbacks

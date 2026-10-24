@@ -35,7 +35,7 @@ def market_compare_text() -> str:
         + bullet(f"✅ Trial PRO — <b>{settings.trial_pro_days}</b> дней + publish-квота")
         + "\n"
         + bullet("⚪ У рынка: от 3 дней до «N бесплатных ответов»")
-        + footer_hint(f"{BRAND} · WB + Ozon · crypto / карта РФ·РБ / юр. счёт")
+        + footer_hint(f"{BRAND} · WB + Ozon · crypto / карта РФ·РБ")
     )
 
 
@@ -74,7 +74,7 @@ def feature_roadmap_text() -> str:
         + "\n"
         + bullet("Аналитика 7/30 дней на «Подробнее»")
         + "\n"
-        + bullet("Подписка: crypto, карта, юр. безнал")
+        + bullet("Подписка: crypto, карта РФ/РБ, СБП")
         + "\n"
         + bullet("CSV истории · правила авто (5★ / без текста) · push о вопросах WB")
         + section("🔜 Скоро (приоритет)", icon="")

@@ -58,7 +58,6 @@ def payment_methods_keyboard() -> InlineKeyboardMarkup:
     if crypto_pay_enabled(settings):
         rows.append([InlineKeyboardButton(text="🪙 Crypto Bot", callback_data="sub:pay:crypto")])
     rows.append([InlineKeyboardButton(text="💳 Карта РФ / РБ", callback_data="sub:pay:card")])
-    rows.append([InlineKeyboardButton(text="🏦 Безнал · юр. лицо", callback_data="sub:pay:legal")])
     rows.append([InlineKeyboardButton(text="◀️ Подписка", callback_data="menu:subscription")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
