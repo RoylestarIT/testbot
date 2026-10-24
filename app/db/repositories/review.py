@@ -3,6 +3,7 @@ from typing import Any
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.db.models import MarketplaceAccount, Review, ReviewStatus
 
@@ -94,6 +95,23 @@ class ReviewRepository:
         if account_id is not None:
             stmt = stmt.where(Review.account_id == account_id)
         stmt = stmt.order_by(Review.created_at.desc()).limit(limit)
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_for_export(self, user_id: int, *, limit: int = 2000) -> list[Review]:
+        stmt = (
+            select(Review)
+            .join(MarketplaceAccount, Review.account_id == MarketplaceAccount.id)
+            .where(
+                MarketplaceAccount.user_id == user_id,
+                Review.status.in_(
+                    (ReviewStatus.PROCESSED, ReviewStatus.PUBLISHED, ReviewStatus.NEW)
+                ),
+            )
+            .order_by(Review.created_at.desc())
+            .limit(limit)
+            .options(selectinload(Review.account))
+        )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 

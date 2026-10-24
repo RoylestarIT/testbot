@@ -180,5 +180,6 @@ def history_filter_keyboard(
                 )
             )
         rows.append(acc_row)
+    rows.append([InlineKeyboardButton(text="📥 CSV отчёт", callback_data="review:history:export")])
     rows.extend(nav_home_queue().inline_keyboard)
     return InlineKeyboardMarkup(inline_keyboard=rows)

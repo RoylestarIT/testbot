@@ -14,12 +14,18 @@ from loguru import logger
 
 from app.bot.keyboards.empty_states import poller_notify_keyboard
 from app.core.config import Settings, get_settings
-from app.db.models import ReviewStatus
+from app.db.models import Marketplace, ReviewStatus
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.user import UserRepository
 from app.services.marketplace.auto_publish import try_auto_publish_review
 from app.services.marketplace.base import MarketplaceAPIError
+from app.services.marketplace.questions_poll import (
+    build_questions_notify,
+    format_questions_message,
+    refresh_unanswered_questions,
+)
 from app.services.marketplace.sync_service import sync_account_reviews
+from app.services.marketplace.wildberries import WildberriesClient
 from app.services.poller_notify import PollerUserNotify, build_poller_notify_text
 from app.db.session import get_session_factory
 
@@ -60,9 +66,11 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
     session_factory = get_session_factory()
     user_stats: dict[int, PollerUserNotify] = defaultdict(PollerUserNotify)
     auth_failed_accounts: list[tuple[int, int]] = []
+    question_notifies: dict[int, list] = defaultdict(list)
 
     async with session_factory() as session:
         accounts = await AccountRepository(session).list_active_for_api_sync()
+        wb_client = WildberriesClient() if any(a.marketplace == Marketplace.WB for a in accounts) else None
 
         for account in accounts:
             try:
@@ -83,8 +91,9 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
                     if outcome.reply_preview:
                         stats.auto_previews.append(outcome.reply_preview)
                 elif outcome.status in ("llm_failed", "api_failed"):
+                    min_r = account.auto_publish_min_rating or 4
                     if account.auto_publish_enabled and (
-                        review.rating is None or review.rating >= 4
+                        review.rating is None or review.rating >= min_r
                     ):
                         stats.auto_failed += 1
                 await session.refresh(review)
@@ -93,6 +102,20 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
                     if review.rating is not None and review.rating <= 3:
                         stats.queue_negative += 1
 
+            if wb_client is not None and account.marketplace == Marketplace.WB:
+                try:
+                    prev, cur = await refresh_unanswered_questions(
+                        session, account, client=wb_client
+                    )
+                    if cur > prev:
+                        question_notifies[account.user_id].append(
+                            build_questions_notify(account, delta=cur - prev)
+                        )
+                except Exception as exc:
+                    logger.debug("Questions skip account_id={} err={}", account.id, exc)
+
+        if wb_client is not None:
+            await wb_client.aclose()
         await session.commit()
 
     _last_poller_ok_at = datetime.now(UTC)
@@ -118,6 +141,22 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
             await bot.send_message(user.tg_id, notify_text, reply_markup=poller_notify_keyboard())
         except Exception:
             logger.warning("Failed to notify user_id={} about new reviews", user_id)
+
+    for user_id, items in question_notifies.items():
+        user = users.get(user_id)
+        if user is None:
+            async with session_factory() as session:
+                user = await UserRepository(session).get_by_id(user_id)
+        if user is None or not user.notify_buyer_questions or not items:
+            continue
+        try:
+            await bot.send_message(
+                user.tg_id,
+                format_questions_message(items),
+                reply_markup=poller_notify_keyboard(),
+            )
+        except Exception:
+            logger.warning("Failed to notify user_id={} about buyer questions", user_id)
 
     for user_id, account_id in auth_failed_accounts:
         user = users.get(user_id)

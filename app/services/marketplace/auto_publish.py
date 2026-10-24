@@ -14,7 +14,11 @@ from app.services.marketplace.product_context import product_context_for_llm
 from app.services.marketplace.publish_service import publish_reply_to_marketplace
 from app.services.tone_resolver import resolve_tone_input
 
-AUTO_PUBLISH_MIN_RATING = 4
+DEFAULT_AUTO_PUBLISH_MIN_RATING = 4
+
+
+def _review_has_text(review: Review) -> bool:
+    return bool((review.text or "").strip())
 
 
 async def try_auto_publish_review(
@@ -29,7 +33,10 @@ async def try_auto_publish_review(
         return AutoPublishOutcome("skipped")
     if not await is_pro_user(session, account.user_id):
         return AutoPublishOutcome("skipped")
-    if review.rating is not None and review.rating < AUTO_PUBLISH_MIN_RATING:
+    min_rating = account.auto_publish_min_rating or DEFAULT_AUTO_PUBLISH_MIN_RATING
+    if review.rating is not None and review.rating < min_rating:
+        return AutoPublishOutcome("skipped")
+    if account.auto_publish_stars_only and _review_has_text(review):
         return AutoPublishOutcome("skipped")
 
     settings = settings or get_settings()

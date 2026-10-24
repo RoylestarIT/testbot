@@ -103,7 +103,7 @@ def autopublish_accounts_keyboard(accounts: list[MarketplaceAccount]) -> InlineK
             [
                 InlineKeyboardButton(
                     text=f"{flag} {mp} {name}",
-                    callback_data=f"settings:account_autopublish:{acc.id}",
+                    callback_data=f"settings:autopublish:detail:{acc.id}",
                 )
             ]
         )

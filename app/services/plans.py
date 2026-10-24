@@ -7,41 +7,31 @@ from app.db.models import Marketplace, Subscription, SubscriptionPlan, Subscript
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.services.pro_access import has_pro_access, is_trial_pro_active
-from app.bot.copy import differentiators_section
-from app.bot.ui import brand_title, bullet, footer_hint, muted, quote, section
+from app.bot.ui import brand_title, bullet, muted, section
 from app.services.subscription import get_effective_subscription, plan_label
 
 FREE_MAX_MARKETPLACE_ACCOUNTS = 1
 FREE_MAX_TONE_PROFILES = 1
 
 PLANS_COMPARISON_TEXT = (
-    brand_title("Тарифы", tagline="Подписка, не пакеты за каждый ответ", icon="💎")
+    brand_title("Тарифы", tagline="Что входит", icon="📊")
     + section("Free", icon="🆓")
     + "\n"
-    + bullet("⚡ 5 генераций в день")
+    + bullet("5 генераций / день · 1 кабинет · 1 tone")
     + "\n"
-    + bullet(f"🏪 {FREE_MAX_MARKETPLACE_ACCOUNTS} кабинет · 🎨 {FREE_MAX_TONE_PROFILES} tone")
+    + bullet("ответ — копирование в кабинет")
+    + section("Lite", icon="✨")
     + "\n"
-    + bullet("📋 ответ — копирование в кабинет")
-    + section("Lite ~$10/мес", icon="✨")
+    + bullet("♾️ генерации · несколько кабинетов и tone")
     + "\n"
-    + bullet("♾️ генерации без лимита")
+    + bullet("без publish в API")
+    + section("PRO", icon="🚀")
     + "\n"
-    + bullet("🏪 несколько кабинетов и tone")
+    + bullet("publish в WB/Ozon из бота")
     + "\n"
-    + bullet("📋 без publish в API")
-    + section("PRO ~$20/мес", icon="🚀")
+    + bullet("авто-ответы 4–5★ · негатив только вручную")
     + "\n"
-    + bullet("♾️ генерации без лимита")
-    + "\n"
-    + bullet("🚀 publish в WB/Ozon из бота")
-    + "\n"
-    + bullet("🤖 авто-ответы 4–5★ (1–3★ — только вручную)")
-    + differentiators_section(compact=True)
-    + section("Trial PRO", icon="🎁")
-    + "\n"
-    + quote("Один раз на аккаунт — возможности PRO на срок trial (кнопка в сводке).")
-    + footer_hint("🎟 Бесплатные publish в API — см. счётчик в сводке.")
+    + muted("Trial PRO — кнопка на сводке · один раз на аккаунт.")
 )
 
 LITE_VS_PRO_SHORT = (

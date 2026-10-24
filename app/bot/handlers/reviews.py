@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import BufferedInputFile, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from loguru import logger
 
 from app.bot.keyboards.menu import main_menu_keyboard
@@ -23,6 +23,7 @@ from app.db.models import ReviewStatus, User as DbUser
 from app.db.repositories.account import AccountRepository
 from app.services.marketplace.product_context import product_context_for_llm
 from app.db.repositories.reply import ReplyRepository
+from app.services.history_export import build_history_csv
 from app.db.repositories.review import ReviewRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.db.repositories.user import UserRepository
@@ -256,6 +257,19 @@ async def _render_history(
             inline_keyboard=filter_kb.inline_keyboard + kb.inline_keyboard,
         )
     return text, kb
+
+
+@router.callback_query(F.data == "review:history:export")
+async def review_history_export(callback: CallbackQuery, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        payload = await build_history_csv(session, db_user.id)
+    await callback.answer()
+    if callback.message:
+        await callback.message.answer_document(
+            BufferedInputFile(payload, filename="golos-brenda-history.csv"),
+            caption="📥 История отзывов (до 2000 строк, UTF-8 для Excel)",
+        )
 
 
 @router.callback_query(F.data == "review:history")
