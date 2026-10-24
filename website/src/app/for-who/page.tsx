@@ -18,9 +18,9 @@ export default function ForWhoPage() {
       />
       <div className="container-page section-y !pt-10">
         <div className="grid gap-8 lg:grid-cols-2">
-          <div className="card border-emerald-200/80 bg-emerald-50/50 p-8">
-            <h2 className="text-lg font-semibold text-green-900">Наш клиент</h2>
-            <ul className="mt-4 space-y-3 text-sm text-green-950">
+          <div className="card border-success-muted/80 bg-success-soft/80 p-8">
+            <h2 className="font-display text-title text-ink">Наш клиент</h2>
+            <ul className="mt-4 space-y-3 text-body text-ink-muted">
               <li>· ~30–1000+ отзывов в месяц на WB и/или Ozon</li>
               <li>· Работаете сами или маленькая команда — некому сидеть в отзывах весь день</li>
               <li>· Хотите Telegram-first: уведомление → черновик → правка → publish или копия</li>
@@ -28,9 +28,9 @@ export default function ForWhoPage() {
               <li>· Нужны несколько кабинетов и tone-профилей (Lite/PRO)</li>
             </ul>
           </div>
-          <div className="card border-amber-200/80 bg-amber-50/50 p-8">
-            <h2 className="text-lg font-semibold text-amber-950">Скорее не к нам</h2>
-            <ul className="mt-4 space-y-3 text-sm text-amber-950">
+          <div className="card border-line-strong bg-surface-muted/90 p-8">
+            <h2 className="font-display text-title text-ink">Скорее не к нам</h2>
+            <ul className="mt-4 space-y-3 text-body text-ink-muted">
               <li>· Нужен только Яндекс Маркет — пока не поддерживаем</li>
               <li>· Требуется 100% автомат на все звёзды без участия человека</li>
               <li>· Нужна тяжёлая BI без работы с отзывами в Telegram</li>

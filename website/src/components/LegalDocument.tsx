@@ -13,16 +13,16 @@ export function LegalDocument({
   return (
     <article className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
       <header>
-        <h1 className="text-3xl font-bold text-slate-900">{title}</h1>
-        <p className="mt-2 text-slate-600">{subtitle}</p>
-        <p className="mt-4 text-sm text-slate-500">Оператор: {LEGAL_OPERATOR}</p>
-        <p className="text-sm text-slate-500">Сервис: «{BRAND}»</p>
+        <h1 className="font-display text-display text-ink">{title}</h1>
+        <p className="mt-2 text-body-lg text-ink-muted">{subtitle}</p>
+        <p className="mt-4 text-caption text-ink-subtle">Оператор: {LEGAL_OPERATOR}</p>
+        <p className="text-caption text-ink-subtle">Сервис: «{BRAND}»</p>
       </header>
       <div className="mt-10 space-y-8">
         {sections.map((section) => (
           <section key={section.title}>
-            <h2 className="text-lg font-semibold text-slate-900">{section.title}</h2>
-            <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-700">
+            <h2 className="font-display text-title text-ink">{section.title}</h2>
+            <div className="mt-3 space-y-3 text-body leading-relaxed text-ink-muted">
               {section.paragraphs.map((p) => (
                 <p key={p.slice(0, 40)}>{p}</p>
               ))}
@@ -30,7 +30,7 @@ export function LegalDocument({
           </section>
         ))}
       </div>
-      <p className="mt-12 text-xs text-slate-500">
+      <p className="mt-12 text-caption text-ink-subtle">
         Черновик для B2B-сервиса. Уточните реквизиты оператора перед публикацией. Актуальная
         версия также доступна в Telegram-боте.
       </p>

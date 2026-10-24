@@ -9,7 +9,7 @@ type Props = {
 };
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-tight transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600";
+  "inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-[-0.01em] transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600";
 
 const variants = {
   primary: `${base} bg-brand-600 text-white shadow-sm shadow-brand-700/20 hover:bg-brand-700 hover:shadow-md`,

@@ -8,7 +8,7 @@ export function TelegramMockup({ variant = "review" }: { variant?: "review" | "p
         aria-hidden
       />
       <div
-        className="relative overflow-hidden rounded-[1.75rem] border border-slate-800/10 bg-[#17212b] shadow-mockup ring-1 ring-white/10"
+        className="relative overflow-hidden rounded-[1.75rem] border border-black/20 bg-[#17212b] shadow-mockup ring-1 ring-white/10"
         aria-hidden
       >
         <div className="flex items-center gap-3 border-b border-white/10 bg-[#1e2c3a] px-4 py-3.5">
@@ -17,7 +17,7 @@ export function TelegramMockup({ variant = "review" }: { variant?: "review" | "p
           </div>
           <div>
             <p className="text-sm font-semibold text-white">Голос бренда</p>
-            <p className="text-xs text-emerald-400/90">● онлайн</p>
+            <p className="text-xs text-[#6bc99a]">● онлайн</p>
           </div>
         </div>
         <div className="space-y-3 px-3 py-5 text-[13px] leading-snug">
@@ -26,7 +26,7 @@ export function TelegramMockup({ variant = "review" }: { variant?: "review" | "p
               <Bubble align="left" muted>
                 <span className="text-amber-300">★★★★★</span> Новый отзыв · WB
                 <br />
-                <span className="text-slate-300">«Быстрая доставка, размер подошёл»</span>
+                <span className="text-white/75">«Быстрая доставка, размер подошёл»</span>
               </Bubble>
               <Bubble align="left" accent>
                 Вариант 1: Спасибо за отзыв! Рады, что размер подошёл…
@@ -83,7 +83,7 @@ function Bubble({
   accent?: boolean;
 }) {
   let bg = "bg-[#2b5278]/95 text-white";
-  if (muted) bg = "bg-[#243447] text-slate-200 ring-1 ring-white/5";
+  if (muted) bg = "bg-[#243447] text-white/85 ring-1 ring-white/5";
   if (accent) bg = "bg-[#2b5278] text-white ring-1 ring-brand-400/30";
 
   return (

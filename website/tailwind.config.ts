@@ -10,15 +10,24 @@ export default {
     extend: {
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        display: ["var(--font-manrope)", "var(--font-inter)", "system-ui", "sans-serif"],
+        display: ["var(--font-onest)", "var(--font-inter)", "system-ui", "sans-serif"],
       },
       fontSize: {
-        "display-lg": ["3.25rem", { lineHeight: "1.08", letterSpacing: "-0.035em", fontWeight: "800" }],
-        "display": ["2.5rem", { lineHeight: "1.12", letterSpacing: "-0.03em", fontWeight: "700" }],
-        "title": ["1.375rem", { lineHeight: "1.3", letterSpacing: "-0.02em", fontWeight: "600" }],
-        "body-lg": ["1.125rem", { lineHeight: "1.65", letterSpacing: "-0.01em" }],
-        "body": ["1rem", { lineHeight: "1.65", letterSpacing: "-0.006em" }],
-        "caption": ["0.8125rem", { lineHeight: "1.5", letterSpacing: "0.01em" }],
+        "display-lg": [
+          "3.125rem",
+          { lineHeight: "1.06", letterSpacing: "-0.032em", fontWeight: "800" },
+        ],
+        display: [
+          "2.375rem",
+          { lineHeight: "1.14", letterSpacing: "-0.028em", fontWeight: "700" },
+        ],
+        title: [
+          "1.3125rem",
+          { lineHeight: "1.32", letterSpacing: "-0.018em", fontWeight: "600" },
+        ],
+        "body-lg": ["1.0625rem", { lineHeight: "1.68", letterSpacing: "-0.008em" }],
+        body: ["1rem", { lineHeight: "1.68", letterSpacing: "-0.004em" }],
+        caption: ["0.8125rem", { lineHeight: "1.52", letterSpacing: "0.005em" }],
       },
       colors: {
         background: "var(--background)",
@@ -27,18 +36,24 @@ export default {
           DEFAULT: "var(--ink)",
           muted: "var(--ink-muted)",
           subtle: "var(--ink-subtle)",
+          faint: "var(--ink-faint)",
         },
         brand: {
-          50: "#f4f3ff",
-          100: "#eceafd",
-          200: "#dcd8fc",
-          300: "#c2bbf8",
-          400: "#9d92f0",
-          500: "#7568e3",
-          600: "#5b4ed0",
-          700: "#4a3fb5",
-          800: "#3f3693",
-          900: "#362f76",
+          50: "#f3f2fb",
+          100: "#eae8f8",
+          200: "#d5d1f0",
+          300: "#b8b1e4",
+          400: "#9489d4",
+          500: "#7266c4",
+          600: "#5a4fb3",
+          700: "#4a4196",
+          800: "#3f377a",
+          900: "#363065",
+        },
+        success: {
+          DEFAULT: "#2d9a6f",
+          soft: "#e8f5ef",
+          muted: "#c5e6d6",
         },
         telegram: {
           DEFAULT: "#2a9fd6",
@@ -46,26 +61,33 @@ export default {
           soft: "#e8f6fc",
         },
         surface: {
-          DEFAULT: "#ffffff",
-          muted: "#f3f4f8",
-          elevated: "#fafbfc",
+          DEFAULT: "var(--surface)",
+          muted: "var(--surface-muted)",
+          elevated: "var(--surface-elevated)",
         },
         line: {
           DEFAULT: "var(--line)",
           strong: "var(--line-strong)",
         },
+        footer: {
+          bg: "var(--footer-bg)",
+          border: "var(--footer-border)",
+          text: "var(--footer-text)",
+          muted: "var(--footer-muted)",
+        },
       },
       boxShadow: {
-        card: "0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -6px rgba(15, 23, 42, 0.07)",
+        card: "0 1px 2px rgba(22, 28, 45, 0.035), 0 10px 28px -8px rgba(22, 28, 45, 0.08)",
         "card-hover":
-          "0 2px 4px rgba(15, 23, 42, 0.04), 0 16px 40px -8px rgba(91, 78, 208, 0.12)",
-        mockup: "0 24px 48px -12px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.04)",
+          "0 2px 4px rgba(22, 28, 45, 0.04), 0 18px 44px -10px rgba(90, 79, 179, 0.14)",
+        mockup: "0 24px 48px -12px rgba(22, 28, 45, 0.16), 0 0 0 1px rgba(22, 28, 45, 0.05)",
       },
       backgroundImage: {
         "hero-mesh":
-          "radial-gradient(ellipse 85% 55% at 50% -15%, rgba(117, 104, 227, 0.11), transparent 55%), radial-gradient(ellipse 45% 35% at 100% 5%, rgba(42, 159, 214, 0.08), transparent), radial-gradient(ellipse 40% 40% at 0% 25%, rgba(157, 146, 240, 0.07), transparent)",
+          "radial-gradient(ellipse 90% 60% at 50% -20%, rgba(114, 102, 196, 0.09), transparent 58%), radial-gradient(ellipse 50% 40% at 100% 0%, rgba(42, 159, 214, 0.06), transparent), radial-gradient(ellipse 45% 45% at -5% 30%, rgba(148, 137, 212, 0.05), transparent)",
         "cta-gradient":
-          "linear-gradient(145deg, #4a3fb5 0%, #5b4ed0 42%, #2a7fb0 100%)",
+          "linear-gradient(152deg, #3f377a 0%, #5a4fb3 48%, #2878a3 100%)",
+        "section-fade": "linear-gradient(180deg, var(--surface-muted) 0%, var(--background) 100%)",
       },
     },
   },

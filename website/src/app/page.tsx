@@ -25,13 +25,13 @@ export default function HomePage() {
         <div className="container-page grid gap-12 pb-16 pt-10 sm:pt-14 lg:grid-cols-2 lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
           <div>
             <p className="badge-pill w-fit">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/90" aria-hidden />
+              <span className="h-1.5 w-1.5 rounded-full bg-success shadow-[0_0_0_2px_rgba(45,154,111,0.2)]" aria-hidden />
               Telegram-first для селлеров
             </p>
             <h1 className="mt-6 text-balance font-display text-display-lg text-ink sm:text-[3.5rem]">
               Голос бренда
             </h1>
-            <p className="mt-3 font-display text-body-lg font-semibold text-brand-700">
+            <p className="mt-3 font-display text-body-lg font-semibold tracking-tight text-brand-700">
               Время, деньги и лояльность покупателей — в одном Telegram
             </p>
             <p className="prose-muted mt-5 max-w-xl text-pretty">
@@ -148,8 +148,8 @@ export default function HomePage() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-brand-500 text-sm font-bold text-white shadow-md">
                   {s.n}
                 </span>
-                <h3 className="mt-5 font-semibold text-slate-900">{s.title}</h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">{s.text}</p>
+                <h3 className="mt-5 font-display text-title text-ink">{s.title}</h3>
+                <p className="mt-2 flex-1 text-body text-ink-muted">{s.text}</p>
               </li>
             ))}
           </ol>
@@ -162,7 +162,7 @@ export default function HomePage() {
       </section>
 
       {/* Features bento */}
-      <section className="section-y border-y border-slate-200/80 bg-white">
+      <section className="section-y border-y border-line bg-surface">
         <div className="container-page">
           <SectionHeading
             title="Возможности платформы"
@@ -170,7 +170,7 @@ export default function HomePage() {
           />
           <div className="mt-14 grid gap-6 lg:grid-cols-3">
             <div className="card p-8 lg:col-span-2">
-              <h3 className="font-semibold text-slate-900">В продукте сейчас</h3>
+              <h3 className="font-display text-title text-ink">В продукте сейчас</h3>
               <ul className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
                   "Синхронизация отзывов WB/Ozon, push, snooze, дайджест",
@@ -180,11 +180,8 @@ export default function HomePage() {
                   "Калькулятор подписка vs ₽ за ответ",
                   "Промокоды, поддержка с контекстом, onboarding",
                 ].map((item) => (
-                  <li key={item} className="flex gap-2.5 text-sm text-slate-700">
-                    <span
-                      className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
-                      aria-hidden
-                    >
+                  <li key={item} className="list-check">
+                    <span className="list-check-icon" aria-hidden>
                       <IconCheck className="h-3 w-3" />
                     </span>
                     {item}
@@ -197,13 +194,13 @@ export default function HomePage() {
                 <p className="text-xs font-bold uppercase tracking-widest text-brand-600">
                   Скоро
                 </p>
-                <ul className="mt-4 space-y-2 text-sm text-slate-700">
+                <ul className="mt-4 space-y-2 text-body text-ink-muted">
                   <li>Рекомендация товара в ответе (PRO)</li>
                   <li>Очередь вопросов Ozon</li>
                   <li>Расширенная аналитика</li>
                 </ul>
               </div>
-              <p className="text-xs leading-relaxed text-slate-500">
+              <p className="text-caption leading-relaxed text-ink-subtle">
                 Не в фокусе: Яндекс Маркет, автомат на 1–3★, отдельный web-кабинет вместо
                 Telegram.
               </p>
@@ -249,10 +246,10 @@ export default function HomePage() {
           aria-hidden
         />
         <div className="container-page relative max-w-3xl text-center">
-          <h2 className="text-balance text-2xl font-bold text-white sm:text-3xl lg:text-4xl">
+          <h2 className="text-balance font-display text-display text-white sm:text-[2.75rem]">
             Подключите первый кабинет за пару минут
           </h2>
-          <p className="mx-auto mt-4 max-w-lg text-pretty text-blue-50/95">
+          <p className="mx-auto mt-4 max-w-lg text-pretty text-body-lg font-normal text-white/85">
             @FeedBackReview_bot · Free без карты · PRO trial в один клик
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">

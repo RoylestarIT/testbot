@@ -11,12 +11,12 @@ import { TelegramButton } from "./TelegramButton";
 
 export function Footer() {
   return (
-    <footer className="border-t border-line bg-[#141a26] text-slate-400">
+    <footer className="border-t border-line bg-footer-bg text-footer-text">
       <div className="container-page py-14">
         <div className="flex flex-col gap-10 lg:flex-row lg:justify-between">
           <div className="max-w-sm">
             <Logo inverted />
-            <p className="mt-4 text-sm leading-relaxed text-slate-400">
+            <p className="mt-4 text-body leading-relaxed text-footer-text">
               Co-pilot для отзывов WB и Ozon в Telegram. Контроль текста у вас —
               рутину забирает бот.
             </p>
@@ -29,7 +29,7 @@ export function Footer() {
 
           <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">
             <div>
-              <p className="font-semibold text-white">Продукт</p>
+              <p className="font-display font-semibold text-white">Продукт</p>
               <ul className="mt-4 space-y-2.5">
                 {[
                   ["/how-it-works", "Как работает"],
@@ -45,7 +45,7 @@ export function Footer() {
               </ul>
             </div>
             <div>
-              <p className="font-semibold text-white">Компания</p>
+              <p className="font-display font-semibold text-white">Компания</p>
               <ul className="mt-4 space-y-2.5">
                 {[
                   ["/for-who", "Для кого"],
@@ -61,7 +61,7 @@ export function Footer() {
               </ul>
             </div>
             <div>
-              <p className="font-semibold text-white">Документы</p>
+              <p className="font-display font-semibold text-white">Документы</p>
               <ul className="mt-4 space-y-2.5">
                 {[
                   ["/privacy", "Конфиденциальность"],
@@ -78,10 +78,10 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-2 border-t border-slate-800 pt-8 text-xs text-slate-500">
+        <div className="mt-12 flex flex-col gap-2 border-t border-footer-border pt-8 text-caption text-footer-muted">
           <p>
             Бот: @{BOT_USERNAME} · Поддержка: бот → «Поддержка» ·{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-slate-300">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-footer-text">
               {SUPPORT_EMAIL}
             </a>
           </p>

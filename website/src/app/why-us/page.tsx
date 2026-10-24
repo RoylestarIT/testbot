@@ -19,15 +19,15 @@ export default function WhyUsPage() {
           title="Время, деньги и лояльность — в одном Telegram"
         />
 
-        <article className="mt-10 space-y-8 text-slate-700">
-          <blockquote className="rounded-xl border-l-4 border-blue-500 bg-slate-50 p-4 text-slate-700">
+        <article className="mt-10 space-y-8 text-ink-muted">
+          <blockquote className="rounded-xl border-l-4 border-brand-500 bg-brand-50/60 p-4 text-body text-ink-muted">
             Отзывы не должны съедать ваш день. «Голос бренда» забирает рутину: подтягиваем
             WB/Ozon, предлагаем 3 варианта ответа — вы решаете, что увидит покупатель.
           </blockquote>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900">Экономия времени</h2>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm">
+            <h2 className="font-display text-title text-ink">Экономия времени</h2>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-body">
               <li>Очередь в Telegram — без прыжков между кабинетами и таблицами</li>
               <li>ИИ готовит черновики — правка за минуты</li>
               <li>PRO: publish в API и авто только на 4–5★</li>
@@ -35,8 +35,8 @@ export default function WhyUsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900">Экономия на людях</h2>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm">
+            <h2 className="font-display text-title text-ink">Экономия на людях</h2>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-body">
               <li>
                 Отдельный сотрудник «только на отзывы» — часто{" "}
                 <strong>30–80 тыс. ₽</strong> и выше в месяц на рынке (без гарантий экономии
@@ -52,8 +52,8 @@ export default function WhyUsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900">Лояльность и продажи</h2>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm">
+            <h2 className="font-display text-title text-ink">Лояльность и продажи</h2>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-body">
               <li>Живой ответ повышает доверие к карточке</li>
               <li>Негатив 1–3★ только с вашего подтверждения</li>
               <li>Единый tone на WB и Ozon</li>
@@ -61,10 +61,10 @@ export default function WhyUsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900">
+            <h2 className="font-display text-title text-ink">
               Сравнение с рынком (без имён конкурентов)
             </h2>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm">
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-body">
               <li>
                 <strong>Мы</strong> — co-pilot в Telegram: sync → ответы → publish или копия
               </li>

@@ -67,8 +67,8 @@ function CompareCard({
         positive ? "ring-2 ring-brand-500/20 bg-brand-50/20" : ""
       }`}
     >
-      <h3 className="font-semibold text-slate-900">{title}</h3>
-      <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
+      <h3 className="font-display text-title text-ink">{title}</h3>
+      <ul className="mt-4 space-y-2.5 text-body text-ink-muted">
         {items.map((item) => (
           <li key={item} className="flex gap-2">
             <span className="text-brand-500" aria-hidden>

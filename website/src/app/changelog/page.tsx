@@ -35,10 +35,10 @@ export default function ChangelogPage() {
         />
         <ul className="mt-10 space-y-8">
           {entries.map((e) => (
-            <li key={e.title} className="border-l-2 border-blue-500 pl-4">
-              <time className="text-xs font-medium text-slate-500">{e.date}</time>
-              <h2 className="mt-1 font-semibold text-slate-900">{e.title}</h2>
-              <p className="mt-2 text-sm text-slate-600">{e.body}</p>
+            <li key={e.title} className="border-l-2 border-brand-500 pl-4">
+              <time className="text-caption font-medium text-ink-subtle">{e.date}</time>
+              <h2 className="mt-1 font-display text-title text-ink">{e.title}</h2>
+              <p className="mt-2 text-body text-ink-muted">{e.body}</p>
             </li>
           ))}
         </ul>

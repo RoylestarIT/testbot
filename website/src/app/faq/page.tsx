@@ -17,7 +17,7 @@ export default function FaqPage() {
       <InnerPageHero title="Частые вопросы" />
       <div className="container-page max-w-3xl section-y !pt-10">
         <FAQAccordion items={FAQ_ITEMS} />
-        <p className="mt-8 text-center text-sm text-slate-600">
+        <p className="mt-8 text-center text-body text-ink-muted">
           Не нашли ответ? Напишите в бота → «Поддержка» — контекст подтянется автоматически.
         </p>
         <div className="mt-6 flex justify-center">

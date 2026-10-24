@@ -40,21 +40,21 @@ export default function HowItWorksPage() {
               },
             ].map((step, i) => (
               <li key={step.title} className="flex gap-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-white shadow-sm">
                   {i + 1}
                 </span>
                 <div>
-                  <h3 className="font-semibold text-slate-900">{step.title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-600">{step.body}</p>
+                  <h3 className="font-display text-title text-ink">{step.title}</h3>
+                  <p className="mt-1 text-body leading-relaxed text-ink-muted">{step.body}</p>
                 </div>
               </li>
             ))}
           </ol>
         </div>
 
-        <div className="mt-16 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-center text-white shadow-card sm:p-10">
-          <h2 className="text-xl font-semibold">Поток в одном месте</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-slate-300">
+        <div className="mt-16 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 to-brand-800 p-8 text-center text-white shadow-card sm:p-10">
+          <h2 className="font-display text-title text-white">Поток в одном месте</h2>
+          <p className="mx-auto mt-3 max-w-xl text-body text-white/80">
             Маркетплейс → sync → Telegram → черновики → человек → publish/копия → покупатель
             видит ответ
           </p>

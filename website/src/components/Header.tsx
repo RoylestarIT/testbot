@@ -12,7 +12,7 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-white/80 shadow-sm backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-line bg-white/85 shadow-sm backdrop-blur-xl">
       <div className="container-page flex items-center justify-between gap-4 py-3.5">
         <Link
           href="/"
@@ -49,7 +49,7 @@ export function Header() {
           </TelegramButton>
           <button
             type="button"
-            className="rounded-xl p-2.5 text-slate-700 ring-1 ring-slate-200/80 md:hidden"
+            className="rounded-xl p-2.5 text-ink-muted ring-1 ring-line md:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav"
             aria-label={open ? "Закрыть меню" : "Открыть меню"}
@@ -63,14 +63,14 @@ export function Header() {
       {open && (
         <div
           id="mobile-nav"
-          className="border-t border-slate-200/80 bg-white px-4 py-4 md:hidden"
+          className="border-t border-line bg-surface px-4 py-4 md:hidden"
         >
           <nav className="flex flex-col gap-1" aria-label="Мобильное">
             {NAV.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-lg px-3 py-2.5 text-base font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-lg px-3 py-2.5 text-base font-medium text-ink-muted hover:bg-surface-muted hover:text-ink"
                 onClick={() => setOpen(false)}
               >
                 {item.label}

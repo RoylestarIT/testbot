@@ -19,8 +19,8 @@ export default function ContactsPage() {
       <div className="container-page max-w-xl section-y !pt-10">
         <div className="card space-y-6 p-8 sm:p-9">
           <div>
-            <h2 className="text-sm font-semibold uppercase text-slate-500">Telegram</h2>
-            <p className="mt-2 text-slate-900">
+            <h2 className="eyebrow">Telegram</h2>
+            <p className="mt-2 text-body font-medium text-ink">
               @{BOT_USERNAME} → меню «Поддержка»
             </p>
             <div className="mt-4">
@@ -28,7 +28,7 @@ export default function ContactsPage() {
             </div>
           </div>
           <div>
-            <h2 className="text-sm font-semibold uppercase text-slate-500">Email</h2>
+            <h2 className="eyebrow">Email</h2>
             <p className="mt-2">
               <a
                 href={`mailto:${SUPPORT_EMAIL}`}
@@ -37,7 +37,7 @@ export default function ContactsPage() {
                 {SUPPORT_EMAIL}
               </a>
             </p>
-            <p className="mt-1 text-xs text-slate-500">Placeholder — замените в env при деплое.</p>
+            <p className="mt-1 text-caption text-ink-subtle">Placeholder — замените в env при деплое.</p>
           </div>
         </div>
       </div>
