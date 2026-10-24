@@ -6,7 +6,6 @@ from loguru import logger
 
 async def _health_handler(_request: web.Request) -> web.Response:
     db_ok = True
-    db_error: str | None = None
     try:
         from sqlalchemy import text
 
@@ -15,9 +14,9 @@ async def _health_handler(_request: web.Request) -> web.Response:
         session_factory = get_session_factory()
         async with session_factory() as session:
             await session.execute(text("SELECT 1"))
-    except Exception as exc:
+    except Exception:
         db_ok = False
-        db_error = str(exc)[:200]
+        logger.exception("Health check: database unavailable")
 
     from app.tasks.poller import get_poller_health
 
@@ -30,8 +29,6 @@ async def _health_handler(_request: web.Request) -> web.Response:
         "poller": get_poller_health(),
         "bot": activity_snapshot(),
     }
-    if db_error:
-        payload["db_error"] = db_error
     status = 200 if db_ok else 503
     return web.json_response(payload, status=status)
 
