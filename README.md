@@ -40,8 +40,9 @@ python3 -m app.main
 - **Дайджест**: `DIGEST_HOUR_UTC=6` (~9:00 Europe/Minsk), вкл. в «🔔 Уведомления».
 - **LLM-очередь**: `LLM_QUEUE_WORKERS=2` — параллельные генерации без блокировки event loop.
 
-Перезапуск на VM: `./scripts/restart-bot.sh`  
-Бэкап SQLite: `./scripts/backup-db.sh`
+Перезапуск на VM: `./scripts/restart-bot.sh` (если включён systemd — рестарт через `systemctl`).
+
+**Работа 24/7:** бот должен крутиться на **своём VPS** (не в сессии Cloud Agent — та VM гасится, когда агент не активен). На сервере один раз: `./scripts/install-systemd.sh` — `Restart=always`, автозапуск после перезагрузки, логи `journalctl -u reviewpilot -f`. Перед этим: PostgreSQL, Redis, `.env`, `alembic upgrade head`. Бэкап: `./scripts/backup-db.sh` и `scripts/cron-backup.example`.
 
 ### Go-live (чеклист)
 
