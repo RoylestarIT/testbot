@@ -82,13 +82,15 @@ npx vercel link
 npx vercel --prod
 ```
 
-### GitHub Pages (запасной вариант, без Vercel)
+### GitHub Pages
 
-Ветка **`gh-pages`** уже содержит собранный лендинг. Один раз включите Pages:
+CI на каждый push в `main` (путь `website/**`) пушит сборку в ветку **`gh-pages`**.
 
-[Settings → Pages](https://github.com/RoylestarIT/testbot/settings/pages) → Branch **`gh-pages`** / **`/`** → Save.
+**Один раз** (только владелец репо): [Settings → Pages](https://github.com/RoylestarIT/testbot/settings/pages) → Source **Deploy from a branch** → **`gh-pages`** / **`/`** → Save.
 
-URL: **https://roylestarit.github.io/testbot/** (`npm run deploy:gh-pages` пересобирает и пушит ветку).
+Публичный URL: **https://roylestarit.github.io/testbot/**
+
+Локально: `npm run deploy:gh-pages` (нужны `git user.name` / `user.email`).
 
 ### Cloudflare Pages
 
