@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { canonical } from "@/content/constants";
 import { PageShell } from "@/components/PageShell";
 import { InnerPageHero } from "@/components/InnerPageHero";
 import { FAQAccordion } from "@/components/FAQAccordion";
@@ -6,6 +7,7 @@ import { FAQ_ITEMS } from "@/content/faq";
 import { TelegramButton } from "@/components/TelegramButton";
 
 export const metadata: Metadata = {
+  alternates: canonical("/faq"),
   title: "FAQ",
   description:
     "Безопасность API-ключей, ИИ и человек в ответах, негатив, trial PRO, оплата и отмена подписки.",

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { canonical } from "@/content/constants";
 import { PageShell } from "@/components/PageShell";
 import { InnerPageHero } from "@/components/InnerPageHero";
 import { TelegramMockup } from "@/components/TelegramMockup";
 import { TelegramButton } from "@/components/TelegramButton";
 
 export const metadata: Metadata = {
+  alternates: canonical("/how-it-works"),
   title: "Как работает бот для отзывов WB и Ozon",
   description:
     "Подключение кабинета, синхронизация, три варианта ответа ИИ, publish в API или копия в личный кабинет — пошагово в Telegram.",

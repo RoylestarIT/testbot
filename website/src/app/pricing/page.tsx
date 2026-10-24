@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { InnerPageHero } from "@/components/InnerPageHero";
 import { PricingTable } from "@/components/PricingTable";
-import { PRICES } from "@/content/constants";
+import { BRAND, PRICES, canonical } from "@/content/constants";
 
 export const metadata: Metadata = {
+  alternates: canonical("/pricing"),
   title: "Тарифы Free, Lite и PRO",
-  description:
-    "Сравнение тарифов «Голос бренда»: генерации, кабинеты, publish в API, авто 4–5★. Lite 800 ₽, PRO 1600 ₽ в месяц.",
+  description: `Сравнение тарифов «${BRAND}»: генерации, кабинеты, publish в API, авто 4–5★. Lite ${PRICES.lite.rub} ₽, PRO ${PRICES.pro.rub} ₽ в месяц.`,
 };
 
 export default function PricingPage() {

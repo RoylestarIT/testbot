@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { canonical } from "@/content/constants";
 import { PageShell } from "@/components/PageShell";
 import { InnerPageHero } from "@/components/InnerPageHero";
 import { TelegramButton } from "@/components/TelegramButton";
 
 export const metadata: Metadata = {
+  alternates: canonical("/for-who"),
   title: "Для кого сервис",
   description:
     "Селлеры Wildberries и Ozon с 30–1000+ отзывами в месяц, Telegram-first workflow и контроль негатива.",

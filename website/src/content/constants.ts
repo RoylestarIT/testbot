@@ -18,6 +18,11 @@ export function resolveSiteUrl(): string {
 
 export const SITE_URL = resolveSiteUrl();
 
+/** Absolute canonical: a relative path would drop the GitHub Pages basePath from metadataBase. */
+export function canonical(path = "/") {
+  return { canonical: path === "/" ? SITE_URL : `${SITE_URL}${path}` };
+}
+
 export const SUPPORT_EMAIL =
   process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "support@example.com";
 

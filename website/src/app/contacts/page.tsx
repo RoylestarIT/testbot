@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { InnerPageHero } from "@/components/InnerPageHero";
-import { BOT_USERNAME, SUPPORT_EMAIL } from "@/content/constants";
+import { BOT_USERNAME, SUPPORT_EMAIL, canonical } from "@/content/constants";
 import { TelegramButton } from "@/components/TelegramButton";
 
 export const metadata: Metadata = {
+  alternates: canonical("/contacts"),
   title: "Контакты и поддержка",
   description: "Поддержка «Голос бренда» через Telegram-бот и email.",
 };

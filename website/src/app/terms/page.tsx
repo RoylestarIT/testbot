@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { canonical } from "@/content/constants";
 import { PageShell } from "@/components/PageShell";
 import { LegalDocument } from "@/components/LegalDocument";
 import { getTermsSections } from "@/content/legal";
 
 export const metadata: Metadata = {
+  alternates: canonical("/terms"),
   title: "Пользовательское соглашение",
   description: "Условия использования сервиса «Голос бренда» в Telegram.",
 };

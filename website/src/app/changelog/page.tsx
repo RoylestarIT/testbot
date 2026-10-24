@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { canonical } from "@/content/constants";
 import { PageShell } from "@/components/PageShell";
 import { SectionHeading } from "@/components/SectionHeading";
 
 export const metadata: Metadata = {
+  alternates: canonical("/changelog"),
   title: "Что нового",
   description: "Обновления «Голос бренда» — синхронизируйте с разделом в боте вручную.",
 };

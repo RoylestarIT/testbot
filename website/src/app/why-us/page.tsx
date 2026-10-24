@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { SectionHeading } from "@/components/SectionHeading";
-import { PRICES } from "@/content/constants";
+import { PRICES, canonical } from "@/content/constants";
 import { TelegramButton } from "@/components/TelegramButton";
 
 export const metadata: Metadata = {
+  alternates: canonical("/why-us"),
   title: "Почему мы",
   description:
     "Co-pilot в Telegram vs типичные сервисы: фикс подписка, WB+Ozon, контроль негатива, publish из бота.",

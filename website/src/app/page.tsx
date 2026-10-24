@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { canonical } from "@/content/constants";
 import { PageShell } from "@/components/PageShell";
 import { SectionHeading } from "@/components/SectionHeading";
 import { TelegramButton } from "@/components/TelegramButton";
@@ -16,6 +18,10 @@ const steps = [
   { n: "3", title: "3 варианта ответа", text: "ИИ предлагает черновики в вашем tone of voice." },
   { n: "4", title: "Publish или копия", text: "PRO — отправка в API из бота; Lite — копия в личный кабинет." },
 ];
+
+export const metadata: Metadata = {
+  alternates: canonical(),
+};
 
 export default function HomePage() {
   return (
