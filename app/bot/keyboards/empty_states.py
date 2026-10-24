@@ -4,10 +4,15 @@ from app.bot.keyboards.nav import nav_home_queue
 
 
 def no_cabinets_keyboard() -> InlineKeyboardMarkup:
+    from app.bot.keyboards.reviews import reviews_queue_toolbar
+
     return nav_home_queue(
         extra=[
-            [InlineKeyboardButton(text="🟣 Подключить WB", callback_data="settings:connect:wb")],
-            [InlineKeyboardButton(text="🔵 Подключить Ozon", callback_data="settings:connect:ozon")],
+            reviews_queue_toolbar(),
+            [
+                InlineKeyboardButton(text="🟣 Подключить WB", callback_data="settings:connect:wb"),
+                InlineKeyboardButton(text="🔵 Подключить Ozon", callback_data="settings:connect:ozon"),
+            ],
         ]
     )
 

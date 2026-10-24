@@ -7,7 +7,7 @@ from app.db.models import Marketplace, MarketplaceAccount, ToneProfile
 def settings_menu_keyboard() -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = [
         [InlineKeyboardButton(text="🏪  Кабинеты WB/Ozon", callback_data="settings:accounts")],
-        [InlineKeyboardButton(text="🎨  Tone of voice", callback_data="settings:tone")],
+        [InlineKeyboardButton(text="🎨 Тон ответа", callback_data="settings:tone")],
         [InlineKeyboardButton(text="🔔  Уведомления", callback_data="settings:notifications")],
         [InlineKeyboardButton(text="📝  Мои шаблоны", callback_data="settings:templates")],
         [
@@ -181,6 +181,6 @@ def tone_detail_keyboard(profile_id: int, is_default: bool) -> InlineKeyboardMar
                     callback_data=f"settings:tone:delete:{profile_id}",
                 )
             ],
-            [InlineKeyboardButton(text="🎨 Tone of voice", callback_data="settings:tone")],
+            [InlineKeyboardButton(text="🎨 Тон ответа", callback_data="settings:tone")],
         ]
     )

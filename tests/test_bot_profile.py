@@ -13,6 +13,10 @@ def test_default_short_description_within_limit() -> None:
     assert "ИИ-ответы" in DEFAULT_SHORT_DESCRIPTION
     assert "без оплаты" in DEFAULT_SHORT_DESCRIPTION
     assert len(resolve_description(Settings(BOT_TOKEN="x"))) <= 512
+    desc = resolve_description(Settings(BOT_TOKEN="x"))
+    assert "$" not in desc
+    assert "/start" not in desc
+    assert "Подписка" in desc
 
 
 def test_resolve_short_description_uses_custom() -> None:

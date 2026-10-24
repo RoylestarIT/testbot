@@ -17,7 +17,7 @@ async def build_onboarding_nudge(session: AsyncSession, user: User) -> str:
 
     tones = await ToneProfileRepository(session).list_by_user_id(user.id)
     if not tones:
-        pending.append("настроить tone of voice")
+        pending.append("настроить тон ответа")
 
     first_reply_stmt = (
         select(func.count(Review.id))
