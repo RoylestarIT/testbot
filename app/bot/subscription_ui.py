@@ -27,7 +27,7 @@ def build_subscription_hub(
         f"✨  Lite — {lite}",
         f"🚀  PRO — {pro}",
         "",
-        muted("Оплата: крипта · карта РФ/РБ · безнал для юр. лиц"),
+        muted("Оплата: крипта · карта РФ/РБ · СБП/перевод"),
     ]
     if trial_line:
         lines.extend(["", trial_line])
