@@ -41,20 +41,24 @@ class Settings(BaseSettings):
     crypto_pro_amount_usd: str = Field(default="20", validation_alias="CRYPTO_PRO_AMOUNT_USD")
     crypto_pay_webhook_path: str = Field(default="/cryptopay/webhook", validation_alias="CRYPTO_PAY_WEBHOOK_PATH")
     payment_currency: str = Field(default="RUB", validation_alias="PAYMENT_CURRENCY")
+    subscription_lite_price_rub: int = Field(default=800, validation_alias="SUBSCRIPTION_LITE_PRICE_RUB")
+    subscription_pro_price_rub: int = Field(default=1600, validation_alias="SUBSCRIPTION_PRO_PRICE_RUB")
+    subscription_lite_price_byn: float = Field(default=30.0, validation_alias="SUBSCRIPTION_LITE_PRICE_BYN")
+    subscription_pro_price_byn: float = Field(default=60.0, validation_alias="SUBSCRIPTION_PRO_PRICE_BYN")
     subscription_lite_price_minor: int = Field(
-        default=100000,
+        default=80000,
         validation_alias="SUBSCRIPTION_LITE_PRICE_MINOR",
     )
     subscription_pro_price_minor: int = Field(
-        default=300000,
+        default=160000,
         validation_alias="SUBSCRIPTION_PRO_PRICE_MINOR",
     )
     subscription_lite_stars: int = Field(default=750, validation_alias="SUBSCRIPTION_LITE_STARS")
     subscription_pro_stars: int = Field(default=2250, validation_alias="SUBSCRIPTION_PRO_STARS")
     subscription_lite_usd_label: str = Field(default="10", validation_alias="SUBSCRIPTION_LITE_USD")
     subscription_pro_usd_label: str = Field(default="20", validation_alias="SUBSCRIPTION_PRO_USD")
-    fx_fallback_usd_rub: float = Field(default=90.0, validation_alias="FX_FALLBACK_USD_RUB")
-    fx_fallback_usd_byn: float = Field(default=3.3, validation_alias="FX_FALLBACK_USD_BYN")
+    fx_fallback_usd_rub: float = Field(default=80.0, validation_alias="FX_FALLBACK_USD_RUB")
+    fx_fallback_usd_byn: float = Field(default=3.0, validation_alias="FX_FALLBACK_USD_BYN")
     poll_interval_minutes: int = Field(default=15, validation_alias="POLL_INTERVAL_MINUTES")
     poller_stale_minutes: int = Field(default=35, validation_alias="POLLER_STALE_MINUTES")
     digest_hour_utc: int = Field(default=6, validation_alias="DIGEST_HOUR_UTC")

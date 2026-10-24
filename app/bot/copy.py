@@ -20,7 +20,7 @@ def differentiators_section(*, compact: bool = False) -> str:
             + "\n"
             + bullet("✋ 1–3★ только вручную; авто-ответы — 4–5★ на PRO")
             + "\n"
-            + bullet("💵 Подписка ~$10 / ~$20, не пакеты «за каждый ответ»")
+            + bullet("💵 Подписка 800 / 1 600 ₽ (30 / 60 BYN), не плата за каждый ответ")
             + "\n"
             + bullet("📊 «Почему мы» → сравнение с рынком и карта функций")
         )
@@ -33,7 +33,7 @@ def differentiators_section(*, compact: bool = False) -> str:
         + "\n"
         + bullet("🛡 Негатив 1–3★ не уходит в автомат; авто-ответы только 4–5★ (PRO)")
         + "\n"
-        + bullet("💵 Фикс ~$10 (Lite) / ~$20 (PRO) в месяц вместо счёта за тысячи токенов")
+        + bullet("💵 Фикс 800 ₽ (Lite) / 1 600 ₽ (PRO) и 30 / 60 BYN в месяц")
         + "\n"
         + bullet("🪙 Crypto Bot и перевод РФ/РБ — без Stars и без ИП у селлера")
         + "\n"
@@ -122,7 +122,6 @@ HELP_TEXT = (
     + "\n"
     + bullet("🔔 уведомления в Настройках")
     + "\n"
-    + bullet("🎟 /promo — промокод")
     + differentiators_section(compact=True)
     + footer_hint("⌨️ /start · /dashboard · /legal · /my_subscription")
 )

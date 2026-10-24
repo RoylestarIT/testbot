@@ -52,7 +52,6 @@ def default_bot_commands() -> list[BotCommand]:
         BotCommand(command="help", description="📖 Справка"),
         BotCommand(command="legal", description="📜 Политика и условия"),
         BotCommand(command="my_subscription", description="💎 Подписка Lite/PRO"),
-        BotCommand(command="promo", description="🎟 Промокод"),
     ]
 
 

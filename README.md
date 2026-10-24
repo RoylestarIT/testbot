@@ -93,7 +93,6 @@ CRYPTO_PRO_AMOUNT_USD=20
 - `/help` — справка
 - `/legal` — политика и пользовательское соглашение в боте
 - `/my_subscription` — статус тарифа
-- `/promo КОД` — промокод (trial PRO)
 - `/admin` — админ-панель (`ADMIN_IDS`)
 
 ## PostgreSQL (prod)

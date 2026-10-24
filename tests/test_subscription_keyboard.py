@@ -9,10 +9,10 @@ from app.services.payment.fx_rates import SubscriptionPricing
 
 def _sample_pricing() -> SubscriptionPricing:
     return SubscriptionPricing(
-        lite_usd=10.0,
-        pro_usd=20.0,
-        rub_per_usd=90.0,
-        byn_per_usd=3.3,
+        lite_rub=800,
+        pro_rub=1600,
+        lite_byn=30.0,
+        pro_byn=60.0,
         source="test",
     )
 
