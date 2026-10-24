@@ -87,7 +87,7 @@ VISUAL_SEP = "───────────────"
 
 def hero_quote(text: str) -> str:
     """Акцентный блок в начале экрана."""
-    return quote(text.strip())
+    return quote(text.strip()) + "\n\n"
 
 
 def progress_bar(current: int, total: int, width: int = 6) -> str:
