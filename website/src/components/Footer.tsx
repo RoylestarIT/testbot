@@ -11,7 +11,7 @@ import { TelegramButton } from "./TelegramButton";
 
 export function Footer() {
   return (
-    <footer className="border-t border-slate-800/10 bg-slate-950 text-slate-400">
+    <footer className="border-t border-line bg-[#141a26] text-slate-400">
       <div className="container-page py-14">
         <div className="flex flex-col gap-10 lg:flex-row lg:justify-between">
           <div className="max-w-sm">

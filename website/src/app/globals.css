@@ -3,15 +3,29 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8f9fc;
-  --foreground: #0f172a;
-  --muted: #64748b;
-  --border: #e8ecf4;
+  --background: #f5f6f9;
+  --foreground: #1a2233;
+  --ink: #1a2233;
+  --ink-muted: #5c6578;
+  --ink-subtle: #8b93a3;
+  --line: rgba(26, 34, 51, 0.08);
+  --line-strong: rgba(26, 34, 51, 0.12);
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
+@layer base {
+  body {
+    color: var(--ink);
+    background: var(--background);
+    font-feature-settings: "kern" 1, "liga" 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display text-ink;
+  }
 }
 
 @layer utilities {
@@ -30,11 +44,11 @@ body {
   }
 
   .card {
-    @apply rounded-2xl border border-slate-200/80 bg-white shadow-card transition-shadow duration-300;
+    @apply rounded-2xl border border-line bg-surface shadow-card transition-all duration-300;
   }
 
   .card-hover {
-    @apply card hover:border-brand-200/80 hover:shadow-card-hover;
+    @apply card hover:border-brand-200/60 hover:shadow-card-hover;
   }
 
   .link-arrow {
@@ -42,6 +56,14 @@ body {
   }
 
   .badge-pill {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/90 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm backdrop-blur-sm;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white/85 px-3.5 py-1.5 text-caption font-medium text-ink-muted shadow-sm backdrop-blur-sm;
+  }
+
+  .eyebrow {
+    @apply text-caption font-semibold uppercase tracking-[0.14em] text-brand-600;
+  }
+
+  .prose-muted {
+    @apply text-body-lg text-ink-muted;
   }
 }

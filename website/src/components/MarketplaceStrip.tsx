@@ -1,9 +1,12 @@
 export function MarketplaceStrip() {
   const items = [
-    { label: "Wildberries", color: "bg-fuchsia-50 text-fuchsia-800 border-fuchsia-100" },
-    { label: "Ozon", color: "bg-sky-50 text-sky-900 border-sky-100" },
-    { label: "Telegram", color: "bg-blue-50 text-blue-900 border-blue-100" },
-    { label: "ИИ + ваш контроль", color: "bg-violet-50 text-violet-900 border-violet-100" },
+    { label: "Wildberries", className: "bg-[#fdf2f8] text-[#9d174d] border-[#f9d8e8]" },
+    { label: "Ozon", className: "bg-telegram-soft text-[#1e6a8a] border-[#cce9f5]" },
+    { label: "Telegram", className: "bg-[#eef6fc] text-[#2563a8] border-[#d6e9f7]" },
+    {
+      label: "ИИ + ваш контроль",
+      className: "bg-brand-50 text-brand-800 border-brand-100",
+    },
   ];
 
   return (
@@ -11,7 +14,7 @@ export function MarketplaceStrip() {
       {items.map((item) => (
         <li
           key={item.label}
-          className={`rounded-full border px-3 py-1 text-xs font-semibold ${item.color}`}
+          className={`rounded-full border px-3.5 py-1 text-caption font-semibold ${item.className}`}
         >
           {item.label}
         </li>

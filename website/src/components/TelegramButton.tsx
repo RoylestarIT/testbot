@@ -9,13 +9,13 @@ type Props = {
 };
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600";
+  "inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-tight transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600";
 
 const variants = {
-  primary: `${base} bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-md shadow-brand-600/25 hover:from-brand-700 hover:to-brand-600 hover:shadow-lg hover:shadow-brand-600/30`,
-  secondary: `${base} bg-white text-slate-800 ring-1 ring-slate-200/90 hover:bg-slate-50 hover:ring-slate-300`,
+  primary: `${base} bg-brand-600 text-white shadow-sm shadow-brand-700/20 hover:bg-brand-700 hover:shadow-md`,
+  secondary: `${base} border border-line-strong bg-white text-ink hover:border-brand-200 hover:bg-surface-muted`,
   ghost: `${base} text-brand-700 hover:bg-brand-50`,
-  white: `${base} bg-white text-brand-700 shadow-lg hover:bg-slate-50`,
+  white: `${base} bg-white text-brand-700 shadow-md hover:bg-surface-elevated`,
 };
 
 export function TelegramButton({
@@ -42,7 +42,7 @@ function TelegramIcon() {
   return (
     <svg
       aria-hidden
-      className="h-5 w-5 shrink-0"
+      className="h-[1.125rem] w-[1.125rem] shrink-0 opacity-95"
       viewBox="0 0 24 24"
       fill="currentColor"
     >

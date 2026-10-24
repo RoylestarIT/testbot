@@ -14,20 +14,20 @@ export function FeatureCard({
   return (
     <li
       className={`card-hover flex flex-col p-6 sm:p-7 ${
-        highlight ? "ring-2 ring-brand-500/20" : ""
+        highlight ? "ring-1 ring-brand-200/80 bg-gradient-to-b from-brand-50/40 to-white" : ""
       }`}
     >
       <div
         className={`flex h-11 w-11 items-center justify-center rounded-xl ${
           highlight
-            ? "bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md"
-            : "bg-brand-50 text-brand-700"
+            ? "bg-brand-600 text-white shadow-sm"
+            : "bg-surface-muted text-brand-700 ring-1 ring-line"
         }`}
       >
         {icon}
       </div>
-      <h3 className="mt-4 text-lg font-semibold text-slate-900">{title}</h3>
-      <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">{children}</p>
+      <h3 className="mt-4 font-display text-title text-ink">{title}</h3>
+      <p className="mt-2.5 flex-1 text-body text-ink-muted">{children}</p>
     </li>
   );
 }
