@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from app.bot.ui import brand_title, bullet, muted, quote
+from app.constants import FREE_DAILY_GENERATIONS
 from app.db.models import Subscription, SubscriptionPlan, SubscriptionStatus, User
 from app.services.payment.fx_rates import SubscriptionPricing
 from app.services.access_messaging import build_my_access_publish_block
-from app.services.pro_access import is_trial_pro_active
+from app.services.pro_access import trial_pro_active
 from app.services.subscription import plan_label, status_label
 
 SUBSCRIPTION_SEP = "───────────────"
@@ -60,14 +61,14 @@ def build_my_access_text(
         lines.append(f"📌  <b>{access_tier_line}</b>")
         lines.append("")
 
-    trial_active = is_trial_pro_active(user)
+    trial_active = trial_pro_active(user)
 
     if subscription is None:
         lines.extend(
             [
                 bullet("Оплаченная подписка: <b>нет</b>"),
                 bullet(
-                    f"Генераций сегодня: <b>{generations_remaining if generations_remaining is not None else '—'}</b> / 5"
+                    f"Генераций сегодня: <b>{generations_remaining if generations_remaining is not None else '—'}</b> / {FREE_DAILY_GENERATIONS}"
                 ),
             ]
         )
@@ -88,7 +89,7 @@ def build_my_access_text(
         if subscription.status == SubscriptionStatus.ACTIVE:
             lines.extend(build_my_access_publish_block(user, subscription, trial_active=trial_active))
         elif generations_remaining is not None:
-            lines.append(bullet(f"Генераций сегодня: <b>{generations_remaining}</b> / 5"))
+            lines.append(bullet(f"Генераций сегодня: <b>{generations_remaining}</b> / {FREE_DAILY_GENERATIONS}"))
         if subscription.status == SubscriptionStatus.PENDING:
             lines.append("")
             lines.append(muted("⏳ Ожидает подтверждения оплаты."))
