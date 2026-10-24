@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     trial_pro_days: int = Field(default=3, validation_alias="TRIAL_PRO_DAYS")
     free_api_publishes: int = Field(default=3, validation_alias="FREE_API_PUBLISHES")
     support_username: str = Field(default="", validation_alias="SUPPORT_USERNAME")
+    legal_operator_name: str = Field(
+        default="",
+        validation_alias="LEGAL_OPERATOR_NAME",
+        description="Наименование оператора ПДн / исполнителя в юридических текстах бота",
+    )
     privacy_policy_url: str = Field(default="", validation_alias="PRIVACY_POLICY_URL")
     terms_of_service_url: str = Field(default="", validation_alias="TERMS_OF_SERVICE_URL")
     webhook_url: str = Field(default="", validation_alias="WEBHOOK_URL")
