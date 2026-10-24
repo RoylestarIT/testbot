@@ -47,6 +47,7 @@ from app.services.marketplace.publish_service import publish_reply_to_marketplac
 from app.services.marketplace.review_format import format_review_card
 from app.bot.utils.reply_checks import validate_reply_for_user
 from app.core.config import get_settings
+from app.core.security import EncryptionError
 from app.db.repositories.reply import ReplyRepository
 from app.services.bulk_quick_reply import (
     apply_bulk_template,
@@ -208,6 +209,12 @@ async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: l
                 if exc.status_code == 403 and account.marketplace == Marketplace.OZON:
                     msg += Ozon_FORBIDDEN_HINT
                 errors.append(msg)
+            except EncryptionError:
+                logger.warning("Sync decrypt failed account_id={}", account.id)
+                errors.append(
+                    "Не удалось прочитать API-ключ кабинета (сменился FERNET_KEY или ключ повреждён). "
+                    "⚙️ Настройки → удалите кабинет и подключите ключ заново."
+                )
         await session.commit()
 
     lines = [SYNC_DONE.format(count=total_new)]

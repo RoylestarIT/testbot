@@ -5,7 +5,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.copy import TERMS_TEXT
 from app.bot.keyboards.legal import legal_document_keyboard, legal_hub_keyboard, parse_legal_back
 from app.bot.keyboards.terms import terms_acceptance_keyboard
-from app.bot.handlers.support import support_keyboard, support_screen_text
+from app.bot.support_ui import support_keyboard, support_screen_text
 from app.bot.legal.documents import LegalDocKind, document_page
 from app.bot.ui import brand_title, muted, section
 from app.bot.utils.callbacks import safe_edit_message
