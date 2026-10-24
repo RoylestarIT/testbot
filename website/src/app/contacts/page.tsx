@@ -32,7 +32,7 @@ export default function ContactsPage() {
             <p className="mt-2">
               <a
                 href={`mailto:${SUPPORT_EMAIL}`}
-                className="text-blue-600 hover:underline"
+                className="font-medium text-brand-600 hover:text-brand-700 hover:underline"
               >
                 {SUPPORT_EMAIL}
               </a>
