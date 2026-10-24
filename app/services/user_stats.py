@@ -68,3 +68,11 @@ async def build_mini_stats_line(session: AsyncSession, user_id: int) -> str | No
     avg = await avg_rating_new_reviews(session, user_id)
     avg_part = f" · новые ⭐ <b>{avg}</b>" if avg is not None else ""
     return f"📊 Сегодня ответов: <b>{today}</b> · в очереди: <b>{queue}</b>{avg_part}"
+
+
+async def build_dashboard_today_line(session: AsyncSession, user_id: int) -> str | None:
+    """Только активность за сегодня — без дубля «очереди» (она в статусе сводки)."""
+    today = await count_replies_today(session, user_id)
+    if today <= 0:
+        return None
+    return f"📊  Сегодня ответов: <b>{today}</b>"

@@ -5,8 +5,7 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.copy import DIFFERENTIATORS_DASHBOARD_LINE
-from app.bot.ui import REVIEWS_HUB_BUTTON, dashboard_home, muted
+from app.bot.ui import REVIEWS_HUB_BUTTON, dashboard_home, muted, quote
 from app.core.config import get_settings
 from app.constants import MANUAL_SHOP_NAME
 from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus, SubscriptionPlan, User
@@ -22,7 +21,7 @@ from app.services.plans import (
 )
 from app.services.subscription import get_effective_subscription
 from app.services.onboarding_checklist import build_onboarding_nudge
-from app.services.user_stats import build_mini_stats_line
+from app.services.user_stats import avg_rating_new_reviews, build_dashboard_today_line
 from app.tasks.poller import get_poller_status_line
 
 
@@ -36,6 +35,30 @@ def _review_word(n: int) -> str:
     if 2 <= n1 <= 4:
         return "отзыва"
     return "отзывов"
+
+
+def _status_block(
+    *,
+    new_count: int,
+    snoozed_count: int,
+    has_cabinets: bool,
+) -> str:
+    if new_count > 0:
+        head = f"📬  <b>{new_count}</b> {_review_word(new_count)} ждёт ответа"
+        if snoozed_count:
+            head += f"  ·  ⏳ отложено <b>{snoozed_count}</b>"
+        tail = muted(f"→ {REVIEWS_HUB_BUTTON}")
+    elif snoozed_count:
+        head = f"📭  В активной очереди пусто  ·  ⏳ отложено <b>{snoozed_count}</b>"
+        tail = muted(f"→ {REVIEWS_HUB_BUTTON}")
+    else:
+        head = "📭  Новых отзывов нет"
+        if has_cabinets:
+            tail = muted("→ 🔄 Sync, если нужно подтянуть сейчас")
+        else:
+            tail = muted("→ ⚙️ Настройки: подключите WB или Ozon")
+    avg_note = ""
+    return quote(f"{head}\n{tail}")
 
 
 async def build_user_dashboard(session: AsyncSession, user: User) -> str:
@@ -92,71 +115,79 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
         tier_icon = "🆓"
 
     poll_min = get_settings().poll_interval_minutes
-    if new_count > 0:
-        focus = f"📬  <b>{new_count}</b> {_review_word(new_count)} ждёт ответа"
-        hint = f"👇 {REVIEWS_HUB_BUTTON}"
-    else:
-        focus = "📭  Новых отзывов нет"
-        hint = f"👇 {REVIEWS_HUB_BUTTON} или 🔄 Sync, если нужно сейчас"
+    has_cabinets = bool(api_accounts)
 
-    mini = await build_mini_stats_line(session, user.id)
-    details: list[str] = []
-    if mini:
-        details.append(mini)
-        details.append("")
-    details.append(f"{tier_icon}  Тариф: <b>{tier}</b>")
+    status = _status_block(
+        new_count=new_count,
+        snoozed_count=snoozed_count,
+        has_cabinets=has_cabinets,
+    )
+
+    meta: list[str] = [f"{tier_icon}  {tier}"]
 
     if remaining is not None:
-        details.append(f"⚡  Генераций сегодня: <b>{remaining}</b> / 5")
+        meta.append(f"⚡  Генераций сегодня: <b>{remaining}</b> / 5")
     elif subscription and subscription.status.value == "active" and subscription.plan == SubscriptionPlan.LITE:
-        details.append("📋  Publish: копирование в кабинет")
-    else:
-        details.append(f"🚀  Publish в API: квота <b>{user.free_api_publishes_remaining}</b>")
+        meta.append("📋  Ответы — копированием в кабинет")
+    elif user.trial_pro_until or (
+        subscription and subscription.status.value == "active" and subscription.plan == SubscriptionPlan.PRO
+    ):
+        meta.append(f"🚀  Publish-квота: <b>{user.free_api_publishes_remaining}</b>")
+    elif user.free_api_publishes_remaining:
+        meta.append(f"🚀  Пробных publish: <b>{user.free_api_publishes_remaining}</b>")
 
-    if snoozed_count:
-        details.append(f"⏳  Отложено: <b>{snoozed_count}</b>")
-
-    if api_accounts:
+    if has_cabinets:
         names = []
-        for acc in api_accounts[:3]:
+        for acc in api_accounts[:2]:
             mp = "🟣" if acc.marketplace == Marketplace.WB else "🔵"
             label = acc.shop_name or ("WB" if acc.marketplace == Marketplace.WB else "Ozon")
             names.append(f"{mp} {label}")
-        tail = f" (+{len(api_accounts) - 3})" if len(api_accounts) > 3 else ""
-        details.append(f"🏪  {', '.join(names)}{tail}")
-        details.append(
-            muted(
-                f"🔄 Sync каждые <b>{poll_min}</b> мин автоматически; "
-                "кнопка «Sync» — если нужно подтянуть отзывы сейчас."
-            )
-        )
+        tail = f" +{len(api_accounts) - 2}" if len(api_accounts) > 2 else ""
+        meta.append(f"🏪  {', '.join(names)}{tail}")
     else:
-        details.append("🏪  Кабинеты: <b>не подключены</b>")
+        meta.append("🏪  Кабинеты не подключены")
+
+    today_line = await build_dashboard_today_line(session, user.id)
+    if today_line:
+        meta.append(today_line)
+
+    if new_count > 0:
+        avg = await avg_rating_new_reviews(session, user.id)
+        if avg is not None:
+            meta.append(f"⭐  Средняя оценка в очереди: <b>{avg}</b>")
 
     nudge = await build_onboarding_nudge(session, user)
-    if nudge:
-        details.append("")
-        details.append(nudge)
-
-    details.append("")
-    details.append(DIFFERENTIATORS_DASHBOARD_LINE)
+    nudge_line = muted(nudge) if nudge else None
 
     if not await has_lite_or_higher(session, user.id):
         acc_n = await count_user_api_accounts(session, user.id)
         tone_n = await count_user_tone_profiles(session, user.id)
-        details.append(
-            muted(
+        if nudge_line:
+            nudge_line = (
+                nudge_line
+                + "\n"
+                + muted(
+                    f"🔒 Free: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} каб., "
+                    f"{tone_n}/{FREE_MAX_TONE_PROFILES} tone"
+                )
+            )
+        else:
+            nudge_line = muted(
                 f"🔒 Free: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} каб., "
                 f"{tone_n}/{FREE_MAX_TONE_PROFILES} tone"
             )
-        )
 
-    footer_raw = get_poller_status_line().strip()
-    footer = f"🔄 {footer_raw}" if footer_raw else None
+    footer_parts: list[str] = []
+    if has_cabinets:
+        footer_parts.append(f"авто-sync каждые {poll_min} мин")
+    poller = get_poller_status_line().strip()
+    if poller:
+        footer_parts.append(poller)
+    footer = " · ".join(footer_parts) if footer_parts else None
 
     return dashboard_home(
-        focus_line=focus,
-        focus_hint=hint,
-        detail_lines=details,
+        status_block=status,
+        meta_lines=meta,
+        nudge=nudge_line,
         footer=footer,
     )

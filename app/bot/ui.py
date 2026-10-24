@@ -27,24 +27,21 @@ def screen_simple(title: str, *paragraphs: str) -> str:
 
 def dashboard_home(
     *,
-    focus_line: str,
-    focus_hint: str | None,
-    detail_lines: list[str],
+    status_block: str,
+    meta_lines: list[str],
+    nudge: str | None = None,
     footer: str | None = None,
 ) -> str:
-    lines = [
-        f"{ICON} <b>{BRAND}</b>",
-        "",
-        focus_line,
-    ]
-    if focus_hint:
-        lines.append(muted(focus_hint))
-    if detail_lines:
-        lines.append("")
-        lines.extend(detail_lines)
+    """Сводка: шапка бренда → статус → компактные факты (без маркeting-блоков)."""
+    sep = "───────────────"
+    lines = [f"{ICON} <b>{BRAND}</b>", sep, "", status_block]
+    if meta_lines:
+        lines.extend(["", sep, ""])
+        lines.extend(meta_lines)
+    if nudge:
+        lines.extend(["", nudge])
     if footer:
-        lines.append("")
-        lines.append(muted(footer))
+        lines.extend(["", muted(footer)])
     return "\n".join(lines)
 
 
