@@ -1,40 +1,9 @@
 from aiogram import F, Router
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import CallbackQuery
 
-from app.bot.keyboards.legal import legal_open_from_terms_row
-from app.bot.keyboards.menu import main_menu_keyboard
-from app.bot.ui import brand_title, muted, section
-from app.core.config import get_settings
+from app.bot.support_ui import support_keyboard, support_screen_text
 
 router = Router(name="support")
-
-
-def support_screen_text() -> str:
-    settings = get_settings()
-    contact = f"@{settings.support_username.lstrip('@')}" if settings.support_username else "администратору проекта"
-    return (
-        brand_title(
-            "Поддержка",
-            tagline="API WB/Ozon, Crypto/перевод, генерация — всё из Telegram",
-            icon="🆘",
-        )
-        + section("Контакт", icon="💬")
-        + f"\n  <b>{contact}</b>\n"
-        + muted("Опишите проблему одним сообщением в личку.")
-    )
-
-
-def support_keyboard() -> InlineKeyboardMarkup:
-    settings = get_settings()
-    rows: list[list[InlineKeyboardButton]] = []
-    if settings.support_username:
-        uname = settings.support_username.lstrip("@")
-        rows.append(
-            [InlineKeyboardButton(text="💬 Написать в поддержку", url=f"https://t.me/{uname}")]
-        )
-    rows.append(legal_open_from_terms_row(back="s"))
-    rows.append([InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 @router.callback_query(F.data == "menu:support")
