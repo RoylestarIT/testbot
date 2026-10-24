@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import type { FaqItem } from "@/lib/faq";
+import type { FaqItem } from "@/content/faq";
 
 export function FAQAccordion({ items }: { items: FaqItem[] }) {
   const baseId = useId();

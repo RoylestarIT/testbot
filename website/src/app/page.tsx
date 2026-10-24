@@ -5,7 +5,7 @@ import { TelegramButton } from "@/components/TelegramButton";
 import { TelegramMockup } from "@/components/TelegramMockup";
 import { PricingTable } from "@/components/PricingTable";
 import { FAQAccordion } from "@/components/FAQAccordion";
-import { FAQ_ITEMS } from "@/lib/faq";
+import { FAQ_ITEMS } from "@/content/faq";
 
 const benefits = [
   {

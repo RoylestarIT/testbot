@@ -5,7 +5,7 @@ import {
   BRAND_TECH,
   PRICING_UPDATED,
   SUPPORT_EMAIL,
-} from "@/lib/constants";
+} from "@/content/constants";
 import { TelegramButton } from "./TelegramButton";
 
 export function Footer() {

@@ -2,6 +2,8 @@
 
 Telegram-бот для селлеров **Wildberries** и **Ozon**: синхронизация отзывов, генерация ответов (LLM + tone of voice), публикация через Seller API на тарифе PRO.
 
+Публичное имя продукта — **«Голос бренда»** (`@FeedBackReview_bot`). Маркетинговый лендинг: каталог [`website/`](website/) (Next.js, static export).
+
 ## Требования
 
 - Python 3.11+

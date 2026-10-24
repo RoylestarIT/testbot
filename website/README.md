@@ -57,7 +57,7 @@ npm run build
 | `/privacy`, `/terms` | Юридические черновики |
 | `/changelog` | Опционально, синхрон с «Что нового» в боте |
 
-CTA везде ведёт в бота; для рекламы используется `?start=site` (см. `BOT_URL_SITE` в `src/lib/constants.ts`).
+CTA везде ведёт в бота; для рекламы используется `?start=site` (см. `BOT_URL_SITE` в `src/content/constants.ts`).
 
 ## Деплой
 

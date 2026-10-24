@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { SectionHeading } from "@/components/SectionHeading";
-import { BOT_USERNAME, SUPPORT_EMAIL } from "@/lib/constants";
+import { BOT_USERNAME, SUPPORT_EMAIL } from "@/content/constants";
 import { TelegramButton } from "@/components/TelegramButton";
 
 export const metadata: Metadata = {

@@ -1,4 +1,4 @@
-import { PRICES } from "@/lib/constants";
+import { PRICES } from "@/content/constants";
 import { TelegramButton } from "./TelegramButton";
 
 type Row = {

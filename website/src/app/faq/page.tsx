@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { SectionHeading } from "@/components/SectionHeading";
 import { FAQAccordion } from "@/components/FAQAccordion";
-import { FAQ_ITEMS } from "@/lib/faq";
+import { FAQ_ITEMS } from "@/content/faq";
 import { TelegramButton } from "@/components/TelegramButton";
 
 export const metadata: Metadata = {

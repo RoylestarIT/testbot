@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { LegalDocument } from "@/components/LegalDocument";
-import { getTermsSections } from "@/lib/legal";
+import { getTermsSections } from "@/content/legal";
 
 export const metadata: Metadata = {
   title: "Пользовательское соглашение",

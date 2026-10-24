@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { SectionHeading } from "@/components/SectionHeading";
 import { PricingTable } from "@/components/PricingTable";
-import { PRICES } from "@/lib/constants";
+import { PRICES } from "@/content/constants";
 
 export const metadata: Metadata = {
   title: "Тарифы Free, Lite и PRO",

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BRAND, NAV } from "@/lib/constants";
+import { BRAND, NAV } from "@/content/constants";
 import { TelegramButton } from "./TelegramButton";
 
 export function Header() {

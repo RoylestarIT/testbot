@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BOT_URL, BOT_URL_SITE } from "@/lib/constants";
+import { BOT_URL, BOT_URL_SITE } from "@/content/constants";
 
 type Props = {
   children: React.ReactNode;

@@ -1,5 +1,5 @@
-import type { LegalSection } from "@/lib/legal";
-import { BRAND, LEGAL_OPERATOR } from "@/lib/constants";
+import type { LegalSection } from "@/content/legal";
+import { BRAND, LEGAL_OPERATOR } from "@/content/constants";
 
 export function LegalDocument({
   title,

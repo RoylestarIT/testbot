@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { LegalDocument } from "@/components/LegalDocument";
-import { getPrivacySections } from "@/lib/legal";
+import { getPrivacySections } from "@/content/legal";
 
 export const metadata: Metadata = {
   title: "Политика конфиденциальности",
