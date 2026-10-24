@@ -20,7 +20,9 @@ from app.services.plans import (
     has_lite_or_higher,
 )
 from app.services.subscription import get_effective_subscription
+from app.bot.product_news import build_product_news_banner, user_should_see_product_news
 from app.services.onboarding_checklist import build_onboarding_nudge
+from app.services.period_analytics import build_publish_activity_line
 from app.services.user_stats import avg_rating_new_reviews, build_dashboard_today_line
 from app.tasks.poller import get_poller_status_line
 
@@ -150,13 +152,26 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
     if today_line:
         meta.append(today_line)
 
+    publish_line = await build_publish_activity_line(session, user.id, days=7)
+    if publish_line:
+        meta.append(publish_line)
+
     if new_count > 0:
         avg = await avg_rating_new_reviews(session, user.id)
         if avg is not None:
             meta.append(f"⭐  Средняя оценка в очереди: <b>{avg}</b>")
 
+    settings = get_settings()
+    show_product_news = user_should_see_product_news(user, settings)
     nudge = await build_onboarding_nudge(session, user)
-    nudge_line = muted(nudge) if nudge else None
+    if show_product_news:
+        nudge_line = build_product_news_banner(settings)
+        if nudge:
+            nudge_line = f"{nudge_line}\n\n{muted(nudge)}"
+    elif nudge:
+        nudge_line = muted(nudge)
+    else:
+        nudge_line = None
 
     if not await has_lite_or_higher(session, user.id):
         acc_n = await count_user_api_accounts(session, user.id)
@@ -173,7 +188,7 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
         else:
             nudge_line = muted(
                 f"🔒 Free: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} каб., "
-                f"{tone_n}/{FREE_MAX_TONE_PROFILES} tone"
+                f"{tone_n}/{FREE_MAX_TONE_PROFILES} тон"
             )
 
     footer_parts: list[str] = []

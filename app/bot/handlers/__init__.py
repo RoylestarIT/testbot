@@ -3,6 +3,7 @@ from aiogram import Router
 from app.bot.handlers import (
     admin,
     dashboard,
+    legal,
     marketplace_reviews,
     onboarding,
     promo,
@@ -17,6 +18,7 @@ from app.bot.middlewares.subscription_check import SubscriptionCheckMiddleware
 
 main_router = Router(name="main")
 main_router.include_router(start.router)
+main_router.include_router(legal.router)
 main_router.include_router(dashboard.router)
 main_router.include_router(onboarding.router)
 main_router.include_router(promo.router)

@@ -7,6 +7,7 @@ from app.bot.marketing import feature_roadmap_text, for_whom_text, market_compar
 from app.bot.keyboards.menu import dashboard_keyboard, main_menu_keyboard
 from app.bot.keyboards.positioning import positioning_keyboard
 from app.bot.utils.callbacks import safe_edit_message
+from app.bot.product_news import product_news_version, user_should_see_product_news
 from app.core.config import get_settings
 from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
@@ -28,10 +29,12 @@ async def _dashboard_ui(session, db_user: DbUser, tg_id: int) -> tuple[str, obje
         return None
     text = await build_user_dashboard(session, user)
     paid_pro = await has_paid_pro(session, user.id)
+    settings = get_settings()
     kb = dashboard_keyboard(
         show_trial=not user.trial_pro_used and not paid_pro,
         show_onboarding=user.onboarding_completed_at is None,
         show_admin=_show_admin(tg_id),
+        show_product_news=user_should_see_product_news(user, settings),
     )
     return text, kb
 
@@ -60,6 +63,22 @@ async def _edit_dashboard(message: Message, db_user: DbUser) -> None:
 @router.message(Command("dashboard"))
 async def cmd_dashboard(message: Message, db_user: DbUser) -> None:
     await _send_dashboard(message, db_user)
+
+
+@router.callback_query(F.data == "news:dismiss")
+async def news_dismiss(callback: CallbackQuery, db_user: DbUser) -> None:
+    settings = get_settings()
+    version = product_news_version(settings)
+    if not version:
+        await callback.answer()
+        return
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        await UserRepository(session).set_product_news_seen(db_user.id, version)
+        await session.commit()
+    await callback.answer("Скрыли обновления")
+    if callback.message:
+        await _edit_dashboard(callback.message, db_user)
 
 
 @router.callback_query(F.data == "menu:dashboard")

@@ -93,6 +93,8 @@ class User(Base):
         nullable=True,
     )
     reply_templates: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True)
+    product_news_seen_version: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    calc_preset_volume: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     marketplace_accounts: Mapped[list["MarketplaceAccount"]] = relationship(
         back_populates="user",

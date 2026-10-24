@@ -81,6 +81,22 @@ class UserRepository:
         await self._session.flush()
         return user
 
+    async def set_product_news_seen(self, user_id: int, version: str) -> User | None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            return None
+        user.product_news_seen_version = version.strip()
+        await self._session.flush()
+        return user
+
+    async def set_calc_preset_volume(self, user_id: int, volume: int) -> User | None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            return None
+        user.calc_preset_volume = max(1, volume)
+        await self._session.flush()
+        return user
+
     async def accept_terms(self, user_id: int) -> User | None:
         user = await self.get_by_id(user_id)
         if user is None:

@@ -42,6 +42,20 @@ async def test_terms_middleware_allows_accept_callback() -> None:
 
 
 @pytest.mark.asyncio
+async def test_terms_middleware_allows_legal_callbacks() -> None:
+    mw = TermsAcceptanceMiddleware()
+    handler = AsyncMock(return_value="ok")
+    user = User(id=1, tg_id=1, terms_accepted_at=None)
+    callback = MagicMock(spec=CallbackQuery)
+    callback.data = "legal:privacy:0"
+
+    result = await mw(handler, callback, {"db_user": user})
+
+    assert result == "ok"
+    handler.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_terms_middleware_passes_when_already_accepted() -> None:
     mw = TermsAcceptanceMiddleware()
     handler = AsyncMock(return_value="ok")

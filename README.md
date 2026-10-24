@@ -43,12 +43,15 @@ python3 -m app.main
 
 ### Go-live (чеклист)
 
-1. `.env`: `BOT_TOKEN`, `FERNET_KEY`, `OPENAI_API_KEY`, `ADMIN_IDS`; для prod — `DATABASE_URL` (PostgreSQL), `FSM_REDIS_URL`, `WEBHOOK_URL`.
-2. `alembic upgrade head` — на чистой БД один раз; дальше при старте бота миграции применяются сами.
-3. Health: `GET /health` на `HEALTH_PORT` — смотрите `poller.last_ok_minsk`; при зависании poller админам уйдёт push (`POLLER_STALE_MINUTES`, по умолчанию 35).
-4. Бэкап по cron (SQLite на VM): `0 3 * * * cd /path/to/reviewpilot && ./scripts/backup-db.sh /var/backups/reviewpilot`
-5. Crypto Pay: webhook на `HEALTH_PORT` + `CRYPTO_PAY_WEBHOOK_PATH`, либо poller оплат (~90 с).
-6. После деплоя: `/start` → сводка, «Подписка», тестовый кабинет WB/Ozon, одна генерация ответа.
+1. `.env`: `BOT_TOKEN`, `FERNET_KEY`, `OPENAI_API_KEY`, `ADMIN_IDS`, **`LEGAL_OPERATOR_NAME`** (ИП/ООО в юридических текстах); для prod — `DATABASE_URL` (PostgreSQL), **`FSM_REDIS_URL`**, **`WEBHOOK_URL`**.
+2. Документы в боте: `/legal` или «⋯ Ещё → Документы»; опционально `PRIVACY_POLICY_URL` / `TERMS_OF_SERVICE_URL` для ссылок на ваш сайт.
+3. Ручная оплата: `QR_PAYMENT_INSTRUCTIONS`, `LEGAL_PAYMENT_INSTRUCTIONS`, **`PAYMENT_ACTIVATION_SLA_HOURS`** (по умолчанию 24).
+4. `alembic upgrade head` — на чистой БД один раз; дальше при старте бота миграции применяются сами.
+5. Health: `GET /health` на `HEALTH_PORT` — смотрите `poller.last_ok_minsk`; при зависании poller админам уйдёт push (`POLLER_STALE_MINUTES`, по умолчанию 35).
+6. Бэкап по cron (SQLite на VM): `0 3 * * * cd /path/to/reviewpilot && ./scripts/backup-db.sh /var/backups/reviewpilot` — для PostgreSQL используйте `pg_dump` по расписанию.
+7. Crypto Pay: webhook на `HEALTH_PORT` + `CRYPTO_PAY_WEBHOOK_PATH`, либо poller оплат (~90 с).
+8. **`PRODUCT_NEWS_VERSION`**: смените строку в `.env`, чтобы снова показать баннер «Что нового» на сводке.
+9. После деплоя: `/start` → сводка (баннер новостей для старых пользователей), «Подписка» + калькулятор, `/legal`, тестовый кабинет WB/Ozon, publish или копия — метрика на сводке за 7 дней.
 
 ## Тарифы (кратко)
 
@@ -88,6 +91,7 @@ CRYPTO_PRO_AMOUNT_USD=20
 - `/start` — сводка (дашборд), чеклист onboarding
 - `/dashboard` — то же
 - `/help` — справка
+- `/legal` — политика и пользовательское соглашение в боте
 - `/my_subscription` — статус тарифа
 - `/promo КОД` — промокод (trial PRO)
 - `/admin` — админ-панель (`ADMIN_IDS`)

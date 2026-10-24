@@ -55,6 +55,8 @@ class TermsAcceptanceMiddleware(BaseMiddleware):
     ) -> Any:
         if callback.data == _ACCEPT_CALLBACK:
             return await handler(event, data)
+        if callback.data and callback.data.startswith("legal:"):
+            return await handler(event, data)
         await callback.answer("Сначала примите условия использования.", show_alert=True)
         if callback.message is not None:
             await callback.message.answer(TERMS_TEXT, reply_markup=terms_acceptance_keyboard())
