@@ -22,6 +22,8 @@ def test_more_menu_only_help_support() -> None:
     assert "📖 Справка" in texts
     assert "review:sync" not in callbacks
     assert "review:mp:list" not in callbacks
+    assert "menu:service_status" in callbacks
+    assert "menu:changelog" in callbacks
 
 
 def test_more_menu_shows_admin_for_admins() -> None:

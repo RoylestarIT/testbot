@@ -5,7 +5,15 @@ from datetime import UTC, datetime, timedelta
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from app.bot.handlers.reviews import QUICK_REPLY_TEMPLATES, _build_variants_keyboard
-from app.bot.keyboards.empty_states import no_cabinets_keyboard, no_new_reviews_keyboard
+from app.bot.keyboards.empty_states import (
+    empty_queue_message,
+    no_cabinets_keyboard,
+    no_new_reviews_keyboard,
+)
+from app.bot.user_errors import user_error_from_exception
+from app.services.queue_diagnosis import EmptyQueueReason, diagnose_empty_queue
+from app.db.repositories.user import UserRepository
+from app.services.reply_feedback import feedback_keyboard, should_ask_feedback
 from app.bot.utils.callbacks import safe_edit_message
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from loguru import logger
@@ -221,9 +229,17 @@ async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: l
     if errors:
         lines.append("\nОшибки:\n" + "\n".join(f"• {e}" for e in errors[:5]))
     if callback.message:
+        extra = []
+        if errors:
+            extra.append(
+                [
+                    InlineKeyboardButton(text="🩺 Здоровье", callback_data="menu:service_status"),
+                    InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu:settings"),
+                ]
+            )
         await callback.message.edit_text(
             "\n".join(lines),
-            reply_markup=nav_home_queue(),
+            reply_markup=nav_home_queue(extra=extra or None),
         )
 
 
@@ -282,11 +298,18 @@ async def list_mp_reviews(callback: CallbackQuery, state: FSMContext, db_user: D
             return
         reviews = await ReviewRepository(session).list_new_for_user(db_user.id, limit=30)
         bulk = await list_bulk_eligible(session, db_user.id)
+        empty_reason = await diagnose_empty_queue(session, db_user.id) if not reviews else None
     await state.update_data(mp_queue=[r.id for r in reviews])
     await callback.answer()
     if not reviews:
         text = MP_LIST_EMPTY
-        kb = no_new_reviews_keyboard()
+        if empty_reason and empty_reason != EmptyQueueReason.NO_CABINETS:
+            text = f"{MP_LIST_EMPTY}\n\n{empty_queue_message(empty_reason)}"
+        kb = (
+            no_cabinets_keyboard()
+            if empty_reason == EmptyQueueReason.NO_CABINETS
+            else no_new_reviews_keyboard(empty_reason)
+        )
     else:
         shown_from = page * MP_LIST_PAGE_SIZE + 1
         shown_to = min(len(reviews), (page + 1) * MP_LIST_PAGE_SIZE)
@@ -520,8 +543,9 @@ async def _mp_generate_variants(
             review_id=int(review_id) if review_id else None,
         )
     except LLMError as exc:
+        facing = user_error_from_exception(exc)
         if callback.message:
-            await callback.message.edit_text(f"Ошибка генерации:\n{exc}", reply_markup=reviews_menu_keyboard())
+            await callback.message.edit_text(facing.html, reply_markup=facing.reply_markup or reviews_menu_keyboard())
         await state.clear()
         return
 
@@ -572,7 +596,10 @@ async def mp_copy_answer(callback: CallbackQuery, state: FSMContext, db_user: Db
             await _persist_selected_reply(session, rid, text, selected_index=selected)
             await ReviewRepository(session).update_status(rid, ReviewStatus.PROCESSED)
             upsell = await first_reply_upsell_suffix(session, db_user.id)
+            action_count = await UserRepository(session).record_publish_action(db_user.id)
             await session.commit()
+    else:
+        action_count = 0
     await callback.answer("Скопируйте текст из сообщения")
     if callback.message:
         body = COPY_HINT.format(text=text)
@@ -584,10 +611,15 @@ async def mp_copy_answer(callback: CallbackQuery, state: FSMContext, db_user: Db
                 allowed, reason = await can_api_publish(session, db_user.id)
             if not allowed and reason == "need_pro":
                 body += "\n\n💡 На PRO — публикация в WB/Ozon в один клик."
+        reply_kb = (
+            feedback_keyboard()
+            if should_ask_feedback(action_count)
+            else after_review_action_keyboard(has_next=has_next, upsell=bool(upsell))
+        )
         await safe_edit_message(
             callback.message,
             body,
-            reply_markup=after_review_action_keyboard(has_next=has_next, upsell=bool(upsell)),
+            reply_markup=reply_kb,
         )
     await state.clear()
 
@@ -661,13 +693,15 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
             await _persist_selected_reply(session, int(review_id), clean or str(text), selected_index=selected)
             await publish_reply_to_marketplace(session, review, clean or str(text))
             upsell = await first_reply_upsell_suffix(session, db_user.id)
+            action_count = await UserRepository(session).record_publish_action(db_user.id)
             await session.commit()
     except MarketplaceAPIError as exc:
         logger.warning("User publish failed review_id={} err={}", review_id, exc)
+        facing = user_error_from_exception(exc)
         if callback.message:
             await callback.message.edit_text(
-                f"Не удалось опубликовать:\n\n{exc}",
-                reply_markup=nav_home_queue(),
+                facing.html,
+                reply_markup=facing.reply_markup or nav_home_queue(),
             )
         await state.clear()
         return
@@ -676,10 +710,12 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
     await state.clear()
     if callback.message:
         body = PUBLISH_SUCCESS + (upsell or "")
-        await callback.message.edit_text(
-            body,
-            reply_markup=after_review_action_keyboard(has_next=has_next, upsell=bool(upsell)),
+        reply_kb = (
+            feedback_keyboard()
+            if should_ask_feedback(action_count)
+            else after_review_action_keyboard(has_next=has_next, upsell=bool(upsell))
         )
+        await callback.message.edit_text(body, reply_markup=reply_kb)
 
 
 @router.callback_query(F.data == "review:mp:cancel_publish")

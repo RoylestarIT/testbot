@@ -1,0 +1,270 @@
+[
+  {
+    "id": "wb_5star_short",
+    "marketplace": "wb",
+    "rating": 5,
+    "text": "Отличный товар, доставка быстрая, рекомендую!",
+    "product": "Кружка керамическая 350 мл",
+    "expect": {
+      "min_len": 30,
+      "max_len": 800,
+      "forbidden": [
+        "ChatGPT",
+        "OpenAI"
+      ]
+    }
+  },
+  {
+    "id": "wb_4star_mixed",
+    "marketplace": "wb",
+    "rating": 4,
+    "text": "В целом хорошо, но упаковка могла бы быть лучше.",
+    "product": "Набор полотенец 3 шт",
+    "expect": {
+      "min_len": 30,
+      "max_len": 800,
+      "forbidden": [
+        "ChatGPT",
+        "OpenAI"
+      ]
+    }
+  },
+  {
+    "id": "wb_3star_neutral",
+    "marketplace": "wb",
+    "rating": 3,
+    "text": "Средне, цвет не как на фото.",
+    "product": "Плед флисовый",
+    "expect": {
+      "min_len": 30,
+      "max_len": 800,
+      "forbidden": [
+        "ChatGPT",
+        "OpenAI"
+      ]
+    }
+  },
+  {
+    "id": "wb_2star_negative",
+    "marketplace": "wb",
+    "rating": 2,
+    "text": "Пришло с браком, жду замену.",
+    "product": "Блендер портативный",
+    "expect": {
+      "min_len": 30,
+      "max_len": 800,
+      "forbidden": [
+        "ChatGPT",
+        "OpenAI"
+      ]
+    }
+  },
+  {
+    "id": "wb_1star_angry",
+    "marketplace": "wb",
+    "rating": 1,
+    "text": "Ужасное качество, деньги на ветер!!!",
+    "product": "Чехол для телефона",
+    "expect": {
+      "min_len": 30,
+      "max_len": 800,
+      "forbidden": [
+        "ChatGPT",
+        "OpenAI"
+      ]
+    }
+  },
+  {
+    "id": "ozon_5star_empty",
+    "marketplace": "ozon",
+    "rating": 5,
+    "text": "",
+    "product": "Фильтр для воды",
+    "expect": {
+      "min_len": 30,
+      "max_len": 800,
+      "forbidden": [
+        "ChatGPT",
+        "OpenAI"
+      ]
+    }
+  },
+  {
+    "id": "ozon_5star_long",
+    "marketplace": "ozon",
+    "rating": 5,
+    "text": "Пользуемся второй месяц, всё работает стабильно. Продавец ответил на вопросы до покупки. Буду заказывать ещё.",
+    "product": "Увлажнитель воздуха",
+    "expect": {
+      "min_len": 30,
+      "max_len": 800,
+      "forbidden": [
+        "ChatGPT",
+        "OpenAI"
+      ]
+    }
+  },
+  {
+    "id": "wb_question_style",
+    "marketplace": "wb",
+    "rating": 5,
+    "text": "Подойдёт для детской комнаты? Какой реальный размер?",
+    "product": "Ночник LED",
+    "expect": {
+      "min_len": 30,
+      "max_len": 800,
+      "forbidden": [
+        "ChatGPT",
+        "OpenAI"
+      ]
+    }
+  },
+  {
+    "id": "wb_5_no_text",
+    "marketplace": "wb",
+    "rating": 5,
+    "text": "",
+    "product": "Светильник LED",
+    "expect": {
+      "min_len": 40,
+      "max_len": 600
+    }
+  },
+  {
+    "id": "wb_4_delivery",
+    "marketplace": "wb",
+    "rating": 4,
+    "text": "Долго шло, но товар норм",
+    "product": "Коврик придверный",
+    "expect": {}
+  },
+  {
+    "id": "wb_3_size",
+    "marketplace": "wb",
+    "rating": 3,
+    "text": "Маломерит на размер",
+    "product": "Кроссовки",
+    "expect": {
+      "forbidden": [
+        "виноват"
+      ]
+    }
+  },
+  {
+    "id": "ozon_2_defect",
+    "marketplace": "ozon",
+    "rating": 2,
+    "text": "Не работает кнопка",
+    "product": "Пульт ДУ",
+    "expect": {}
+  },
+  {
+    "id": "ozon_1_rude",
+    "marketplace": "ozon",
+    "rating": 1,
+    "text": "Обман! Не заказывайте!",
+    "product": "Крем для лица",
+    "expect": {
+      "forbidden": [
+        "суд",
+        "иск"
+      ]
+    }
+  },
+  {
+    "id": "wb_5_thanks",
+    "marketplace": "wb",
+    "rating": 5,
+    "text": "Спасибо продавцу!",
+    "product": "Шампунь",
+    "expect": {}
+  },
+  {
+    "id": "wb_4_photo",
+    "marketplace": "wb",
+    "rating": 4,
+    "text": "Как на фото",
+    "product": "Vase декор",
+    "expect": {}
+  },
+  {
+    "id": "ozon_3_color",
+    "marketplace": "ozon",
+    "rating": 3,
+    "text": "Оттенок другой",
+    "product": "Помада",
+    "expect": {}
+  },
+  {
+    "id": "wb_2_late",
+    "marketplace": "wb",
+    "rating": 2,
+    "text": "Опоздала доставка на неделю",
+    "product": "Платье",
+    "expect": {}
+  },
+  {
+    "id": "ozon_5_fast",
+    "marketplace": "ozon",
+    "rating": 5,
+    "text": "Быстро, качественно",
+    "product": "Наушники",
+    "expect": {}
+  },
+  {
+    "id": "wb_5_repeat",
+    "marketplace": "wb",
+    "rating": 5,
+    "text": "Уже второй раз беру",
+    "product": "Чайник",
+    "expect": {}
+  },
+  {
+    "id": "wb_1_return",
+    "marketplace": "wb",
+    "rating": 1,
+    "text": "Требую возврат",
+    "product": "Куртка",
+    "expect": {}
+  },
+  {
+    "id": "ozon_4_pack",
+    "marketplace": "ozon",
+    "rating": 4,
+    "text": "Мятая коробка",
+    "product": "Игрушка",
+    "expect": {}
+  },
+  {
+    "id": "wb_3_smell",
+    "marketplace": "wb",
+    "rating": 3,
+    "text": "Странный запах",
+    "product": "Ковер",
+    "expect": {}
+  },
+  {
+    "id": "ozon_5_gift",
+    "marketplace": "ozon",
+    "rating": 5,
+    "text": "Подарили — в восторге",
+    "product": "Парфюм",
+    "expect": {}
+  },
+  {
+    "id": "wb_4_support",
+    "marketplace": "wb",
+    "rating": 4,
+    "text": "Поддержка помогла",
+    "product": "Рюкзак",
+    "expect": {}
+  },
+  {
+    "id": "wb_2_missing",
+    "marketplace": "wb",
+    "rating": 2,
+    "text": "Не хватает детали",
+    "product": "Конструктор",
+    "expect": {}
+  }
+]

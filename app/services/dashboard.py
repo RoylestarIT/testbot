@@ -21,7 +21,9 @@ from app.services.plans import (
 )
 from app.services.subscription import get_effective_subscription
 from app.bot.product_news import build_product_news_banner, user_should_see_product_news
-from app.services.onboarding_checklist import build_onboarding_nudge
+from app.services.access_messaging import build_dashboard_publish_line
+from app.services.trial_banner import user_should_see_trial_ended_banner
+from app.services.onboarding_checklist import build_onboarding_checklist_block, build_onboarding_nudge
 from app.services.period_analytics import build_publish_activity_line
 from app.services.user_stats import avg_rating_new_reviews, build_dashboard_today_line
 from app.tasks.poller import get_poller_status_line
@@ -128,14 +130,9 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
 
     if remaining is not None:
         meta.append(f"⚡  Генераций сегодня: <b>{remaining}</b> / 5")
-    elif subscription and subscription.status.value == "active" and subscription.plan == SubscriptionPlan.LITE:
-        meta.append("📋  Ответы — копированием в кабинет")
-    elif user.trial_pro_until or (
-        subscription and subscription.status.value == "active" and subscription.plan == SubscriptionPlan.PRO
-    ):
-        meta.append(f"🚀  Publish-квота: <b>{user.free_api_publishes_remaining}</b>")
-    elif user.free_api_publishes_remaining:
-        meta.append(f"🚀  Пробных publish: <b>{user.free_api_publishes_remaining}</b>")
+    publish_line = await build_dashboard_publish_line(session, user, subscription)
+    if publish_line:
+        meta.append(publish_line)
 
     if has_cabinets:
         names = []
@@ -163,7 +160,10 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
 
     settings = get_settings()
     show_product_news = user_should_see_product_news(user, settings)
+    checklist = await build_onboarding_checklist_block(session, user)
     nudge = await build_onboarding_nudge(session, user)
+    if checklist:
+        nudge = f"{checklist}\n\n{nudge}" if nudge else checklist
     if show_product_news:
         nudge_line = build_product_news_banner(settings)
         if nudge:
@@ -172,6 +172,10 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
         nudge_line = muted(nudge)
     else:
         nudge_line = None
+
+    if user_should_see_trial_ended_banner(user):
+        trial_hint = muted("⏱ Trial PRO завершён — нажмите «Что изменилось» на сводке.")
+        nudge_line = f"{trial_hint}\n\n{nudge_line}" if nudge_line else trial_hint
 
     if not await has_lite_or_higher(session, user.id):
         acc_n = await count_user_api_accounts(session, user.id)

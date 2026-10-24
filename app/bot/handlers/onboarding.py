@@ -1,70 +1,127 @@
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
-from app.core.config import get_settings
+from app.bot.ui import BRAND, ICON, brand_title, muted, progress_bar
 from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
-from app.bot.ui import BRAND, ICON, brand_title, muted, progress_bar
+from app.services.onboarding_checklist import onboarding_is_complete, onboarding_step_states
 
 router = Router(name="onboarding")
 
-STEPS = [
-    brand_title("Шаг 1 из 3", tagline="Кабинет маркетплейса", icon="🏪")
-    + "\n"
-    + progress_bar(1, 3)
-    + "\n\n"
-    + muted("⚙️ Настройки → подключите 🟣 WB или 🔵 Ozon (API-ключ)."),
-    brand_title("Шаг 2 из 3", tagline="Синхронизация", icon="🔄")
-    + "\n"
-    + progress_bar(2, 3)
-    + "\n\n"
-    + muted("🔄 Sync на сводке — подтянем новые отзывы в очередь."),
-    brand_title("Шаг 3 из 3", tagline="Первый ответ", icon="✍️")
-    + "\n"
-    + progress_bar(3, 3)
-    + "\n\n"
-    + muted("📬 «Ответы на отзывы» → 🎨 тон → варианты → отправить."),
+_STEP_META = [
+    ("Кабинет WB/Ozon", "⚙️ Настройки → API-ключ.", "menu:settings"),
+    ("Первый Sync", "🔄 Sync на сводке — подтянуть отзывы.", "review:sync"),
+    ("Тон ответа", "🎨 В очереди отзывов — профиль tone.", "review:mp:list"),
+    ("Первый ответ", "📬 Отправить или скопировать ответ.", "review:mp:list"),
 ]
 
 
-def _step_keyboard(step: int) -> InlineKeyboardMarkup:
-    if step == 0:
-        next_data = "onboarding:step:1"
-        action = [InlineKeyboardButton(text="⚙️ Открыть настройки", callback_data="menu:settings")]
-    elif step == 1:
-        next_data = "onboarding:step:2"
-        action = [InlineKeyboardButton(text="🔄 Синхронизировать", callback_data="review:sync")]
-    else:
-        next_data = "onboarding:done"
-        action = [InlineKeyboardButton(text="📬 Ответы на отзывы", callback_data="review:mp:list")]
-    rows = [action, [InlineKeyboardButton(text="➡️ Далее", callback_data=next_data)]]
+def _step_body(step: int, states: list[tuple[str, bool]]) -> str:
+    total = len(states)
+    step = max(0, min(step, total - 1))
+    done_count = sum(1 for _, ok in states if ok)
+    lines = [
+        brand_title(f"Шаг {step + 1} из {total}", tagline="Быстрый старт", icon="🚀"),
+        progress_bar(step + 1, total),
+        "",
+    ]
+    for i, (label, ok) in enumerate(states):
+        mark = "✅" if ok else ("👉" if i == step else "⬜")
+        lines.append(f"{mark}  {label}")
+    lines.append("")
+    title, hint, _ = _STEP_META[step]
+    lines.append(f"<b>{title}</b>")
+    lines.append(muted(hint))
+    if done_count == total:
+        lines.append("")
+        lines.append(muted("Все шаги выполнены — нажмите «Завершить»."))
+    return "\n".join(lines)
+
+
+def _step_keyboard(step: int, states: list[tuple[str, bool]]) -> InlineKeyboardMarkup:
+    total = len(states)
+    step = max(0, min(step, total - 1))
+    _, _, action_cb = _STEP_META[step]
+    all_done = all(ok for _, ok in states)
+    rows: list[list[InlineKeyboardButton]] = [
+        [InlineKeyboardButton(text="▶️ Перейти к шагу", callback_data=action_cb)],
+    ]
+    nav: list[InlineKeyboardButton] = []
     if step > 0:
-        rows.append([InlineKeyboardButton(text="◀️ Назад", callback_data=f"onboarding:step:{step - 1}")])
-    rows.append([InlineKeyboardButton(text="⏭ Пропустить", callback_data="onboarding:done")])
+        nav.append(InlineKeyboardButton(text="◀️ Назад", callback_data=f"onboarding:step:{step - 1}"))
+    if step < total - 1:
+        nav.append(InlineKeyboardButton(text="➡️ Далее", callback_data=f"onboarding:step:{step + 1}"))
+    if nav:
+        rows.append(nav)
+    if all_done:
+        rows.insert(0, [InlineKeyboardButton(text="✅ Завершить настройку", callback_data="onboarding:done")])
+    rows.append([InlineKeyboardButton(text="⏭ К сводке", callback_data="onboarding:skip")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def _first_incomplete_step(states: list[tuple[str, bool]]) -> int:
+    for i, (_, ok) in enumerate(states):
+        if not ok:
+            return i
+    return max(0, len(states) - 1)
+
+
+async def _render_onboarding(callback: CallbackQuery, db_user: DbUser, step: int | None = None) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None or callback.message is None:
+            return
+        states = await onboarding_step_states(session, user)
+    if step is None:
+        step = _first_incomplete_step(states)
+    text = _step_body(step, states)
+    await callback.message.edit_text(text, reply_markup=_step_keyboard(step, states))
+
+
 @router.callback_query(F.data == "menu:onboarding")
-async def onboarding_start(callback: CallbackQuery) -> None:
+async def onboarding_start(callback: CallbackQuery, db_user: DbUser) -> None:
     await callback.answer()
-    if callback.message:
-        await callback.message.edit_text(STEPS[0], reply_markup=_step_keyboard(0))
+    await _render_onboarding(callback, db_user)
 
 
 @router.callback_query(F.data.startswith("onboarding:step:"))
-async def onboarding_step(callback: CallbackQuery) -> None:
+async def onboarding_step(callback: CallbackQuery, db_user: DbUser) -> None:
     step = int(callback.data.split(":")[-1])
-    step = max(0, min(step, 2))
+    await callback.answer()
+    await _render_onboarding(callback, db_user, step=step)
+
+
+@router.callback_query(F.data == "onboarding:skip")
+async def onboarding_skip(callback: CallbackQuery) -> None:
     await callback.answer()
     if callback.message:
-        await callback.message.edit_text(STEPS[step], reply_markup=_step_keyboard(step))
+        await callback.message.edit_text(
+            f"{ICON} <b>{BRAND}</b>\n"
+            "Чеклист быстрого старта остаётся на сводке — вернитесь, когда будет время.",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
+                ]
+            ),
+        )
 
 
 @router.callback_query(F.data == "onboarding:done")
 async def onboarding_done(callback: CallbackQuery, db_user: DbUser) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            await callback.answer("Ошибка профиля", show_alert=True)
+            return
+        if not await onboarding_is_complete(session, user):
+            await callback.answer(
+                "Сначала выполните шаги чеклиста (кабинет, sync, тон, первый ответ).",
+                show_alert=True,
+            )
+            return
         await UserRepository(session).complete_onboarding(db_user.id)
         await session.commit()
     await callback.answer("Готово!")

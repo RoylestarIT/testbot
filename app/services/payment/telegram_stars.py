@@ -7,26 +7,17 @@ STARS_CURRENCY = "XTR"
 PAYLOAD_PREFIX = "sub"
 
 
+def fiat_invoices_configured(settings: Settings) -> bool:
+    return bool(settings.payment_provider_token.strip())
+
+
+def stars_invoices_configured(settings: Settings) -> bool:
+    return settings.payment_enable_stars
+
+
 def uses_telegram_stars(settings: Settings) -> bool:
-    return not settings.payment_provider_token.strip()
-
-
-def invoice_provider_token(settings: Settings) -> str:
-    if uses_telegram_stars(settings):
-        return ""
-    return settings.payment_provider_token.strip()
-
-
-def invoice_currency(settings: Settings) -> str:
-    if uses_telegram_stars(settings):
-        return STARS_CURRENCY
-    return settings.payment_currency.upper()
-
-
-def payment_method_for_invoice(settings: Settings) -> PaymentMethod:
-    if uses_telegram_stars(settings):
-        return PaymentMethod.STARS
-    return PaymentMethod.TELEGRAM
+    """Legacy: только Stars, без провайдера карт (нет PAYMENT_PROVIDER_TOKEN)."""
+    return not fiat_invoices_configured(settings) and stars_invoices_configured(settings)
 
 
 def invoice_payload(plan: SubscriptionPlan, user_id: int) -> str:
@@ -47,20 +38,70 @@ def parse_invoice_payload(payload: str) -> tuple[SubscriptionPlan, int] | None:
     return plan, user_id
 
 
-def invoice_amount(settings: Settings, plan: SubscriptionPlan) -> int:
-    if uses_telegram_stars(settings):
-        if plan == SubscriptionPlan.PRO:
-            return settings.subscription_pro_stars
-        return settings.subscription_lite_stars
+def effective_stars_amount(settings: Settings, plan: SubscriptionPlan) -> int:
+    """Stars: явный SUBSCRIPTION_*_STARS или ₽ × (1 + markup%), округление."""
+    manual = (
+        settings.subscription_pro_stars
+        if plan == SubscriptionPlan.PRO
+        else settings.subscription_lite_stars
+    )
+    if manual is not None:
+        return manual
+    rub = (
+        settings.subscription_pro_price_rub
+        if plan == SubscriptionPlan.PRO
+        else settings.subscription_lite_price_rub
+    )
+    factor = 1.0 + settings.subscription_stars_markup_percent / 100.0
+    return max(1, round(rub * factor))
+
+
+def stars_invoice_amount(settings: Settings, plan: SubscriptionPlan) -> int:
+    return effective_stars_amount(settings, plan)
+
+
+def fiat_invoice_amount(settings: Settings, plan: SubscriptionPlan) -> int:
     if plan == SubscriptionPlan.PRO:
         return settings.subscription_pro_price_minor
     return settings.subscription_lite_price_minor
 
 
-def invoice_prices(settings: Settings, plan: SubscriptionPlan) -> list[LabeledPrice]:
-    amount = invoice_amount(settings, plan)
+def invoice_amount(settings: Settings, plan: SubscriptionPlan, *, for_stars: bool) -> int:
+    if for_stars:
+        return stars_invoice_amount(settings, plan)
+    return fiat_invoice_amount(settings, plan)
+
+
+def invoice_prices(settings: Settings, plan: SubscriptionPlan, *, for_stars: bool) -> list[LabeledPrice]:
+    amount = invoice_amount(settings, plan, for_stars=for_stars)
     label = "PRO 1 месяц" if plan == SubscriptionPlan.PRO else "Lite 1 месяц"
     return [LabeledPrice(label=label, amount=amount)]
+
+
+def invoice_currency(*, for_stars: bool, settings: Settings | None = None) -> str:
+    if for_stars:
+        return STARS_CURRENCY
+    assert settings is not None
+    return settings.payment_currency.upper()
+
+
+def invoice_provider_token(*, for_stars: bool, settings: Settings | None = None) -> str:
+    if for_stars:
+        return ""
+    assert settings is not None
+    return settings.payment_provider_token.strip()
+
+
+def payment_method_for_currency(currency: str) -> PaymentMethod:
+    if currency.upper() == STARS_CURRENCY:
+        return PaymentMethod.STARS
+    return PaymentMethod.TELEGRAM
+
+
+def payment_method_for_invoice(settings: Settings, *, for_stars: bool) -> PaymentMethod:
+    if for_stars:
+        return PaymentMethod.STARS
+    return PaymentMethod.TELEGRAM
 
 
 def invoice_title(plan: SubscriptionPlan) -> str:
@@ -69,7 +110,18 @@ def invoice_title(plan: SubscriptionPlan) -> str:
     return "ReviewPilot Lite"
 
 
-def invoice_description(plan: SubscriptionPlan, settings: Settings) -> str:
+def invoice_description(plan: SubscriptionPlan, settings: Settings, *, for_stars: bool) -> str:
+    if for_stars:
+        stars = stars_invoice_amount(settings, plan)
+        if plan == SubscriptionPlan.PRO:
+            return (
+                f"PRO на 1 месяц — {stars} Telegram Stars. "
+                "Без лимита генераций, publish в WB/Ozon, авто-ответы 4–5★."
+            )
+        return (
+            f"Lite на 1 месяц — {stars} Telegram Stars. "
+            "Без лимита генераций; ответ в кабинет — копированием."
+        )
     if plan == SubscriptionPlan.PRO:
         return (
             f"PRO на 1 месяц — {settings.subscription_pro_price_rub} ₽ / "
@@ -83,7 +135,19 @@ def invoice_description(plan: SubscriptionPlan, settings: Settings) -> str:
     )
 
 
-def payment_mode_label(settings: Settings) -> str:
+def payment_mode_label(settings: Settings, *, for_stars: bool | None = None) -> str:
+    if for_stars is True:
+        return "Telegram Stars"
+    if for_stars is False:
+        return f"Telegram Payments ({settings.payment_currency.upper()})"
     if uses_telegram_stars(settings):
         return "Telegram Stars"
-    return f"Telegram Payments ({invoice_currency(settings)})"
+    if stars_invoices_configured(settings) and not fiat_invoices_configured(settings):
+        return "Telegram Stars"
+    return f"Telegram Payments ({settings.payment_currency.upper()})"
+
+
+def payment_mode_label_for_currency(currency: str, settings: Settings) -> str:
+    if currency.upper() == STARS_CURRENCY:
+        return "Telegram Stars"
+    return f"Telegram Payments ({currency.upper()})"

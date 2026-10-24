@@ -12,6 +12,6 @@ def test_product_news_shown_until_dismissed() -> None:
 
 
 def test_product_news_banner_mentions_legal() -> None:
-    settings = Settings.model_construct(bot_token="x", product_news_version="v1")
+    settings = Settings.model_construct(bot_token="x", product_news_version="2025-10-v1")
     text = build_product_news_banner(settings)
     assert "/legal" in text

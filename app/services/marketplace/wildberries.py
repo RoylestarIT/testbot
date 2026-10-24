@@ -175,3 +175,37 @@ class WildberriesClient(MarketplaceClient):
             if len(items) < take:
                 break
         return total
+
+    async def list_unanswered_questions(
+        self,
+        account: MarketplaceAccount,
+        *,
+        limit: int = 5,
+    ) -> list[dict[str, Any]]:
+        headers = _auth_headers(self._token(account))
+        params = {
+            "isAnswered": "false",
+            "take": min(limit, 20),
+            "skip": 0,
+            "order": "dateDesc",
+        }
+        response = await request_with_retry(
+            self._client,
+            "GET",
+            WB_QUESTIONS_LIST_PATH,
+            headers=headers,
+            params=params,
+        )
+        if response.status_code == 401:
+            raise MarketplaceAPIError("WB: не авторизован (вопросы)", status_code=401)
+        if response.status_code >= 400:
+            raise MarketplaceAPIError(
+                f"WB: ошибка получения вопросов ({response.status_code})",
+                status_code=response.status_code,
+            )
+        payload = response.json()
+        data = payload.get("data") if isinstance(payload, dict) else None
+        items = data.get("questions", []) if isinstance(data, dict) else []
+        if not isinstance(items, list):
+            return []
+        return [item for item in items if isinstance(item, dict)][:limit]

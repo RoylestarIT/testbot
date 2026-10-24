@@ -5,6 +5,8 @@ from __future__ import annotations
 from app.bot.ui import brand_title, bullet, muted, quote
 from app.db.models import Subscription, SubscriptionPlan, SubscriptionStatus, User
 from app.services.payment.fx_rates import SubscriptionPricing
+from app.services.access_messaging import build_my_access_publish_block
+from app.services.pro_access import is_trial_pro_active
 from app.services.subscription import plan_label, status_label
 
 SUBSCRIPTION_SEP = "───────────────"
@@ -25,7 +27,7 @@ def build_subscription_hub(
         f"✨  Lite — {pricing.lite_price_label()}",
         f"🚀  PRO — {pricing.pro_price_label()}",
         "",
-        muted("Оплата: крипта · карта РФ/РБ · СБП/перевод"),
+        muted("Оплата: Stars · крипта · карта РФ/РБ · СБП/перевод"),
     ]
     if trial_line:
         lines.extend(["", trial_line])
@@ -58,6 +60,8 @@ def build_my_access_text(
         lines.append(f"📌  <b>{access_tier_line}</b>")
         lines.append("")
 
+    trial_active = is_trial_pro_active(user)
+
     if subscription is None:
         lines.extend(
             [
@@ -65,11 +69,10 @@ def build_my_access_text(
                 bullet(
                     f"Генераций сегодня: <b>{generations_remaining if generations_remaining is not None else '—'}</b> / 5"
                 ),
-                bullet("Publish в API: <b>PRO</b> или trial"),
-                "",
-                muted("Оформить: «Подписка → Оплатить»"),
             ]
         )
+        lines.extend(build_my_access_publish_block(user, subscription, trial_active=trial_active))
+        lines.extend(["", muted("Оформить: «Подписка → Оплатить»")])
     else:
         expires = (
             subscription.expires_at.strftime("%d.%m.%Y")
@@ -83,10 +86,7 @@ def build_my_access_text(
             ]
         )
         if subscription.status == SubscriptionStatus.ACTIVE:
-            if subscription.plan == SubscriptionPlan.PRO:
-                lines.append(bullet("Publish + авто 4–5★: <b>да</b>"))
-            else:
-                lines.append(bullet("Publish в API: <b>копирование</b> в кабинет"))
+            lines.extend(build_my_access_publish_block(user, subscription, trial_active=trial_active))
         elif generations_remaining is not None:
             lines.append(bullet(f"Генераций сегодня: <b>{generations_remaining}</b> / 5"))
         if subscription.status == SubscriptionStatus.PENDING:

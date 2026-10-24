@@ -102,6 +102,62 @@ async def build_publish_activity_line(session: AsyncSession, user_id: int, *, da
     )
 
 
+async def median_hours_to_first_reply(session: AsyncSession, user_id: int, *, days: int = 30) -> float | None:
+    """Медиана часов от created_at отзыва до первой генерации."""
+    since = _since_days(days)
+    stmt = (
+        select(Review.created_at, func.min(GeneratedReply.created_at))
+        .select_from(GeneratedReply)
+        .join(Review, GeneratedReply.review_id == Review.id)
+        .join(MarketplaceAccount, Review.account_id == MarketplaceAccount.id)
+        .where(
+            MarketplaceAccount.user_id == user_id,
+            GeneratedReply.created_at >= since,
+        )
+        .group_by(Review.id, Review.created_at)
+    )
+    rows = (await session.execute(stmt)).all()
+    deltas: list[float] = []
+    for review_created, first_gen in rows:
+        if review_created is None or first_gen is None:
+            continue
+        rc = review_created if review_created.tzinfo else review_created.replace(tzinfo=UTC)
+        fg = first_gen if first_gen.tzinfo else first_gen.replace(tzinfo=UTC)
+        hours = (fg - rc).total_seconds() / 3600.0
+        if hours >= 0:
+            deltas.append(hours)
+    if not deltas:
+        return None
+    deltas.sort()
+    mid = len(deltas) // 2
+    if len(deltas) % 2:
+        return round(deltas[mid], 1)
+    return round((deltas[mid - 1] + deltas[mid]) / 2, 1)
+
+
+async def weekly_avg_rating_trend(session: AsyncSession, user_id: int, *, weeks: int = 4) -> list[tuple[str, float | None]]:
+    """Последние N недель: средняя оценка отзывов, попавших в очередь (NEW) в этой неделе."""
+    now = datetime.now(UTC)
+    out: list[tuple[str, float | None]] = []
+    for w in range(weeks - 1, -1, -1):
+        end = now - timedelta(days=7 * w)
+        start = end - timedelta(days=7)
+        avg = await session.scalar(
+            select(func.avg(Review.rating))
+            .select_from(Review)
+            .join(MarketplaceAccount, Review.account_id == MarketplaceAccount.id)
+            .where(
+                MarketplaceAccount.user_id == user_id,
+                Review.created_at >= start,
+                Review.created_at < end,
+                Review.rating.isnot(None),
+            )
+        )
+        label = start.strftime("%d.%m")
+        out.append((label, round(float(avg), 2) if avg is not None else None))
+    return out
+
+
 async def build_period_analytics_block(session: AsyncSession, user_id: int) -> str:
     from app.services.user_stats import avg_rating_new_reviews
 
@@ -113,6 +169,8 @@ async def build_period_analytics_block(session: AsyncSession, user_id: int) -> s
 
     pub7 = await count_reviews_by_status(session, user_id, ReviewStatus.PUBLISHED, days=7)
     copy7 = await count_reviews_by_status(session, user_id, ReviewStatus.PROCESSED, days=7)
+    median_h30 = await median_hours_to_first_reply(session, user_id, days=30)
+    median_h7 = await median_hours_to_first_reply(session, user_id, days=7)
 
     lines = ["<b>📈 Активность</b>"]
     lines.append(
@@ -121,10 +179,20 @@ async def build_period_analytics_block(session: AsyncSession, user_id: int) -> s
     if pub7 or copy7:
         lines.append(f"· Publish в API: <b>{pub7}</b> · копия/ручная отправка: <b>{copy7}</b>")
     lines.append(f"· 30 дней: генерации по <b>{w30_gen}</b> отзывам")
+    if median_h7 is not None:
+        lines.append(f"· ⏱ До 1-го ответа (7 дн.): <b>{median_h7:g}</b> ч (медиана)")
+    if median_h30 is not None:
+        lines.append(f"· ⏱ До 1-го ответа (30 дн.): <b>{median_h30:g}</b> ч (медиана)")
     if queue:
         pct = round(100 * low / queue) if queue else 0
         avg_s = f" · средняя ⭐ <b>{avg}</b>" if avg is not None else ""
         lines.append(f"· Очередь: <b>{queue}</b> · негатив ≤3★: <b>{low}</b> ({pct}%){avg_s}")
     else:
         lines.append("· Очередь пуста")
+    trend = await weekly_avg_rating_trend(session, user_id, weeks=4)
+    if any(v is not None for _, v in trend):
+        parts = []
+        for label, val in trend:
+            parts.append(f"{label}: <b>{val:g}</b>⭐" if val is not None else f"{label}: —")
+        lines.append("· Тренд ⭐ (4 нед., новые отзывы): " + " · ".join(parts))
     return "\n".join(lines)

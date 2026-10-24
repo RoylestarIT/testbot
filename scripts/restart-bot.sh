@@ -27,5 +27,21 @@ PY
 
 pkill -f "python3 -m app.main" 2>/dev/null || true
 sleep 1
+
+python3 - <<'PY'
+import asyncio
+from aiogram import Bot
+from app.core.config import get_settings
+
+async def main() -> None:
+    bot = Bot(token=get_settings().bot_token)
+    await bot.delete_webhook(drop_pending_updates=False)
+    wh = await bot.get_webhook_info()
+    print(f"Telegram webhook cleared, pending updates: {wh.pending_update_count}")
+    await bot.session.close()
+
+asyncio.run(main())
+PY
+
 nohup python3 -m app.main >> /tmp/reviewpilot-bot.log 2>&1 &
 echo "ReviewPilot started (log: /tmp/reviewpilot-bot.log)"

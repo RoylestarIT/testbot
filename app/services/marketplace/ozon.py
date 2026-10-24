@@ -16,6 +16,7 @@ from app.services.marketplace.base import MarketplaceAPIError, MarketplaceClient
 OZON_SELLER_BASE_URL = "https://api-seller.ozon.ru"
 OZON_REVIEW_LIST_PATH = "/v1/review/list"
 OZON_REVIEW_COMMENT_CREATE_PATH = "/v1/review/comment/create"
+OZON_QUESTION_LIST_PATH = "/v1/question/list"
 
 
 def _ozon_headers(client_id: str, api_key: str) -> dict[str, str]:
@@ -160,3 +161,43 @@ class OzonClient(MarketplaceClient):
     async def test_connection(self, account: MarketplaceAccount) -> MarketplaceReviewDTO | None:
         reviews = await self.fetch_reviews(account, limit=20, unanswered_only=False)
         return reviews[0] if reviews else None
+
+    async def count_unanswered_questions(self, account: MarketplaceAccount, *, cap: int = 200) -> int:
+        items = await self.list_unanswered_questions(account, limit=min(cap, 100))
+        return len(items)
+
+    async def list_unanswered_questions(
+        self,
+        account: MarketplaceAccount,
+        *,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        client_id, api_key = self._credentials(account)
+        body: dict[str, Any] = {
+            "filter": {"status": "UNANSWERED"},
+            "last_id": "",
+            "limit": max(1, min(limit, 50)),
+        }
+        response = await request_with_retry(
+            self._client,
+            "POST",
+            OZON_QUESTION_LIST_PATH,
+            headers=_ozon_headers(client_id, api_key),
+            json=body,
+        )
+        if response.status_code == 401:
+            raise MarketplaceAPIError("Ozon: не авторизован (вопросы)", status_code=401)
+        if response.status_code == 404:
+            return []
+        if response.status_code >= 400:
+            raise MarketplaceAPIError(
+                f"Ozon: ошибка получения вопросов ({response.status_code})",
+                status_code=response.status_code,
+            )
+        payload = response.json()
+        if not isinstance(payload, dict):
+            return []
+        questions = payload.get("questions") or payload.get("result", {}).get("questions")
+        if not isinstance(questions, list):
+            return []
+        return [q for q in questions if isinstance(q, dict)][:limit]

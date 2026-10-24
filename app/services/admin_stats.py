@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services.start_sources import aggregate_start_sources
 from app.db.models import (
     Marketplace,
     MarketplaceAccount,
@@ -69,6 +70,12 @@ async def build_stats_message(session: AsyncSession) -> str:
         )
     ) or 0
 
+    sources = await aggregate_start_sources(session)
+    sources_block = ""
+    if sources:
+        lines = [f"· {name}: <b>{cnt}</b>" for name, cnt in sources]
+        sources_block = "\n\n<b>/start источники</b>\n" + "\n".join(lines)
+
     return (
         "<b>Статистика Голос бренда</b>\n\n"
         f"Пользователей: <b>{users_count}</b>\n"
@@ -79,4 +86,5 @@ async def build_stats_message(session: AsyncSession) -> str:
         f"Подписки Lite (active): <b>{active_lite}</b>\n"
         f"Подписки PRO (active): <b>{active_pro}</b>\n"
         f"Заявок pending: <b>{pending_qr}</b>"
+        f"{sources_block}"
     )

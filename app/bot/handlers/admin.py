@@ -29,6 +29,7 @@ from app.db.repositories.subscription import SubscriptionRepository
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.services.admin_stats import build_stats_message
+from app.services.admin_weekly_metrics import build_admin_weekly_text
 from app.services.subscription import (
     approve_qr_subscription,
     grant_subscription_by_tg_id,
@@ -165,6 +166,19 @@ async def admin_stats_callback(callback: CallbackQuery) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
         text = await build_stats_message(session)
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(text, reply_markup=admin_back_keyboard())
+
+
+@router.callback_query(F.data == "admin:weekly")
+async def admin_weekly_callback(callback: CallbackQuery) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        text = await build_admin_weekly_text(session)
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(text, reply_markup=admin_back_keyboard())
@@ -561,3 +575,52 @@ async def admin_pending_cmd(message: Message) -> None:
         await message.answer(text, reply_markup=admin_menu_keyboard())
     else:
         await message.answer(text, reply_markup=pending_detail_keyboard(sub_id, 0, total))
+
+
+@router.callback_query(F.data == "admin:promo")
+async def admin_promo_start(callback: CallbackQuery, state: FSMContext) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await state.set_state(AdminStates.waiting_promo_line)
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            "🎟 <b>Новый промокод</b>\n\n"
+            "Формат одной строкой:\n"
+            "<code>КОД дней_ trial max_активаций</code>\n"
+            "Пример: <code>WELCOME 7 100</code>",
+            reply_markup=admin_back_keyboard(),
+        )
+
+
+@router.message(AdminStates.waiting_promo_line, F.text)
+async def admin_promo_create(message: Message, state: FSMContext) -> None:
+    if message.from_user is None or not _is_admin(message.from_user.id):
+        return
+    parts = (message.text or "").strip().split()
+    if len(parts) != 3:
+        await message.answer("Нужно 3 значения: КОД дни max")
+        return
+    code, days_s, max_s = parts
+    try:
+        trial_days = int(days_s)
+        max_redemptions = int(max_s)
+    except ValueError:
+        await message.answer("Дни и max — целые числа.")
+        return
+    from app.db.repositories.promo_code import PromoCodeRepository
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        repo = PromoCodeRepository(session)
+        if await repo.get_by_code(code):
+            await message.answer("Такой код уже есть.")
+            return
+        promo = await repo.create(code=code, trial_days=trial_days, max_redemptions=max_redemptions)
+        await session.commit()
+    await state.clear()
+    await message.answer(
+        f"✅ Промокод <code>{promo.code}</code>: +{promo.trial_days} дн., max {promo.max_redemptions}",
+        reply_markup=admin_menu_keyboard(),
+    )
