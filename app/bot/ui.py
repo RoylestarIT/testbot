@@ -62,11 +62,16 @@ def brand_title(screen: str, *, tagline: str | None = None, icon: str = ICON) ->
 
 def section(title: str, *, icon: str = "") -> str:
     prefix = f"{icon} " if icon else ""
-    return f"\n<b>{prefix}{title}</b>"
+    return f"\n\n<b>{prefix}{title}</b>\n\n"
 
 
 def bullet(text: str, *, icon: str = "▫️") -> str:
     return f"{icon} {text}"
+
+
+def bullet_list(*items: str) -> str:
+    """Пункты списка с пустой строкой между ними (читаемость в Telegram)."""
+    return "\n\n".join(bullet(item) for item in items)
 
 
 def kv(label: str, value: str) -> str:
