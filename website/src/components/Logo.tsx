@@ -10,7 +10,7 @@ export function Logo({
   return (
     <span className="flex items-center gap-2.5">
       <span
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brand-600 to-telegram shadow-md"
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brand-600 to-brand-500 shadow-sm ring-1 ring-black/5"
         aria-hidden
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none">
@@ -24,8 +24,8 @@ export function Logo({
       </span>
       {!compact && (
         <span
-          className={`text-base font-semibold tracking-tight ${
-            inverted ? "text-white" : "text-slate-900"
+          className={`font-display text-[1.05rem] font-bold tracking-tight ${
+            inverted ? "text-white" : "text-ink"
           }`}
         >
           {BRAND}

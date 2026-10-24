@@ -49,7 +49,7 @@ const rows: Row[] = [
 
 export function PricingTable({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-card">
+    <div className="overflow-x-auto rounded-2xl border border-line bg-surface shadow-card">
       <table className="w-full min-w-[640px] border-collapse text-left text-sm">
         <caption className="sr-only">Сравнение тарифов Free, Lite и PRO</caption>
         <thead>

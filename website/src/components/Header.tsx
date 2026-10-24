@@ -12,7 +12,7 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/60 bg-white/75 shadow-sm backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-line bg-white/80 shadow-sm backdrop-blur-xl">
       <div className="container-page flex items-center justify-between gap-4 py-3.5">
         <Link
           href="/"
@@ -31,7 +31,7 @@ export function Header() {
                 className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                   active
                     ? "bg-brand-50 text-brand-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    : "text-ink-muted hover:bg-surface-muted hover:text-ink"
                 }`}
               >
                 {item.label}

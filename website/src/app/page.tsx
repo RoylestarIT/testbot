@@ -24,17 +24,17 @@ export default function HomePage() {
       <section className="relative overflow-hidden bg-hero-mesh">
         <div className="container-page grid gap-12 pb-16 pt-10 sm:pt-14 lg:grid-cols-2 lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
           <div>
-            <p className="badge-pill w-fit text-brand-700">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+            <p className="badge-pill w-fit">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/90" aria-hidden />
               Telegram-first для селлеров
             </p>
-            <h1 className="mt-5 text-balance text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
+            <h1 className="mt-6 text-balance font-display text-display-lg text-ink sm:text-[3.5rem]">
               Голос бренда
             </h1>
-            <p className="mt-2 text-lg font-medium text-brand-700">
+            <p className="mt-3 font-display text-body-lg font-semibold text-brand-700">
               Время, деньги и лояльность покупателей — в одном Telegram
             </p>
-            <p className="mt-5 max-w-xl text-pretty text-lg leading-relaxed text-slate-600">
+            <p className="prose-muted mt-5 max-w-xl text-pretty">
               Отзывы не должны съедать ваш день. Подтягиваем WB/Ozon, предлагаем 3
               варианта ответа — вы решаете, что увидит покупатель.
             </p>
@@ -46,7 +46,7 @@ export default function HomePage() {
                 Попробовать PRO
               </TelegramButton>
             </div>
-            <p className="mt-4 text-sm text-slate-500">
+            <p className="mt-4 text-caption text-ink-subtle">
               Trial PRO в боте · Free: 5 генераций в день · негатив только вручную
             </p>
             <div className="mt-8">
@@ -60,8 +60,8 @@ export default function HomePage() {
       </section>
 
       {/* Trust stats */}
-      <section className="border-y border-slate-200/80 bg-white">
-        <div className="container-page grid grid-cols-2 gap-6 py-10 sm:grid-cols-4 sm:gap-8">
+      <section className="border-y border-line bg-surface">
+        <div className="container-page grid grid-cols-2 gap-6 py-11 sm:grid-cols-4 sm:gap-8">
           {[
             ["3", "варианта ответа ИИ"],
             ["2", "маркетплейса в одном боте"],
@@ -69,8 +69,10 @@ export default function HomePage() {
             ["1–3★", "только с вашего OK"],
           ].map(([val, label]) => (
             <div key={label} className="text-center sm:text-left">
-              <p className="text-2xl font-bold text-brand-700 sm:text-3xl">{val}</p>
-              <p className="mt-1 text-sm text-slate-600">{label}</p>
+              <p className="font-display text-3xl font-bold tracking-tight text-brand-700 sm:text-[2rem]">
+                {val}
+              </p>
+              <p className="mt-1.5 text-caption text-ink-muted">{label}</p>
             </div>
           ))}
         </div>
@@ -86,17 +88,15 @@ export default function HomePage() {
             description="Селлер или маленькая команда: отзывы важны для карточки, но каждый день уходит на копипаст и прыжки между WB и Ozon."
           />
           <div className="card p-8 lg:p-9">
-            <p className="text-xs font-bold uppercase tracking-widest text-brand-600">
-              Наш подход
-            </p>
-            <h3 className="mt-2 text-xl font-semibold text-slate-900">
+            <p className="eyebrow">Наш подход</p>
+            <h3 className="mt-2 font-display text-title text-ink">
               Co-pilot, а не «чёрный ящик»
             </h3>
-            <p className="mt-4 leading-relaxed text-slate-600">
+            <p className="mt-4 text-body text-ink-muted">
               Sync → три черновика → вы правите → publish (PRO) или копия (Lite). Авто
               только на 4–5★; негатив не уходит без человека.
             </p>
-            <blockquote className="mt-6 rounded-xl bg-brand-50/60 p-4 text-sm italic leading-relaxed text-slate-700">
+            <blockquote className="mt-6 rounded-xl border border-brand-100/80 bg-brand-50/50 p-4 text-body italic text-ink-muted">
               «Раньше отзывы копились к вечеру. Сейчас отвечаю между созвонами — из
               Telegram.» — селлер WB/Ozon
             </blockquote>
@@ -105,7 +105,7 @@ export default function HomePage() {
       </section>
 
       {/* Benefits */}
-      <section className="section-y bg-surface-muted">
+      <section className="section-y bg-surface-muted/80">
         <div className="container-page">
           <SectionHeading
             title="Почему селлеры выбирают нас"
@@ -213,7 +213,7 @@ export default function HomePage() {
       </section>
 
       {/* Pricing preview */}
-      <section className="section-y bg-surface-muted">
+      <section className="section-y bg-surface-muted/80">
         <div className="container-page">
           <SectionHeading title="Тарифы" description="Актуальные цифры — в боте при оплате" />
           <div className="mt-12">
