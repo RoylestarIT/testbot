@@ -58,6 +58,12 @@ def crypto_amount_for_plan(settings: Settings, plan: SubscriptionPlan) -> str:
     return settings.crypto_lite_amount_usd
 
 
+def crypto_price_label(settings: Settings, plan: SubscriptionPlan) -> str:
+    """Сумма счёта Crypto Pay (fiat USD) — в UI показываем как USDT."""
+    amount = crypto_amount_for_plan(settings, plan).strip()
+    return f"{amount} USDT"
+
+
 def build_invoice_payload(*, subscription_id: int, user_id: int, plan: SubscriptionPlan) -> str:
     return json.dumps(
         {"subscription_id": subscription_id, "user_id": user_id, "plan": plan.value},

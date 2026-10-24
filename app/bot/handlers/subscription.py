@@ -34,8 +34,8 @@ from app.services.generation_limit import remaining_generations_today
 from app.services.payment.crypto_pay import (
     CryptoPayError,
     create_subscription_invoice,
-    crypto_amount_for_plan,
     crypto_pay_enabled,
+    crypto_price_label,
 )
 from app.services.payment.fx_rates import SubscriptionPricing, get_subscription_pricing
 from app.services.payment.manual_qr import legal_payment_instructions, qr_instructions
@@ -204,15 +204,19 @@ async def payment_methods_menu(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "sub:pay:crypto")
 async def payment_crypto_plans(callback: CallbackQuery) -> None:
-    pricing = await get_subscription_pricing()
     settings = get_settings()
     if not crypto_pay_enabled(settings):
         await callback.answer("Crypto Bot не настроен", show_alert=True)
         return
+    lite = crypto_price_label(settings, SubscriptionPlan.LITE)
+    pro = crypto_price_label(settings, SubscriptionPlan.PRO)
     await answer_and_edit(
         callback,
-        "🪙 <b>Crypto Bot</b>\n\nВыберите тариф. Оплата в @CryptoBot (USDT, TON и др.).",
-        reply_markup=crypto_plan_keyboard(pricing),
+        "🪙 <b>Crypto Bot</b>\n\n"
+        f"✨ Lite — <b>{lite}</b>\n"
+        f"🚀 PRO — <b>{pro}</b>\n\n"
+        "Выберите тариф. В @CryptoBot можно оплатить USDT, TON и др.",
+        reply_markup=crypto_plan_keyboard(settings),
     )
 
 
@@ -432,9 +436,8 @@ async def crypto_create_invoice(callback: CallbackQuery, bot: Bot, db_user: DbUs
     if not pay_url:
         await callback.answer("Нет ссылки на оплату", show_alert=True)
         return
-    pricing = await get_subscription_pricing()
     plan_name = "PRO" if plan == SubscriptionPlan.PRO else "Lite"
-    amount_label = pricing.pro_price_label() if plan == SubscriptionPlan.PRO else pricing.lite_price_label()
+    amount_label = crypto_price_label(settings, plan)
     await callback.answer()
     if callback.message:
         await safe_edit_message(

@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.core.config import get_settings
-from app.services.payment.crypto_pay import crypto_pay_enabled
+from app.services.payment.crypto_pay import crypto_pay_enabled, crypto_price_label
 from app.services.payment.fx_rates import SubscriptionPricing
 from app.services.payment.payment_options import card_payments_enabled, stars_payments_enabled
 from app.services.payment.telegram_stars import effective_stars_amount
@@ -99,18 +99,21 @@ def card_payment_keyboard(pricing: SubscriptionPricing) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def crypto_plan_keyboard(pricing: SubscriptionPricing) -> InlineKeyboardMarkup:
+def crypto_plan_keyboard(settings=None) -> InlineKeyboardMarkup:
+    settings = settings or get_settings()
+    lite = crypto_price_label(settings, SubscriptionPlan.LITE)
+    pro = crypto_price_label(settings, SubscriptionPlan.PRO)
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=_truncate_btn(f"✨ {pricing.lite_price_label()}"),
+                    text=_truncate_btn(f"✨ Lite · {lite}"),
                     callback_data="sub:crypto:lite",
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text=_truncate_btn(f"🚀 {pricing.pro_price_label()}"),
+                    text=_truncate_btn(f"🚀 PRO · {pro}"),
                     callback_data="sub:crypto:pro",
                 ),
             ],
