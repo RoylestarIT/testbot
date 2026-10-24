@@ -260,6 +260,20 @@ async def activate_from_crypto_invoice(
     )
 
 
+async def expire_pending_crypto(session: AsyncSession, subscription_id: int) -> bool:
+    """Close a pending crypto row whose invoice expired unpaid; no-op if already settled."""
+    result = await session.execute(
+        update(Subscription)
+        .where(
+            Subscription.id == subscription_id,
+            Subscription.status == SubscriptionStatus.PENDING,
+            Subscription.payment_method == PaymentMethod.CRYPTO,
+        )
+        .values(status=SubscriptionStatus.EXPIRED)
+    )
+    return result.rowcount == 1
+
+
 def format_subscription_summary(
     user: User,
     subscription: Subscription | None,
