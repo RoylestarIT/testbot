@@ -3,6 +3,7 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.bot.copy import HELP_TEXT, TERMS_TEXT
+from app.bot.keyboards.terms import terms_acceptance_keyboard
 from app.bot.ui import BRAND, ICON
 from app.bot.handlers.dashboard import _edit_dashboard, _send_dashboard
 from app.bot.keyboards.menu import main_menu_keyboard, more_menu_keyboard
@@ -12,14 +13,6 @@ from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 
 router = Router(name="start")
-
-
-def _terms_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="✅ Принимаю", callback_data="onboarding:accept")],
-        ]
-    )
 
 
 def _needs_terms(db_user: DbUser) -> bool:
@@ -49,7 +42,7 @@ async def _home_keyboard(db_user_id: int, tg_id: int) -> InlineKeyboardMarkup:
 @router.message(CommandStart())
 async def cmd_start(message: Message, db_user: DbUser) -> None:
     if _needs_terms(db_user):
-        await message.answer(TERMS_TEXT, reply_markup=_terms_keyboard())
+        await message.answer(TERMS_TEXT, reply_markup=terms_acceptance_keyboard())
         return
     await _send_dashboard(message, db_user)
 
