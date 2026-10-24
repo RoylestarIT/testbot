@@ -18,6 +18,15 @@ export function resolveSiteUrl(): string {
 
 export const SITE_URL = resolveSiteUrl();
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
+/** Путь к файлу из public/ с учётом basePath (next/link его добавляет сам, <img> — нет). */
+export function asset(path: string): string {
+  return `${BASE_PATH}${path}`;
+}
+
+export const BOT_AVATAR = asset("/bot-avatar.png");
+
 export const SUPPORT_EMAIL =
   process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "support@example.com";
 

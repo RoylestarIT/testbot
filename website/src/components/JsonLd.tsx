@@ -16,7 +16,7 @@ export function organizationSchema() {
     "@type": "Organization",
     name: BRAND,
     url: SITE_URL,
-    logo: `${SITE_URL}/og.png`,
+    logo: `${SITE_URL}/bot-avatar.png`,
     sameAs: [BOT_URL],
   };
 }

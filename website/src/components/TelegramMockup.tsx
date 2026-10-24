@@ -1,4 +1,5 @@
 /** Стилизованный mockup чата Telegram без персональных данных. */
+import { BOT_AVATAR } from "@/content/constants";
 
 export function TelegramMockup({ variant = "review" }: { variant?: "review" | "pricing" }) {
   return (
@@ -12,9 +13,14 @@ export function TelegramMockup({ variant = "review" }: { variant?: "review" | "p
         aria-hidden
       >
         <div className="flex items-center gap-3 border-b border-white/10 bg-[#1e2c3a] px-4 py-3.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-telegram text-xs font-bold text-white">
-            ГБ
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+          <img
+            src={BOT_AVATAR}
+            alt=""
+            width={36}
+            height={36}
+            className="h-9 w-9 rounded-full"
+          />
           <div>
             <p className="text-sm font-semibold text-white">Голос бренда</p>
             <p className="text-xs text-[#6bc99a]">● онлайн</p>

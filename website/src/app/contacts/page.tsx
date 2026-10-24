@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { InnerPageHero } from "@/components/InnerPageHero";
-import { BOT_USERNAME, SUPPORT_EMAIL } from "@/content/constants";
+import { BOT_AVATAR, BOT_USERNAME, SUPPORT_EMAIL } from "@/content/constants";
 import { TelegramButton } from "@/components/TelegramButton";
 import { Button } from "@/components/Button";
 import { Reveal } from "@/components/Reveal";
@@ -24,9 +24,19 @@ export default function ContactsPage() {
         <div className="container-page grid max-w-4xl gap-5 md:grid-cols-2">
           <Reveal>
             <div className="flex h-full flex-col rounded-3xl bg-brand-900 p-8 text-white sm:p-10">
-              <p className="text-caption font-semibold uppercase tracking-[0.14em] text-brand-300">
-                Рекомендуем
-              </p>
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-caption font-semibold uppercase tracking-[0.14em] text-brand-300">
+                  Рекомендуем
+                </p>
+                {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+                <img
+                  src={BOT_AVATAR}
+                  alt={`Аватар бота @${BOT_USERNAME}`}
+                  width={56}
+                  height={56}
+                  className="h-14 w-14 rounded-full ring-4 ring-white/10"
+                />
+              </div>
               <h2 className="mt-4 text-headline text-white">Telegram</h2>
               <p className="mt-3 flex-1 text-body text-brand-100">
                 @{BOT_USERNAME} → меню «Поддержка». Обычно отвечаем в течение рабочего дня.
