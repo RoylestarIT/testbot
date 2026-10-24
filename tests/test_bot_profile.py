@@ -10,6 +10,8 @@ from app.core.config import Settings
 
 def test_default_short_description_within_limit() -> None:
     assert len(DEFAULT_SHORT_DESCRIPTION) <= SHORT_DESCRIPTION_MAX
+    assert "ИИ-ответы" in DEFAULT_SHORT_DESCRIPTION
+    assert "без оплаты" in DEFAULT_SHORT_DESCRIPTION
 
 
 def test_resolve_short_description_uses_custom() -> None:

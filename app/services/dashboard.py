@@ -57,7 +57,6 @@ def _status_block(
             tail = muted("→ 🔄 Sync, если нужно подтянуть сейчас")
         else:
             tail = muted("→ ⚙️ Настройки: подключите WB или Ozon")
-    avg_note = ""
     return quote(f"{head}\n{tail}")
 
 

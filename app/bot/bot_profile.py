@@ -14,16 +14,18 @@ SHORT_DESCRIPTION_MAX = 120
 DESCRIPTION_MAX = 512
 
 DEFAULT_SHORT_DESCRIPTION = (
-    f"{BRAND}: ответы на отзывы WB/Ozon в Telegram. Очередь, 3 варианта, PRO — publish. ~$10 / ~$20."
+    "ИИ-ответы на отзывы WB и Ozon в Telegram: правите каждый негатив, "
+    "авто — только на хорошие оценки, без оплаты за ответ"
 )
 
 DEFAULT_DESCRIPTION = (
-    f"{BRAND} — co-pilot для селлеров Wildberries и Ozon.\n\n"
-    "• Sync отзывов в очередь в Telegram\n"
-    "• 3 варианта ответа и ваш tone of voice\n"
-    "• 1–3★ — только вы подтверждаете текст\n"
+    "ИИ-ответы на отзывы WB и Ozon в Telegram: вы правите каждый негатив, "
+    "автомат — только на хорошие оценки, подписка без оплаты за каждый ответ.\n\n"
+    f"{BRAND} — co-pilot для селлеров:\n"
+    "• sync отзывов и «Ответы на отзывы» в Telegram\n"
+    "• 3 варианта ИИ и tone of voice\n"
     "• PRO: publish в API и авто-ответы 4–5★\n\n"
-    "Lite ~$10 / PRO ~$20 в месяц. Crypto Bot, карта/перевод РФ·РБ, безнал для юр. лиц.\n\n"
+    "Lite ~$10 / PRO ~$20 в месяц · crypto · карта РФ·РБ · безнал для юр. лиц\n\n"
     "/start — сводка · /help — справка · /my_subscription — тариф"
 )
 
