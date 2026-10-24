@@ -21,7 +21,7 @@ export function Footer() {
               рутину забирает бот.
             </p>
             <div className="mt-5">
-              <TelegramButton variant="white" trackSite className="!rounded-full">
+              <TelegramButton variant="white" trackSite>
                 Начать бесплатно
               </TelegramButton>
             </div>

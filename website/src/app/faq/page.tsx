@@ -23,7 +23,7 @@ export default function FaqPage() {
           Не нашли ответ? Напишите в бота → «Поддержка» — контекст подтянется автоматически.
         </p>
         <div className="mt-6 flex justify-center">
-          <TelegramButton className="!rounded-full">Открыть поддержку в боте</TelegramButton>
+          <TelegramButton>Открыть поддержку в боте</TelegramButton>
         </div>
       </div>
     </PageShell>

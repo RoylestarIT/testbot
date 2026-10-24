@@ -43,7 +43,7 @@ export function Header() {
         <div className="flex items-center gap-2">
           <TelegramButton
             variant="primary"
-            className="hidden !rounded-full !py-2.5 !px-5 sm:inline-flex"
+            className="hidden py-2.5 sm:inline-flex"
           >
             Открыть в Telegram
           </TelegramButton>
@@ -76,7 +76,7 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
-            <TelegramButton variant="primary" className="mt-3 w-full !rounded-full">
+            <TelegramButton variant="primary" className="mt-3 w-full">
               Открыть в Telegram
             </TelegramButton>
           </nav>

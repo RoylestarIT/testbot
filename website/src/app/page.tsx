@@ -45,10 +45,10 @@ export default function HomePage() {
               варианта ответа — вы решаете, что увидит покупатель.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <TelegramButton trackSite className="!rounded-full">
+              <TelegramButton trackSite>
                 Начать бесплатно
               </TelegramButton>
-              <TelegramButton variant="secondary" className="!rounded-full">
+              <TelegramButton variant="secondary">
                 Попробовать PRO
               </TelegramButton>
             </div>
@@ -262,7 +262,7 @@ export default function HomePage() {
             @FeedBackReview_bot · Free без карты · PRO trial в один клик
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">
-            <TelegramButton variant="white" trackSite className="!rounded-full">
+            <TelegramButton variant="white" trackSite>
               Открыть в Telegram
             </TelegramButton>
           </div>

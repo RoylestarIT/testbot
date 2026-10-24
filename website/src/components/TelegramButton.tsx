@@ -1,40 +1,42 @@
-import Link from "next/link";
 import { BOT_URL, BOT_URL_SITE } from "@/content/constants";
+import { cn } from "@/lib/cn";
 
 type Props = {
   children: React.ReactNode;
   variant?: "primary" | "secondary" | "ghost" | "white";
   className?: string;
   trackSite?: boolean;
+  onClick?: () => void;
 };
 
 const base =
   "inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-tight transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600";
 
 const variants = {
-  primary: `${base} bg-brand-600 text-white shadow-sm shadow-brand-700/20 hover:bg-brand-700 hover:shadow-md`,
-  secondary: `${base} border border-line-strong bg-white text-ink hover:border-brand-200 hover:bg-surface-muted`,
-  ghost: `${base} text-brand-700 hover:bg-brand-50`,
-  white: `${base} bg-white text-brand-700 shadow-md hover:bg-surface-elevated`,
-};
+  primary: "bg-brand-600 text-white shadow-sm shadow-brand-700/20 hover:bg-brand-700 hover:shadow-md",
+  secondary: "border border-line-strong bg-white text-ink hover:border-brand-200 hover:bg-surface-muted",
+  ghost: "text-brand-700 hover:bg-brand-50",
+  white: "bg-white text-brand-700 shadow-md hover:bg-surface-elevated",
+} as const;
 
 export function TelegramButton({
   children,
   variant = "primary",
-  className = "",
+  className,
   trackSite = false,
+  onClick,
 }: Props) {
-  const href = trackSite ? BOT_URL_SITE : BOT_URL;
   return (
-    <Link
-      href={href}
+    <a
+      href={trackSite ? BOT_URL_SITE : BOT_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className={`${variants[variant]} ${className}`}
+      onClick={onClick}
+      className={cn(base, variants[variant], className)}
     >
       <TelegramIcon />
       {children}
-    </Link>
+    </a>
   );
 }
 
