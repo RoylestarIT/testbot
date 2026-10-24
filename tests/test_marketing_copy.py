@@ -14,4 +14,4 @@ def test_feature_roadmap_sections() -> None:
     assert "Уже есть" in text
     assert "Скоро" in text
     assert "Не в фокусе" in text
-    assert "ROADMAP.md" in text
+    assert "ROADMAP.md" not in text

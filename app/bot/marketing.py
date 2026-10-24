@@ -76,5 +76,4 @@ def feature_roadmap_text() -> str:
         + bullet("Полный автомат на 1–3★")
         + "\n"
         + bullet("Отдельный web-кабинет вместо Telegram")
-        + muted("\nДетальный backlog: ROADMAP.md в репозитории.")
     )
