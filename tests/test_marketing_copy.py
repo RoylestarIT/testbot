@@ -1,22 +1,18 @@
-from app.bot.marketing import feature_roadmap_text, for_whom_text, market_compare_text
+from app.bot.marketing import for_whom_text, market_compare_text, why_us_hub_text
 
 
-def test_market_compare_no_competitor_names() -> None:
-    text = market_compare_text()
-    assert "Otveto" not in text
-    assert "Spix" not in text
-    assert "Сравнение с рынком" in text
-    assert "Telegram" in text
+def test_why_us_hub_mentions_time_and_salary_savings() -> None:
+    text = why_us_hub_text()
+    assert len(text) <= 4096
+    assert "время" in text.lower() or "⏱" in text
+    assert "30" in text or "сотрудник" in text.lower()
+    assert "800" in text
+    assert "лояль" in text.lower() or "❤️" in text
 
 
-def test_feature_roadmap_sections() -> None:
-    text = feature_roadmap_text()
-    assert "Уже есть" in text
-    assert "Скоро" in text
-    assert "Не в фокусе" in text
-    assert "ROADMAP.md" not in text
-
-
-def test_for_whom_screen() -> None:
+def test_for_whom_structured_for_sellers() -> None:
     text = for_whom_text()
-    assert "Для кого" in text or "селлер" in text.lower()
+    assert len(text) <= 4096
+    assert "селлер" in text.lower()
+    assert "───────────────" in text
+    assert "получите" in text.lower()

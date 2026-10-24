@@ -77,6 +77,14 @@ def footer_hint(text: str) -> str:
     return f"\n{muted(text)}"
 
 
+VISUAL_SEP = "───────────────"
+
+
+def hero_quote(text: str) -> str:
+    """Акцентный блок в начале экрана."""
+    return quote(text.strip())
+
+
 def progress_bar(current: int, total: int, width: int = 6) -> str:
     if total <= 0:
         return ""

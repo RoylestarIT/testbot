@@ -2,8 +2,12 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.bot.copy import differentiators_section
-from app.bot.marketing import feature_roadmap_text, for_whom_text, market_compare_text
+from app.bot.marketing import (
+    feature_roadmap_text,
+    for_whom_text,
+    market_compare_text,
+    why_us_hub_text,
+)
 from app.bot.keyboards.menu import dashboard_keyboard, main_menu_keyboard
 from app.bot.keyboards.positioning import positioning_keyboard
 from app.bot.utils.callbacks import safe_edit_message
@@ -91,7 +95,7 @@ async def menu_dashboard(callback: CallbackQuery, db_user: DbUser) -> None:
 @router.callback_query(F.data == "menu:why_us")
 async def menu_why_us(callback: CallbackQuery) -> None:
     await callback.answer()
-    text = differentiators_section(compact=False)
+    text = why_us_hub_text()
     if callback.message:
         await safe_edit_message(callback.message, text, reply_markup=positioning_keyboard())
 
