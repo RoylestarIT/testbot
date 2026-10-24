@@ -74,6 +74,22 @@ class AccountRepository:
         await self._session.flush()
         return account
 
+    async def set_auto_publish_min_rating(self, account_id: int, min_rating: int) -> MarketplaceAccount | None:
+        account = await self.get_by_id(account_id)
+        if account is None:
+            return None
+        account.auto_publish_min_rating = 5 if min_rating >= 5 else 4
+        await self._session.flush()
+        return account
+
+    async def toggle_auto_publish_stars_only(self, account_id: int) -> MarketplaceAccount | None:
+        account = await self.get_by_id(account_id)
+        if account is None:
+            return None
+        account.auto_publish_stars_only = not account.auto_publish_stars_only
+        await self._session.flush()
+        return account
+
     async def update_wb_api_key(self, account_id: int, encrypted_api_key: str) -> MarketplaceAccount | None:
         account = await self.get_by_id(account_id)
         if account is None or account.marketplace != Marketplace.WB:

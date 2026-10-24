@@ -60,6 +60,7 @@ class UserRepository:
         notify_negative_only: bool | None = None,
         notify_daily_digest: bool | None = None,
         notify_stale_reviews: bool | None = None,
+        notify_buyer_questions: bool | None = None,
     ) -> User | None:
         user = await self.get_by_id(user_id)
         if user is None:
@@ -72,6 +73,8 @@ class UserRepository:
             user.notify_daily_digest = notify_daily_digest
         if notify_stale_reviews is not None:
             user.notify_stale_reviews = notify_stale_reviews
+        if notify_buyer_questions is not None:
+            user.notify_buyer_questions = notify_buyer_questions
         await self._session.flush()
         return user
 

@@ -16,6 +16,7 @@ from app.services.marketplace.base import MarketplaceAPIError, MarketplaceClient
 WB_FEEDBACKS_BASE_URL = "https://feedbacks-api.wildberries.ru"
 WB_FEEDBACKS_LIST_PATH = "/api/v1/feedbacks"
 WB_FEEDBACKS_ANSWER_PATH = "/api/v1/feedbacks/answer"
+WB_QUESTIONS_LIST_PATH = "/api/v1/questions"
 
 
 def _auth_headers(api_key: str) -> dict[str, str]:
@@ -136,3 +137,41 @@ class WildberriesClient(MarketplaceClient):
     async def test_connection(self, account: MarketplaceAccount) -> MarketplaceReviewDTO | None:
         reviews = await self.fetch_reviews(account, limit=1, unanswered_only=False)
         return reviews[0] if reviews else None
+
+    async def count_unanswered_questions(self, account: MarketplaceAccount, *, cap: int = 500) -> int:
+        """Число неотвеченных вопросов покупателей (WB Questions API)."""
+        headers = _auth_headers(self._token(account))
+        total = 0
+        skip = 0
+        while total < cap:
+            take = min(100, cap - total)
+            params = {
+                "isAnswered": "false",
+                "take": take,
+                "skip": skip,
+                "order": "dateDesc",
+            }
+            response = await request_with_retry(
+                self._client,
+                "GET",
+                WB_QUESTIONS_LIST_PATH,
+                headers=headers,
+                params=params,
+            )
+            if response.status_code == 401:
+                raise MarketplaceAPIError("WB: не авторизован (вопросы)", status_code=401)
+            if response.status_code >= 400:
+                raise MarketplaceAPIError(
+                    f"WB: ошибка получения вопросов ({response.status_code})",
+                    status_code=response.status_code,
+                )
+            payload = response.json()
+            data = payload.get("data") if isinstance(payload, dict) else None
+            items = data.get("questions", []) if isinstance(data, dict) else []
+            if not isinstance(items, list) or not items:
+                break
+            total += len(items)
+            skip += len(items)
+            if len(items) < take:
+                break
+        return total

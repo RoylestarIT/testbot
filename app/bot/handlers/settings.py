@@ -7,6 +7,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.copy import SETTINGS_INTRO as SETTINGS_TEXT
 from app.bot.utils.callbacks import safe_edit_message
 from app.bot.keyboards.menu import main_menu_keyboard
+from app.bot.keyboards.autopublish import autopublish_detail_keyboard
 from app.bot.keyboards.settings import (
     account_detail_keyboard,
     accounts_menu_keyboard,
@@ -15,6 +16,7 @@ from app.bot.keyboards.settings import (
     tone_detail_keyboard,
     tone_menu_keyboard,
 )
+from app.db.models import MarketplaceAccount
 from app.bot.states.settings import (
     ConnectOzonStates,
     ConnectWbStates,
@@ -64,6 +66,21 @@ async def menu_settings(callback: CallbackQuery, state: FSMContext) -> None:
         )
 
 
+def _autopublish_detail_text(account: MarketplaceAccount) -> str:
+    mp = "Wildberries" if account.marketplace == Marketplace.WB else "Ozon"
+    name = account.shop_name or f"{mp} #{account.id}"
+    min_r = account.auto_publish_min_rating or 4
+    rule = "только <b>5★</b>" if min_r >= 5 else "<b>4–5★</b>"
+    stars_only = "да" if account.auto_publish_stars_only else "нет"
+    state = "включена" if account.auto_publish_enabled else "выключена"
+    return (
+        f"<b>Авто-публикация</b> · {name}\n\n"
+        f"Статус: <b>{state}</b>\n"
+        f"Звёзды: {rule} · 1–3★ всегда вручную\n"
+        f"Только оценка без текста: <b>{stars_only}</b>"
+    )
+
+
 @router.callback_query(F.data == "pro:autopublish")
 async def pro_autopublish_menu(callback: CallbackQuery, db_user: DbUser) -> None:
     session_factory = get_session_factory()
@@ -74,9 +91,29 @@ async def pro_autopublish_menu(callback: CallbackQuery, db_user: DbUser) -> None
         await safe_edit_message(
             callback.message,
             "<b>Авто-публикация (PRO)</b>\n\n"
-            "Для отзывов <b>4–5★</b> бот сгенерирует и опубликует ответ без подтверждения "
-            "(1–3★ — только уведомление). Выберите кабинет:",
+            "Выберите кабинет — на следующем экране правила (4–5★ или только 5★).",
             reply_markup=autopublish_accounts_keyboard(accounts),
+        )
+
+
+@router.callback_query(F.data.startswith("settings:autopublish:detail:"))
+async def settings_autopublish_detail(callback: CallbackQuery, db_user: DbUser) -> None:
+    account_id = int(callback.data.split(":")[-1])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        if not await is_pro_user(session, db_user.id):
+            await callback.answer("Только для PRO", show_alert=True)
+            return
+        account = await AccountRepository(session).get_by_id(account_id)
+        if account is None or account.user_id != db_user.id:
+            await callback.answer("Нет доступа", show_alert=True)
+            return
+    await callback.answer()
+    if callback.message and account is not None:
+        await safe_edit_message(
+            callback.message,
+            _autopublish_detail_text(account),
+            reply_markup=autopublish_detail_keyboard(account),
         )
 
 
@@ -339,15 +376,62 @@ async def settings_account_autopublish(callback: CallbackQuery, db_user: DbUser)
             await callback.answer("Нет доступа", show_alert=True)
             return
         account = await repo.set_auto_publish(account_id, not account.auto_publish_enabled)
-        accounts = await repo.list_by_user_id(db_user.id, active_only=True)
         await session.commit()
     await callback.answer("Сохранено")
     if callback.message and account is not None:
         await safe_edit_message(
             callback.message,
-            "<b>Авто-публикация (PRO)</b>\n\n"
-            "4–5★ — авто-ответ; 1–3★ — только уведомление.",
-            reply_markup=autopublish_accounts_keyboard(accounts),
+            _autopublish_detail_text(account),
+            reply_markup=autopublish_detail_keyboard(account),
+        )
+
+
+@router.callback_query(F.data.startswith("settings:autopublish_min:"))
+async def settings_autopublish_min_rating(callback: CallbackQuery, db_user: DbUser) -> None:
+    account_id = int(callback.data.split(":")[-1])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        if not await is_pro_user(session, db_user.id):
+            await callback.answer("Только для PRO", show_alert=True)
+            return
+        repo = AccountRepository(session)
+        account = await repo.get_by_id(account_id)
+        if account is None or account.user_id != db_user.id:
+            await callback.answer("Нет доступа", show_alert=True)
+            return
+        new_min = 5 if (account.auto_publish_min_rating or 4) < 5 else 4
+        account = await repo.set_auto_publish_min_rating(account_id, new_min)
+        await session.commit()
+    await callback.answer("Правило обновлено")
+    if callback.message and account is not None:
+        await safe_edit_message(
+            callback.message,
+            _autopublish_detail_text(account),
+            reply_markup=autopublish_detail_keyboard(account),
+        )
+
+
+@router.callback_query(F.data.startswith("settings:autopublish_empty:"))
+async def settings_autopublish_stars_only(callback: CallbackQuery, db_user: DbUser) -> None:
+    account_id = int(callback.data.split(":")[-1])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        if not await is_pro_user(session, db_user.id):
+            await callback.answer("Только для PRO", show_alert=True)
+            return
+        repo = AccountRepository(session)
+        account = await repo.get_by_id(account_id)
+        if account is None or account.user_id != db_user.id:
+            await callback.answer("Нет доступа", show_alert=True)
+            return
+        account = await repo.toggle_auto_publish_stars_only(account_id)
+        await session.commit()
+    await callback.answer("Сохранено")
+    if callback.message and account is not None:
+        await safe_edit_message(
+            callback.message,
+            _autopublish_detail_text(account),
+            reply_markup=autopublish_detail_keyboard(account),
         )
 
 
@@ -701,7 +785,8 @@ async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> No
         "Push от фоновой синхронизации (poller).\n"
         "«Только негатив» — только 1–3★.\n"
         "«Утренний дайджест» — сводка раз в день (~9:00 Минск, UTC+3).\n"
-        "«Напоминание об очереди» — если отзывы без ответа дольше 24 ч (~18:00 Минск)."
+        "«Напоминание об очереди» — если отзывы без ответа дольше 24 ч (~18:00 Минск).\n"
+        "«Вопросы в кабинете» — push, если на WB появились новые вопросы без ответа."
     )
     if callback.message:
         await safe_edit_message(
@@ -712,6 +797,7 @@ async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> No
                 negative_only=user.notify_negative_only,
                 daily_digest=user.notify_daily_digest,
                 notify_stale=user.notify_stale_reviews,
+                notify_questions=user.notify_buyer_questions,
             ),
         )
 
@@ -741,6 +827,7 @@ async def settings_notify_toggle_new(callback: CallbackQuery, db_user: DbUser) -
                 negative_only=user.notify_negative_only,
                 daily_digest=user.notify_daily_digest,
                 notify_stale=user.notify_stale_reviews,
+                notify_questions=user.notify_buyer_questions,
             ),
         )
 
@@ -770,6 +857,37 @@ async def settings_notify_toggle_negative(callback: CallbackQuery, db_user: DbUs
                 negative_only=user.notify_negative_only,
                 daily_digest=user.notify_daily_digest,
                 notify_stale=user.notify_stale_reviews,
+                notify_questions=user.notify_buyer_questions,
+            ),
+        )
+
+
+@router.callback_query(F.data == "settings:notify:toggle_questions")
+async def settings_notify_toggle_questions(callback: CallbackQuery, db_user: DbUser) -> None:
+    from app.bot.keyboards.notifications import notifications_keyboard
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            return
+        await UserRepository(session).set_notification_prefs(
+            db_user.id,
+            notify_buyer_questions=not user.notify_buyer_questions,
+        )
+        await session.commit()
+        user = await UserRepository(session).get_by_id(db_user.id)
+    await callback.answer("Сохранено")
+    if callback.message and user is not None:
+        await safe_edit_message(
+            callback.message,
+            callback.message.text or "🔔 Уведомления",
+            reply_markup=notifications_keyboard(
+                notify_new=user.notify_new_reviews,
+                negative_only=user.notify_negative_only,
+                daily_digest=user.notify_daily_digest,
+                notify_stale=user.notify_stale_reviews,
+                notify_questions=user.notify_buyer_questions,
             ),
         )
 
@@ -799,6 +917,7 @@ async def settings_notify_toggle_digest(callback: CallbackQuery, db_user: DbUser
                 negative_only=user.notify_negative_only,
                 daily_digest=user.notify_daily_digest,
                 notify_stale=user.notify_stale_reviews,
+                notify_questions=user.notify_buyer_questions,
             ),
         )
 
@@ -828,6 +947,7 @@ async def settings_notify_toggle_stale(callback: CallbackQuery, db_user: DbUser)
                 negative_only=user.notify_negative_only,
                 daily_digest=user.notify_daily_digest,
                 notify_stale=user.notify_stale_reviews,
+                notify_questions=user.notify_buyer_questions,
             ),
         )
 
