@@ -40,12 +40,18 @@ async def build_dashboard_details(session: AsyncSession, user: User) -> str:
     subscription = await get_effective_subscription(session, user.id)
     tier = await describe_access_tier(session, user, subscription)
     analytics = await build_period_analytics_block(session, user.id)
+    accounts_all = await AccountRepository(session).list_by_user_id(user.id, active_only=True)
+    q_sum = sum(a.cached_unanswered_questions for a in accounts_all if a.marketplace.value == "wb")
+    questions_line = (
+        f"❓  Вопросы WB без ответа: <b>{q_sum}</b>" if q_sum else "❓  Новых вопросов WB нет"
+    )
     lines = [
         brand_title("Подробнее", tagline="Тариф, аналитика, кабинеты", icon="📊"),
         bullet(f"💎 Тариф: <b>{tier}</b>"),
         bullet(f"🚀 Publish-квота: <b>{user.free_api_publishes_remaining}</b>"),
         "",
         analytics,
+        questions_line,
         "",
         "<b>🏪 Кабинеты</b>",
     ]

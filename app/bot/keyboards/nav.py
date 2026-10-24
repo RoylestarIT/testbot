@@ -27,15 +27,10 @@ def nav_home_settings() -> InlineKeyboardMarkup:
     )
 
 
-def after_review_action_keyboard(*, has_next: bool = False) -> InlineKeyboardMarkup:
-    rows: list[list[InlineKeyboardButton]] = []
+def after_review_action_keyboard(*, has_next: bool = False, upsell: bool = False) -> InlineKeyboardMarkup:
+    extra: list[list[InlineKeyboardButton]] = []
+    if upsell:
+        extra.append([InlineKeyboardButton(text="💎 Подписка", callback_data="menu:subscription")])
     if has_next:
-        rows.append([InlineKeyboardButton(text="➡️ Следующий отзыв", callback_data="review:mp:next")])
-    rows.append(
-        [
-            InlineKeyboardButton(text="✍️ Ручной", callback_data="review:manual:start"),
-            InlineKeyboardButton(text=REVIEWS_HUB_BUTTON, callback_data="review:mp:list"),
-        ]
-    )
-    rows.append([InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
+        extra.append([InlineKeyboardButton(text="➡️ Следующий", callback_data="review:mp:next")])
+    return nav_home_queue(extra=extra)

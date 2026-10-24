@@ -87,6 +87,7 @@ class User(Base):
     )
     notify_stale_reviews: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     notify_buyer_questions: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    soft_product_recommend: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     last_stale_reminder_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
@@ -183,6 +184,7 @@ class MarketplaceAccount(Base):
     auto_publish_min_rating: Mapped[int] = mapped_column(Integer, default=4, nullable=False)
     auto_publish_stars_only: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     cached_unanswered_questions: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    auto_publish_stop_words: Mapped[str | None] = mapped_column(String(512), nullable=True)
     last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_sync_error: Mapped[str | None] = mapped_column(String(512), nullable=True)
     created_at: Mapped[datetime] = mapped_column(

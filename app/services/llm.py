@@ -69,6 +69,7 @@ def build_prompt(
     count: int,
     *,
     product_context: str | None = None,
+    soft_product_recommend: bool = False,
 ) -> tuple[str, str]:
     system = (
         "Ты — опытный менеджер маркетплейса (Wildberries/Ozon). "
@@ -80,10 +81,16 @@ def build_prompt(
     product_block = ""
     if product_context and product_context.strip():
         product_block = f"Товар:\n{product_context.strip()}\n\n"
+    recommend_block = ""
+    if soft_product_recommend:
+        recommend_block = (
+            "Мягко упомяни, что у магазина есть другие товары/линейка (без ссылок, без давления, одна фраза).\n\n"
+        )
 
     user = (
         f"{_format_tone_profile(tone_profile)}\n\n"
         f"{_rating_guidance(rating)}\n\n"
+        f"{recommend_block}"
         f"Рейтинг: {rating if rating is not None else 'не указан'}\n"
         f"{product_block}"
         f"Текст отзыва:\n{review_text.strip()}\n\n"
@@ -172,6 +179,7 @@ async def generate_replies(
     count: int = 3,
     *,
     product_context: str | None = None,
+    soft_product_recommend: bool = False,
     client: AsyncOpenAI | None = None,
     settings: Settings | None = None,
 ) -> list[str]:
@@ -188,6 +196,7 @@ async def generate_replies(
         tone_profile,
         count,
         product_context=product_context,
+        soft_product_recommend=soft_product_recommend,
     )
 
     try:

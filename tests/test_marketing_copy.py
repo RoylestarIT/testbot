@@ -1,4 +1,4 @@
-from app.bot.marketing import feature_roadmap_text, market_compare_text
+from app.bot.marketing import feature_roadmap_text, for_whom_text, market_compare_text
 
 
 def test_market_compare_no_competitor_names() -> None:
@@ -15,3 +15,8 @@ def test_feature_roadmap_sections() -> None:
     assert "Скоро" in text
     assert "Не в фокусе" in text
     assert "ROADMAP.md" not in text
+
+
+def test_for_whom_screen() -> None:
+    text = for_whom_text()
+    assert "Для кого" in text or "селлер" in text.lower()

@@ -31,3 +31,7 @@ class RotateWbKeyStates(StatesGroup):
 class RotateOzonKeyStates(StatesGroup):
     waiting_client_id = State()
     waiting_api_key = State()
+
+
+class AutoStopWordsStates(StatesGroup):
+    waiting_words = State()

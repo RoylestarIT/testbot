@@ -53,6 +53,7 @@ from app.services.bulk_quick_reply import (
     list_bulk_eligible,
 )
 from app.services.generation_limit import is_pro_user
+from app.services.conversion_upsell import first_reply_upsell_suffix
 from app.services.marketplace.auto_publish import try_auto_publish_review
 from app.services.marketplace.sync_service import sync_account_reviews
 from app.tasks.poller import format_ui_time
@@ -556,24 +557,29 @@ async def mp_copy_answer(callback: CallbackQuery, state: FSMContext, db_user: Db
     text = clean or text
     rid = int(review_id) if review_id is not None else None
     has_next = await _queue_has_next(state, rid)
+    upsell: str | None = None
     if rid is not None:
         session_factory = get_session_factory()
         async with session_factory() as session:
             await _persist_selected_reply(session, rid, text, selected_index=selected)
             await ReviewRepository(session).update_status(rid, ReviewStatus.PROCESSED)
+            upsell = await first_reply_upsell_suffix(session, db_user.id)
             await session.commit()
     await callback.answer("Скопируйте текст из сообщения")
     if callback.message:
-        session_factory = get_session_factory()
-        async with session_factory() as session:
-            allowed, reason = await can_api_publish(session, db_user.id)
         body = COPY_HINT.format(text=text)
-        if not allowed and reason == "need_pro":
-            body += "\n\n💡 На PRO — публикация в WB/Ozon в один клик."
+        if upsell:
+            body += upsell
+        else:
+            session_factory = get_session_factory()
+            async with session_factory() as session:
+                allowed, reason = await can_api_publish(session, db_user.id)
+            if not allowed and reason == "need_pro":
+                body += "\n\n💡 На PRO — публикация в WB/Ozon в один клик."
         await safe_edit_message(
             callback.message,
             body,
-            reply_markup=after_review_action_keyboard(has_next=has_next),
+            reply_markup=after_review_action_keyboard(has_next=has_next, upsell=bool(upsell)),
         )
     await state.clear()
 
@@ -634,6 +640,7 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
         return
 
     await callback.answer("Публикую…")
+    upsell: str | None = None
     try:
         async with session_factory() as session:
             review = await ReviewRepository(session).get_by_id(int(review_id))
@@ -645,6 +652,7 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
             selected = int(data.get("selected_index", 0))
             await _persist_selected_reply(session, int(review_id), clean or str(text), selected_index=selected)
             await publish_reply_to_marketplace(session, review, clean or str(text))
+            upsell = await first_reply_upsell_suffix(session, db_user.id)
             await session.commit()
     except MarketplaceAPIError as exc:
         logger.warning("User publish failed review_id={} err={}", review_id, exc)
@@ -659,9 +667,10 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
     has_next = await _queue_has_next(state, int(review_id))
     await state.clear()
     if callback.message:
+        body = PUBLISH_SUCCESS + (upsell or "")
         await callback.message.edit_text(
-            PUBLISH_SUCCESS,
-            reply_markup=after_review_action_keyboard(has_next=has_next),
+            body,
+            reply_markup=after_review_action_keyboard(has_next=has_next, upsell=bool(upsell)),
         )
 
 

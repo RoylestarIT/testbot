@@ -69,3 +69,31 @@ async def test_auto_publish_skips_when_stars_only_and_text(session: AsyncSession
     await session.flush()
     outcome = await try_auto_publish_review(session, account=acc, review=review)
     assert outcome.status == "skipped"
+
+
+@pytest.mark.asyncio
+async def test_auto_publish_skips_stop_words(session: AsyncSession) -> None:
+    user = User(tg_id=3, username="w")
+    session.add(user)
+    await session.flush()
+    acc = MarketplaceAccount(
+        user_id=user.id,
+        marketplace=Marketplace.WB,
+        encrypted_api_key="x",
+        auto_publish_enabled=True,
+        auto_publish_min_rating=5,
+        auto_publish_stop_words="брак, возврат",
+    )
+    session.add(acc)
+    await session.flush()
+    review = Review(
+        account_id=acc.id,
+        external_id="r3",
+        rating=5,
+        text="Пришёл с браком",
+        status=ReviewStatus.NEW,
+    )
+    session.add(review)
+    await session.flush()
+    outcome = await try_auto_publish_review(session, account=acc, review=review)
+    assert outcome.status == "skipped"

@@ -4,6 +4,7 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 
 from aiogram import Bot
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from loguru import logger
 from sqlalchemy import select
 
@@ -11,6 +12,15 @@ from app.core.config import Settings, get_settings
 from app.db.models import Subscription, SubscriptionStatus, User
 from app.db.session import get_session_factory
 from app.services.subscription import plan_label
+
+
+def _renewal_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="💳 Оплатить", callback_data="sub:pay:menu")],
+            [InlineKeyboardButton(text="💎 Подписка", callback_data="menu:subscription")],
+        ]
+    )
 
 
 async def subscription_reminder_once(bot: Bot, settings: Settings | None = None) -> None:
@@ -43,10 +53,10 @@ async def subscription_reminder_once(bot: Bot, settings: Settings | None = None)
             text = (
                 f"⏳ Подписка <b>{plan_label(subscription.plan)}</b> заканчивается через "
                 f"<b>{days_left}</b> дн. (до {subscription.expires_at.strftime('%d.%m.%Y')}).\n"
-                "Продлите в «Подписка»."
+                "Продлите сейчас — доступ сохранится без паузы."
             )
             try:
-                await bot.send_message(user.tg_id, text)
+                await bot.send_message(user.tg_id, text, reply_markup=_renewal_keyboard())
                 user.last_subscription_reminder_at = now
             except Exception:
                 logger.warning("subscription reminder failed user_id={}", user.id)
@@ -68,7 +78,8 @@ async def subscription_reminder_once(bot: Bot, settings: Settings | None = None)
                 await bot.send_message(
                     user.tg_id,
                     "📭 Подписка закончилась — вы на <b>бесплатном</b> режиме "
-                    "(5 генераций/день, 1 кабинет). Продлить: «Подписка».",
+                    "(5 генераций/день, 1 кабинет).",
+                    reply_markup=_renewal_keyboard(),
                 )
             except Exception:
                 pass
