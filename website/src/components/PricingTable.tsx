@@ -1,0 +1,111 @@
+import { PRICES } from "@/lib/constants";
+import { TelegramButton } from "./TelegramButton";
+
+type Row = {
+  label: string;
+  free: string;
+  lite: string;
+  pro: string;
+};
+
+const rows: Row[] = [
+  {
+    label: "Генерации",
+    free: "5 / день",
+    lite: "∞",
+    pro: "∞",
+  },
+  {
+    label: "Кабинеты WB/Ozon",
+    free: "1",
+    lite: "несколько",
+    pro: "несколько",
+  },
+  {
+    label: "Tone of voice",
+    free: "1",
+    lite: "несколько",
+    pro: "несколько",
+  },
+  {
+    label: "Publish в API",
+    free: "пробный лимит",
+    lite: "копия в кабинет",
+    pro: "✓ из бота",
+  },
+  {
+    label: "Авто-ответы",
+    free: "—",
+    lite: "—",
+    pro: "только 4–5★",
+  },
+  {
+    label: "Негатив 1–3★",
+    free: "только вручную",
+    lite: "только вручную",
+    pro: "только вручную",
+  },
+];
+
+export function PricingTable({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+        <caption className="sr-only">Сравнение тарифов Free, Lite и PRO</caption>
+        <thead>
+          <tr className="border-b border-slate-200 bg-slate-50">
+            <th scope="col" className="px-4 py-4 font-medium text-slate-600">
+              Возможность
+            </th>
+            <th scope="col" className="px-4 py-4 font-semibold text-slate-900">
+              Free
+            </th>
+            <th scope="col" className="px-4 py-4 font-semibold text-slate-900">
+              Lite ✨
+            </th>
+            <th scope="col" className="px-4 py-4 font-semibold text-slate-900">
+              PRO 🚀
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.label} className="border-b border-slate-100 last:border-0">
+              <th scope="row" className="px-4 py-3 font-medium text-slate-700">
+                {row.label}
+              </th>
+              <td className="px-4 py-3 text-slate-600">{row.free}</td>
+              <td className="px-4 py-3 text-slate-600">{row.lite}</td>
+              <td className="px-4 py-3 text-slate-600">{row.pro}</td>
+            </tr>
+          ))}
+          <tr className="bg-slate-50/80">
+            <th scope="row" className="px-4 py-4 font-medium text-slate-700">
+              Цена / месяц
+            </th>
+            <td className="px-4 py-4 text-slate-600">0 ₽</td>
+            <td className="px-4 py-4 text-slate-900">
+              {PRICES.lite.rub} ₽ / {PRICES.lite.byn} BYN
+            </td>
+            <td className="px-4 py-4 text-slate-900">
+              {PRICES.pro.rub} ₽ / {PRICES.pro.byn} BYN
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      {!compact && (
+        <div className="flex flex-col items-start justify-between gap-4 border-t border-slate-200 px-4 py-5 sm:flex-row sm:items-center">
+          <p className="max-w-xl text-sm text-slate-600">
+            Оплата в боте: Telegram Stars, Crypto Bot (USDT и др.), карта РФ/РБ,
+            СБП/перевод (ручная активация до 24 ч). Trial PRO — в боте, один раз на
+            аккаунт.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <TelegramButton variant="primary">Оплатить в боте</TelegramButton>
+            <TelegramButton variant="ghost">Сравнение в боте</TelegramButton>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
