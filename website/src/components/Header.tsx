@@ -2,14 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NAV } from "@/content/constants";
+import { cn } from "@/lib/cn";
 import { Logo } from "./Logo";
 import { TelegramButton } from "./TelegramButton";
+
+function isActive(pathname: string, href: string) {
+  const path = pathname.replace(/\/+$/, "") || "/";
+  return path === href || path.startsWith(`${href}/`);
+}
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const close = () => setOpen(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-white/80 shadow-sm backdrop-blur-xl">
@@ -23,16 +39,18 @@ export function Header() {
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Основное">
           {NAV.map((item) => {
-            const active = pathname === item.href;
+            const active = isActive(pathname, item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "rounded-lg px-3 py-2 text-sm font-medium transition",
                   active
                     ? "bg-brand-50 text-brand-700"
-                    : "text-ink-muted hover:bg-surface-muted hover:text-ink"
-                }`}
+                    : "text-ink-muted hover:bg-surface-muted hover:text-ink",
+                )}
               >
                 {item.label}
               </Link>
@@ -41,10 +59,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <TelegramButton
-            variant="primary"
-            className="hidden py-2.5 sm:inline-flex"
-          >
+          <TelegramButton variant="primary" className="hidden py-2.5 sm:inline-flex">
             Открыть в Telegram
           </TelegramButton>
           <button
@@ -66,17 +81,24 @@ export function Header() {
           className="border-t border-slate-200/80 bg-white px-4 py-4 md:hidden"
         >
           <nav className="flex flex-col gap-1" aria-label="Мобильное">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-lg px-3 py-2.5 text-base font-medium text-slate-700 hover:bg-slate-50"
-                onClick={() => setOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <TelegramButton variant="primary" className="mt-3 w-full">
+            {NAV.map((item) => {
+              const active = isActive(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "rounded-lg px-3 py-2.5 text-base font-medium",
+                    active ? "bg-brand-50 text-brand-700" : "text-slate-700 hover:bg-slate-50",
+                  )}
+                  onClick={close}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+            <TelegramButton variant="primary" className="mt-3 w-full" onClick={close}>
               Открыть в Telegram
             </TelegramButton>
           </nav>
