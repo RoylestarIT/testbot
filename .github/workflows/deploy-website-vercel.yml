@@ -1,11 +1,8 @@
 name: Deploy website (Vercel)
 
 on:
+  # Только вручную, пока в secrets нет VERCEL_TOKEN / ORG_ID / PROJECT_ID
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "website/**"
 
 jobs:
   deploy:
