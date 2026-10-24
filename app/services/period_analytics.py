@@ -135,6 +135,29 @@ async def median_hours_to_first_reply(session: AsyncSession, user_id: int, *, da
     return round((deltas[mid - 1] + deltas[mid]) / 2, 1)
 
 
+async def weekly_avg_rating_trend(session: AsyncSession, user_id: int, *, weeks: int = 4) -> list[tuple[str, float | None]]:
+    """Последние N недель: средняя оценка отзывов, попавших в очередь (NEW) в этой неделе."""
+    now = datetime.now(UTC)
+    out: list[tuple[str, float | None]] = []
+    for w in range(weeks - 1, -1, -1):
+        end = now - timedelta(days=7 * w)
+        start = end - timedelta(days=7)
+        avg = await session.scalar(
+            select(func.avg(Review.rating))
+            .select_from(Review)
+            .join(MarketplaceAccount, Review.account_id == MarketplaceAccount.id)
+            .where(
+                MarketplaceAccount.user_id == user_id,
+                Review.created_at >= start,
+                Review.created_at < end,
+                Review.rating.isnot(None),
+            )
+        )
+        label = start.strftime("%d.%m")
+        out.append((label, round(float(avg), 2) if avg is not None else None))
+    return out
+
+
 async def build_period_analytics_block(session: AsyncSession, user_id: int) -> str:
     from app.services.user_stats import avg_rating_new_reviews
 
@@ -166,4 +189,10 @@ async def build_period_analytics_block(session: AsyncSession, user_id: int) -> s
         lines.append(f"· Очередь: <b>{queue}</b> · негатив ≤3★: <b>{low}</b> ({pct}%){avg_s}")
     else:
         lines.append("· Очередь пуста")
+    trend = await weekly_avg_rating_trend(session, user_id, weeks=4)
+    if any(v is not None for _, v in trend):
+        parts = []
+        for label, val in trend:
+            parts.append(f"{label}: <b>{val:g}</b>⭐" if val is not None else f"{label}: —")
+        lines.append("· Тренд ⭐ (4 нед., новые отзывы): " + " · ".join(parts))
     return "\n".join(lines)

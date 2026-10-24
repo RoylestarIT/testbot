@@ -1168,9 +1168,30 @@ async def settings_account_sync(callback: CallbackQuery, db_user: DbUser) -> Non
         except MarketplaceAPIError as exc:
             await session.commit()
             msg = f"⚠️ Sync не удался:\n{exc}"
+        except Exception as exc:
+            from app.bot.user_errors import user_error_from_exception
+
+            await session.commit()
+            facing = user_error_from_exception(exc)
+            msg = facing.html
+            kb = facing.reply_markup
+            await callback.answer("Готово")
+            if callback.message:
+                await safe_edit_message(callback.message, msg, reply_markup=kb)
+            return
     await callback.answer("Готово")
     if callback.message:
-        await safe_edit_message(callback.message, msg, reply_markup=settings_menu_keyboard())
+        from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="🩺 Здоровье", callback_data="menu:service_status"),
+                    InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu:settings"),
+                ],
+            ]
+        )
+        await safe_edit_message(callback.message, msg, reply_markup=kb)
 
 
 @router.callback_query(F.data == "settings:templates")

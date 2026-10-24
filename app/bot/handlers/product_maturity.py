@@ -111,11 +111,20 @@ async def _render_wb_questions(callback: CallbackQuery, db_user: DbUser, page: i
                     visible = filter_visible_questions(user, acc, raw)
                     acc.cached_unanswered_ozon_questions = len(raw)
                 except MarketplaceAPIError as exc:
-                    err = user_error_from_exception(exc)
-                    lines.append(f"🔵 <b>{name}</b> — {err.html[:120]}")
+                    if exc.status_code == 404:
+                        lines.append(
+                            f"🔵 <b>{name}</b> — "
+                            + muted("API вопросов недоступен на этом тарифе · ответ в seller.ozon.ru")
+                        )
+                    else:
+                        err = user_error_from_exception(exc)
+                        lines.append(f"🔵 <b>{name}</b> — {err.html[:120]}")
                     continue
                 except Exception:
-                    lines.append(f"🔵 <b>{name}</b> — ⚠️ API вопросов")
+                    lines.append(
+                        f"🔵 <b>{name}</b> — "
+                        + muted("не удалось загрузить · проверьте ключи или ответьте в кабинете Ozon")
+                    )
                     continue
                 total = acc.cached_unanswered_ozon_questions
                 lines.append(f"🔵 <b>{name}</b> — без ответа: <b>{total}</b> (в очереди: {len(visible)})")

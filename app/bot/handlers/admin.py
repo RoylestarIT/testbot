@@ -29,6 +29,7 @@ from app.db.repositories.subscription import SubscriptionRepository
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.services.admin_stats import build_stats_message
+from app.services.admin_weekly_metrics import build_admin_weekly_text
 from app.services.subscription import (
     approve_qr_subscription,
     grant_subscription_by_tg_id,
@@ -165,6 +166,19 @@ async def admin_stats_callback(callback: CallbackQuery) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
         text = await build_stats_message(session)
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(text, reply_markup=admin_back_keyboard())
+
+
+@router.callback_query(F.data == "admin:weekly")
+async def admin_weekly_callback(callback: CallbackQuery) -> None:
+    if callback.from_user is None or not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        text = await build_admin_weekly_text(session)
     await callback.answer()
     if callback.message:
         await callback.message.edit_text(text, reply_markup=admin_back_keyboard())

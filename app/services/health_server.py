@@ -21,11 +21,14 @@ async def _health_handler(_request: web.Request) -> web.Response:
 
     from app.tasks.poller import get_poller_health
 
+    from app.services.bot_activity import activity_snapshot
+
     payload: dict[str, object] = {
         "status": "ok" if db_ok else "degraded",
         "service": "reviewpilot",
         "db": db_ok,
         "poller": get_poller_health(),
+        "bot": activity_snapshot(),
     }
     if db_error:
         payload["db_error"] = db_error

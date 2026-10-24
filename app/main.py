@@ -11,6 +11,7 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 from loguru import logger
 
 from app.bot.handlers import main_router
+from app.bot.middlewares.bot_activity import BotActivityMiddleware
 from app.bot.middlewares.terms_acceptance import TermsAcceptanceMiddleware
 from app.bot.middlewares.user_context import UserContextMiddleware
 from app.core.config import get_settings
@@ -122,6 +123,7 @@ async def main() -> None:
         logger.info("FSM storage: memory")
 
     dp = Dispatcher(storage=storage)
+    dp.update.middleware(BotActivityMiddleware())
     dp.update.middleware(UserContextMiddleware())
     dp.update.middleware(TermsAcceptanceMiddleware())
     dp.include_router(main_router)

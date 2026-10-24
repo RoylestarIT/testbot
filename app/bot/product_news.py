@@ -26,6 +26,16 @@ RELEASE_NOTES: list[dict[str, object]] = [
             "⭐ Telegram Stars и USDT в Crypto Bot",
         ],
     },
+    {
+        "version": "2026-10-v1",
+        "title": "Октябрь 2026",
+        "items": [
+            "🩺 Здоровье аккаунта и понятный trial/PRO",
+            "❓ Вопросы WB/Ozon — очередь и snooze",
+            "🧮 Калькулятор: hub, Stars, кнопки с ценой",
+            "📈 Админ: экран «Неделя» (activation, WAU, кабинеты)",
+        ],
+    },
 ]
 
 
