@@ -210,3 +210,10 @@ __marimo__/
 
 # Local DB dumps (contain user data)
 backups/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
