@@ -3,6 +3,8 @@ from __future__ import annotations
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import MANUAL_SHOP_NAME
+from app.core.security import EncryptionError
 from app.db.models import Marketplace, Review, ReviewStatus
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.review import ReviewRepository
@@ -27,9 +29,19 @@ async def publish_reply_to_marketplace(
     if account.marketplace not in (Marketplace.WB, Marketplace.OZON):
         raise MarketplaceAPIError("Публикация доступна только для WB и Ozon")
 
+    if account.shop_name == MANUAL_SHOP_NAME:
+        raise MarketplaceAPIError(
+            "Отзыв введён вручную и не связан с API — скопируйте ответ в личный кабинет"
+        )
+
     client = get_client_for_account(account)
     try:
         await client.publish_reply(account, review.external_id, text)
+    except EncryptionError as exc:
+        logger.warning("Publish decrypt failed review_id={} account_id={}", review.id, account.id)
+        raise MarketplaceAPIError(
+            "Не удалось прочитать API-ключ кабинета — подключите кабинет заново в настройках"
+        ) from exc
     except MarketplaceAPIError as exc:
         logger.warning(
             "Marketplace publish failed review_id={} account_id={} marketplace={} status={}",
