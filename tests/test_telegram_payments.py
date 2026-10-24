@@ -35,7 +35,7 @@ def test_provider_token_enables_fiat_invoices() -> None:
     assert invoice_provider_token(for_stars=False, settings=settings) == "2051251535:TEST:abc"
     assert invoice_currency(for_stars=False, settings=settings) == "RUB"
     assert invoice_amount(settings, SubscriptionPlan.LITE, for_stars=False) == 10000
-    assert invoice_amount(settings, SubscriptionPlan.LITE, for_stars=True) == 750
+    assert invoice_amount(settings, SubscriptionPlan.LITE, for_stars=True) == 1040
     assert payment_method_for_invoice(settings, for_stars=False) == PaymentMethod.TELEGRAM
     assert payment_method_for_currency("XTR") == PaymentMethod.STARS
 
@@ -54,6 +54,29 @@ def test_stars_only_without_provider(monkeypatch: pytest.MonkeyPatch) -> None:
     assert invoice_provider_token(for_stars=True) == ""
     assert invoice_currency(for_stars=True) == "XTR"
     assert invoice_amount(settings, SubscriptionPlan.LITE, for_stars=True) == 100
+
+
+def test_stars_markup_from_rub() -> None:
+    settings = Settings(
+        _env_file=None,
+        BOT_TOKEN="x",
+        SUBSCRIPTION_LITE_PRICE_RUB=800,
+        SUBSCRIPTION_PRO_PRICE_RUB=1600,
+        SUBSCRIPTION_STARS_MARKUP_PERCENT=25,
+        PAYMENT_ENABLE_STARS=True,
+    )
+    assert invoice_amount(settings, SubscriptionPlan.LITE, for_stars=True) == 1000
+    assert invoice_amount(settings, SubscriptionPlan.PRO, for_stars=True) == 2000
+
+
+def test_stars_manual_override() -> None:
+    settings = Settings(
+        _env_file=None,
+        BOT_TOKEN="x",
+        SUBSCRIPTION_LITE_STARS=999,
+        SUBSCRIPTION_STARS_MARKUP_PERCENT=30,
+    )
+    assert invoice_amount(settings, SubscriptionPlan.LITE, for_stars=True) == 999
 
 
 def test_sub_payload_roundtrip() -> None:

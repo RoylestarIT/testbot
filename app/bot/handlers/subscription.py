@@ -41,6 +41,7 @@ from app.services.payment.fx_rates import SubscriptionPricing, get_subscription_
 from app.services.payment.manual_qr import legal_payment_instructions, qr_instructions
 from app.services.payment.payment_options import card_payments_enabled, stars_payments_enabled
 from app.services.payment.telegram_stars import (
+    effective_stars_amount,
     invoice_currency,
     invoice_description,
     invoice_payload,
@@ -221,13 +222,15 @@ async def payment_stars_plans(callback: CallbackQuery) -> None:
     if not stars_payments_enabled(settings):
         await callback.answer("Оплата Stars не включена", show_alert=True)
         return
-    lite = settings.subscription_lite_stars
-    pro = settings.subscription_pro_stars
+    lite = effective_stars_amount(settings, SubscriptionPlan.LITE)
+    pro = effective_stars_amount(settings, SubscriptionPlan.PRO)
+    markup = settings.subscription_stars_markup_percent
     await answer_and_edit(
         callback,
         "⭐ <b>Telegram Stars</b>\n\n"
         f"✨ Lite — <b>{lite}</b> ⭐\n"
         f"🚀 PRO — <b>{pro}</b> ⭐\n\n"
+        f"{muted(f'К карте/переводу +{markup:g}% — запас на комиссию Telegram при выводе Stars.')}\n\n"
         "<i>Оплата внутри Telegram, без банковской карты в боте.</i>",
         reply_markup=stars_plan_keyboard(settings),
     )

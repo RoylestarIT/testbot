@@ -38,10 +38,26 @@ def parse_invoice_payload(payload: str) -> tuple[SubscriptionPlan, int] | None:
     return plan, user_id
 
 
+def effective_stars_amount(settings: Settings, plan: SubscriptionPlan) -> int:
+    """Stars: явный SUBSCRIPTION_*_STARS или ₽ × (1 + markup%), округление."""
+    manual = (
+        settings.subscription_pro_stars
+        if plan == SubscriptionPlan.PRO
+        else settings.subscription_lite_stars
+    )
+    if manual is not None:
+        return manual
+    rub = (
+        settings.subscription_pro_price_rub
+        if plan == SubscriptionPlan.PRO
+        else settings.subscription_lite_price_rub
+    )
+    factor = 1.0 + settings.subscription_stars_markup_percent / 100.0
+    return max(1, round(rub * factor))
+
+
 def stars_invoice_amount(settings: Settings, plan: SubscriptionPlan) -> int:
-    if plan == SubscriptionPlan.PRO:
-        return settings.subscription_pro_stars
-    return settings.subscription_lite_stars
+    return effective_stars_amount(settings, plan)
 
 
 def fiat_invoice_amount(settings: Settings, plan: SubscriptionPlan) -> int:

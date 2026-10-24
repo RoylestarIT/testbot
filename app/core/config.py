@@ -53,8 +53,19 @@ class Settings(BaseSettings):
         default=160000,
         validation_alias="SUBSCRIPTION_PRO_PRICE_MINOR",
     )
-    subscription_lite_stars: int = Field(default=750, validation_alias="SUBSCRIPTION_LITE_STARS")
-    subscription_pro_stars: int = Field(default=2250, validation_alias="SUBSCRIPTION_PRO_STARS")
+    subscription_stars_markup_percent: float = Field(
+        default=30.0,
+        validation_alias="SUBSCRIPTION_STARS_MARKUP_PERCENT",
+        description="Наценка к цене в ₽ для инвойса Stars (вывод и конвертация Telegram)",
+    )
+    subscription_lite_stars: int | None = Field(
+        default=None,
+        validation_alias="SUBSCRIPTION_LITE_STARS",
+    )
+    subscription_pro_stars: int | None = Field(
+        default=None,
+        validation_alias="SUBSCRIPTION_PRO_STARS",
+    )
     subscription_lite_usd_label: str = Field(default="10", validation_alias="SUBSCRIPTION_LITE_USD")
     subscription_pro_usd_label: str = Field(default="20", validation_alias="SUBSCRIPTION_PRO_USD")
     fx_fallback_usd_rub: float = Field(default=80.0, validation_alias="FX_FALLBACK_USD_RUB")
@@ -108,6 +119,13 @@ class Settings(BaseSettings):
         ),
         validation_alias="LEGAL_PAYMENT_INSTRUCTIONS",
     )
+
+    @field_validator("subscription_lite_stars", "subscription_pro_stars", mode="before")
+    @classmethod
+    def empty_stars_override_is_none(cls, value: object) -> object:
+        if value is None or value == "":
+            return None
+        return value
 
     @field_validator("admin_ids", mode="before")
     @classmethod

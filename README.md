@@ -70,11 +70,12 @@ python3 -m app.main
 
 ```env
 PAYMENT_ENABLE_STARS=true
-SUBSCRIPTION_LITE_STARS=750
-SUBSCRIPTION_PRO_STARS=2250
+SUBSCRIPTION_STARS_MARKUP_PERCENT=30
 ```
 
-В боте: **Подписка → Оплатить → ⭐ Telegram Stars**. Суммы в Stars подстройте под ваши цены в ₽.
+Сумма в Stars считается как **цена в ₽ × (1 + markup%)** (по умолчанию +30% на вывод/конвертацию Telegram). Фиксированные `SUBSCRIPTION_LITE_STARS` / `SUBSCRIPTION_PRO_STARS` — если нужно вручную.
+
+В боте: **Подписка → Оплатить → ⭐ Telegram Stars**. Для наценки 20% задайте `SUBSCRIPTION_STARS_MARKUP_PERCENT=20`.
 
 ### Crypto Bot (без ИП)
 

@@ -4,6 +4,8 @@ from app.core.config import get_settings
 from app.services.payment.crypto_pay import crypto_pay_enabled
 from app.services.payment.fx_rates import SubscriptionPricing
 from app.services.payment.payment_options import card_payments_enabled, stars_payments_enabled
+from app.services.payment.telegram_stars import effective_stars_amount
+from app.db.models import SubscriptionPlan
 
 
 def _truncate_btn(text: str, limit: int = 64) -> str:
@@ -58,8 +60,8 @@ def payment_methods_keyboard() -> InlineKeyboardMarkup:
 
 def stars_plan_keyboard(settings=None) -> InlineKeyboardMarkup:
     settings = settings or get_settings()
-    lite = settings.subscription_lite_stars
-    pro = settings.subscription_pro_stars
+    lite = effective_stars_amount(settings, SubscriptionPlan.LITE)
+    pro = effective_stars_amount(settings, SubscriptionPlan.PRO)
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
