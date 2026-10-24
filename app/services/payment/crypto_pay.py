@@ -38,8 +38,11 @@ async def _api_request(settings: Settings, method: str, **params: Any) -> Any:
     url = f"{_api_base(settings)}/{method}"
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(url, headers=_headers(settings), params=params)
-    data = response.json()
-    if not data.get("ok"):
+    try:
+        data = response.json()
+    except ValueError as exc:
+        raise CryptoPayError(f"HTTP {response.status_code}: non-JSON response") from exc
+    if not isinstance(data, dict) or not data.get("ok"):
         raise CryptoPayError(str(data.get("error", response.text)))
     return data.get("result")
 
@@ -108,15 +111,35 @@ async def create_subscription_invoice(
     return result
 
 
+GET_INVOICES_BATCH = 100
+
+
+def _invoice_items(result: Any) -> list[dict[str, Any]]:
+    if isinstance(result, dict):
+        result = result.get("items", [])
+    if not isinstance(result, list):
+        return []
+    return [item for item in result if isinstance(item, dict)]
+
+
+async def get_invoices(settings: Settings, invoice_ids: list[int]) -> dict[int, dict[str, Any]]:
+    """Fetch many invoices with one getInvoices call per batch of 100 ids."""
+    found: dict[int, dict[str, Any]] = {}
+    for start in range(0, len(invoice_ids), GET_INVOICES_BATCH):
+        chunk = invoice_ids[start : start + GET_INVOICES_BATCH]
+        result = await _api_request(
+            settings,
+            "getInvoices",
+            invoice_ids=",".join(str(i) for i in chunk),
+            count=len(chunk),
+        )
+        for item in _invoice_items(result):
+            try:
+                found[int(item["invoice_id"])] = item
+            except (KeyError, TypeError, ValueError):
+                continue
+    return found
+
+
 async def get_invoice(settings: Settings, invoice_id: int) -> dict[str, Any] | None:
-    result = await _api_request(settings, "getInvoices", invoice_ids=str(invoice_id))
-    if isinstance(result, dict) and "items" in result:
-        items = result["items"]
-    elif isinstance(result, list):
-        items = result
-    else:
-        items = []
-    if not items:
-        return None
-    item = items[0]
-    return item if isinstance(item, dict) else None
+    return (await get_invoices(settings, [invoice_id])).get(invoice_id)

@@ -9,11 +9,13 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     func,
+    text as sa_text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -285,8 +287,20 @@ class GeneratedReply(Base):
     review: Mapped["Review"] = relationship(back_populates="generated_replies")
 
 
+TELEGRAM_CHARGE_METHODS_SQL = "payment_method IN ('stars', 'telegram')"
+
+
 class Subscription(Base):
     __tablename__ = "subscriptions"
+    __table_args__ = (
+        Index(
+            "uq_subscription_telegram_charge",
+            "external_payment_id",
+            unique=True,
+            sqlite_where=sa_text(TELEGRAM_CHARGE_METHODS_SQL),
+            postgresql_where=sa_text(TELEGRAM_CHARGE_METHODS_SQL),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(

@@ -13,6 +13,17 @@ class SubscriptionRepository:
     async def get_by_id(self, subscription_id: int) -> Subscription | None:
         return await self._session.get(Subscription, subscription_id)
 
+    async def get_by_telegram_charge_id(self, charge_id: str) -> Subscription | None:
+        result = await self._session.execute(
+            select(Subscription)
+            .where(
+                Subscription.external_payment_id == charge_id,
+                Subscription.payment_method.in_((PaymentMethod.STARS, PaymentMethod.TELEGRAM)),
+            )
+            .limit(1)
+        )
+        return result.scalars().first()
+
     async def list_by_user_id(self, user_id: int) -> list[Subscription]:
         result = await self._session.execute(
             select(Subscription)
@@ -40,8 +51,9 @@ class SubscriptionRepository:
                 or_(Subscription.expires_at.is_(None), Subscription.expires_at > now),
             )
             .order_by(Subscription.id.desc())
+            .limit(1)
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def create(
         self,

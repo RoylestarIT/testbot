@@ -53,11 +53,10 @@ class UserContextMiddleware(BaseMiddleware):
                     is_admin=is_admin,
                 )
                 await session.commit()
-                data["db_user"] = db_user
         except Exception:
+            # The user-facing hint is sent by the global dp.errors() handler.
             logger.exception("Failed to load DB user for tg_id={}", tg_user.id)
-            if isinstance(event, CallbackQuery):
-                await event.answer("Ошибка базы данных. Попробуйте позже.", show_alert=True)
             raise
 
+        data["db_user"] = db_user
         return await handler(event, data)

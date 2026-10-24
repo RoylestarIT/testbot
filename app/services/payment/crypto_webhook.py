@@ -9,8 +9,9 @@ from loguru import logger
 from app.core.config import Settings, get_settings
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
+from app.services.payment.crypto_notify import notify_crypto_paid
 from app.services.payment.crypto_pay import parse_invoice_payload, verify_webhook_signature
-from app.services.subscription import activate_from_crypto_invoice, get_effective_subscription
+from app.services.subscription import activate_from_crypto_invoice
 
 
 async def handle_crypto_webhook(request: web.Request) -> web.Response:
@@ -40,7 +41,11 @@ async def handle_crypto_webhook(request: web.Request) -> web.Response:
         logger.warning("Crypto webhook: missing payload")
         return web.Response(text="ok")
 
-    subscription_id = int(payload_data.get("subscription_id", 0))
+    try:
+        subscription_id = int(payload_data.get("subscription_id", 0))
+    except (TypeError, ValueError):
+        logger.warning("Crypto webhook: bad subscription_id in payload")
+        return web.Response(text="ok")
     if subscription_id <= 0:
         return web.Response(text="ok")
 
@@ -56,20 +61,9 @@ async def handle_crypto_webhook(request: web.Request) -> web.Response:
             return web.Response(text="ok")
         user = await UserRepository(session).get_by_id(activated.user_id)
         await session.commit()
-        subscription = await get_effective_subscription(session, activated.user_id)
 
     if bot and user:
-        plan_name = "PRO" if activated.plan.value == "pro" else "Lite"
-        expires = subscription.expires_at.strftime("%d.%m.%Y") if subscription and subscription.expires_at else "—"
-        try:
-            await bot.send_message(
-                user.tg_id,
-                f"✅ Оплата Crypto Bot принята!\n\n"
-                f"Тариф: <b>{plan_name}</b>\n"
-                f"Действует до: <b>{expires}</b>",
-            )
-        except Exception:
-            pass
+        await notify_crypto_paid(bot, user.tg_id, activated)
 
     return web.Response(text="ok")
 

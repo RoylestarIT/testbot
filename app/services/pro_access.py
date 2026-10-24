@@ -17,13 +17,17 @@ async def has_paid_pro(session: AsyncSession, user_id: int) -> bool:
     return subscription.plan == SubscriptionPlan.PRO
 
 
-async def is_trial_pro_active(user: User | None) -> bool:
+def trial_pro_active(user: User | None) -> bool:
     if user is None or user.trial_pro_until is None:
         return False
     until = user.trial_pro_until
     if until.tzinfo is None:
         until = until.replace(tzinfo=UTC)
     return until > datetime.now(UTC)
+
+
+async def is_trial_pro_active(user: User | None) -> bool:
+    return trial_pro_active(user)
 
 
 async def has_pro_access(session: AsyncSession, user_id: int) -> bool:

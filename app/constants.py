@@ -1,1 +1,2 @@
 MANUAL_SHOP_NAME = "Ручной ввод"
+FREE_DAILY_GENERATIONS = 5
