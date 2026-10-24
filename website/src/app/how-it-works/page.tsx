@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
-import { SectionHeading } from "@/components/SectionHeading";
+import { InnerPageHero } from "@/components/InnerPageHero";
 import { TelegramMockup } from "@/components/TelegramMockup";
 import { TelegramButton } from "@/components/TelegramButton";
 
@@ -13,13 +13,12 @@ export const metadata: Metadata = {
 export default function HowItWorksPage() {
   return (
     <PageShell>
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <SectionHeading
-          title="Как это работает"
-          description="Вся работа — в Telegram. Лендинг только объясняет; личный кабинет бота не дублируем на сайте."
-        />
-
-        <div className="mt-14 grid gap-12 lg:grid-cols-2 lg:items-center">
+      <InnerPageHero
+        title="Как это работает"
+        description="Вся работа — в Telegram. Лендинг только объясняет; личный кабинет бота не дублируем на сайте."
+      />
+      <div className="container-page section-y !pt-10">
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
           <TelegramMockup />
           <ol className="space-y-8">
             {[
@@ -53,7 +52,7 @@ export default function HowItWorksPage() {
           </ol>
         </div>
 
-        <div className="mt-16 rounded-2xl bg-slate-900 p-8 text-center text-white">
+        <div className="mt-16 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-center text-white shadow-card sm:p-10">
           <h2 className="text-xl font-semibold">Поток в одном месте</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-slate-300">
             Маркетплейс → sync → Telegram → черновики → человек → publish/копия → покупатель

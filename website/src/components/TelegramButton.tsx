@@ -3,18 +3,19 @@ import { BOT_URL, BOT_URL_SITE } from "@/content/constants";
 
 type Props = {
   children: React.ReactNode;
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "white";
   className?: string;
   trackSite?: boolean;
 };
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600";
+  "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600";
 
 const variants = {
-  primary: `${base} bg-blue-600 text-white hover:bg-blue-700 shadow-sm`,
-  secondary: `${base} bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50`,
-  ghost: `${base} text-blue-700 hover:bg-blue-50`,
+  primary: `${base} bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-md shadow-brand-600/25 hover:from-brand-700 hover:to-brand-600 hover:shadow-lg hover:shadow-brand-600/30`,
+  secondary: `${base} bg-white text-slate-800 ring-1 ring-slate-200/90 hover:bg-slate-50 hover:ring-slate-300`,
+  ghost: `${base} text-brand-700 hover:bg-brand-50`,
+  white: `${base} bg-white text-brand-700 shadow-lg hover:bg-slate-50`,
 };
 
 export function TelegramButton({

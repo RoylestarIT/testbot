@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
-import { SectionHeading } from "@/components/SectionHeading";
+import { InnerPageHero } from "@/components/InnerPageHero";
 import { TelegramButton } from "@/components/TelegramButton";
 
 export const metadata: Metadata = {
@@ -12,14 +12,13 @@ export const metadata: Metadata = {
 export default function ForWhoPage() {
   return (
     <PageShell>
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <SectionHeading
-          title="Для кого «Голос бренда»"
-          description="Продавцы на WB и Ozon в РФ и Беларуси, которым важны скорость ответов и контроль тона."
-        />
-
-        <div className="mt-12 grid gap-8 lg:grid-cols-2">
-          <div className="rounded-2xl border border-green-200 bg-green-50/60 p-8">
+      <InnerPageHero
+        title="Для кого «Голос бренда»"
+        description="Продавцы на WB и Ozon в РФ и Беларуси, которым важны скорость ответов и контроль тона."
+      />
+      <div className="container-page section-y !pt-10">
+        <div className="grid gap-8 lg:grid-cols-2">
+          <div className="card border-emerald-200/80 bg-emerald-50/50 p-8">
             <h2 className="text-lg font-semibold text-green-900">Наш клиент</h2>
             <ul className="mt-4 space-y-3 text-sm text-green-950">
               <li>· ~30–1000+ отзывов в месяц на WB и/или Ozon</li>
@@ -29,7 +28,7 @@ export default function ForWhoPage() {
               <li>· Нужны несколько кабинетов и tone-профилей (Lite/PRO)</li>
             </ul>
           </div>
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-8">
+          <div className="card border-amber-200/80 bg-amber-50/50 p-8">
             <h2 className="text-lg font-semibold text-amber-950">Скорее не к нам</h2>
             <ul className="mt-4 space-y-3 text-sm text-amber-950">
               <li>· Нужен только Яндекс Маркет — пока не поддерживаем</li>

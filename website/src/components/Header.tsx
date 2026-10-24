@@ -1,48 +1,55 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { BRAND, NAV } from "@/content/constants";
+import { NAV } from "@/content/constants";
+import { Logo } from "./Logo";
 import { TelegramButton } from "./TelegramButton";
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <header className="sticky top-0 z-50 border-b border-white/60 bg-white/75 shadow-sm backdrop-blur-xl">
+      <div className="container-page flex items-center justify-between gap-4 py-3.5">
         <Link
           href="/"
-          className="flex items-center gap-2 font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          className="rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
         >
-          <span
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-sm text-white"
-            aria-hidden
-          >
-            ГБ
-          </span>
-          <span className="hidden sm:inline">{BRAND}</span>
+          <Logo />
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex" aria-label="Основное">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-sm text-slate-600 hover:text-slate-900"
-            >
-              {item.label}
-            </Link>
-          ))}
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Основное">
+          {NAV.map((item) => {
+            const active = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  active
+                    ? "bg-brand-50 text-brand-700"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-2">
-          <TelegramButton variant="primary" className="hidden sm:inline-flex py-2.5 px-4 text-sm">
+          <TelegramButton
+            variant="primary"
+            className="hidden !rounded-full !py-2.5 !px-5 sm:inline-flex"
+          >
             Открыть в Telegram
           </TelegramButton>
           <button
             type="button"
-            className="rounded-lg p-2 text-slate-700 ring-1 ring-slate-200 md:hidden"
+            className="rounded-xl p-2.5 text-slate-700 ring-1 ring-slate-200/80 md:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav"
             aria-label={open ? "Закрыть меню" : "Открыть меню"}
@@ -56,20 +63,20 @@ export function Header() {
       {open && (
         <div
           id="mobile-nav"
-          className="border-t border-slate-200 bg-white px-4 py-4 md:hidden"
+          className="border-t border-slate-200/80 bg-white px-4 py-4 md:hidden"
         >
-          <nav className="flex flex-col gap-3" aria-label="Мобильное">
+          <nav className="flex flex-col gap-1" aria-label="Мобильное">
             {NAV.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-base text-slate-700"
+                className="rounded-lg px-3 py-2.5 text-base font-medium text-slate-700 hover:bg-slate-50"
                 onClick={() => setOpen(false)}
               >
                 {item.label}
               </Link>
             ))}
-            <TelegramButton variant="primary" className="mt-2 w-full">
+            <TelegramButton variant="primary" className="mt-3 w-full !rounded-full">
               Открыть в Telegram
             </TelegramButton>
           </nav>

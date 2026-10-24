@@ -49,45 +49,53 @@ const rows: Row[] = [
 
 export function PricingTable({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-card">
       <table className="w-full min-w-[640px] border-collapse text-left text-sm">
         <caption className="sr-only">Сравнение тарифов Free, Lite и PRO</caption>
         <thead>
-          <tr className="border-b border-slate-200 bg-slate-50">
-            <th scope="col" className="px-4 py-4 font-medium text-slate-600">
+          <tr className="border-b border-slate-200 bg-surface-muted">
+            <th scope="col" className="px-5 py-4 font-medium text-slate-600">
               Возможность
             </th>
-            <th scope="col" className="px-4 py-4 font-semibold text-slate-900">
+            <th scope="col" className="px-5 py-4 font-semibold text-slate-900">
               Free
             </th>
-            <th scope="col" className="px-4 py-4 font-semibold text-slate-900">
+            <th scope="col" className="px-5 py-4 font-semibold text-slate-900">
               Lite ✨
             </th>
-            <th scope="col" className="px-4 py-4 font-semibold text-slate-900">
+            <th
+              scope="col"
+              className="bg-brand-50/80 px-5 py-4 font-semibold text-brand-800"
+            >
               PRO 🚀
             </th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.label} className="border-b border-slate-100 last:border-0">
-              <th scope="row" className="px-4 py-3 font-medium text-slate-700">
+            <tr
+              key={row.label}
+              className="border-b border-slate-100 transition-colors hover:bg-slate-50/50 last:border-0"
+            >
+              <th scope="row" className="px-5 py-3.5 font-medium text-slate-800">
                 {row.label}
               </th>
-              <td className="px-4 py-3 text-slate-600">{row.free}</td>
-              <td className="px-4 py-3 text-slate-600">{row.lite}</td>
-              <td className="px-4 py-3 text-slate-600">{row.pro}</td>
+              <td className="px-5 py-3.5 text-slate-600">{row.free}</td>
+              <td className="px-5 py-3.5 text-slate-600">{row.lite}</td>
+              <td className="bg-brand-50/40 px-5 py-3.5 font-medium text-slate-800">
+                {row.pro}
+              </td>
             </tr>
           ))}
-          <tr className="bg-slate-50/80">
-            <th scope="row" className="px-4 py-4 font-medium text-slate-700">
+          <tr className="bg-surface-muted">
+            <th scope="row" className="px-5 py-4 font-semibold text-slate-800">
               Цена / месяц
             </th>
-            <td className="px-4 py-4 text-slate-600">0 ₽</td>
-            <td className="px-4 py-4 text-slate-900">
+            <td className="px-5 py-4 text-slate-600">0 ₽</td>
+            <td className="px-5 py-4 font-semibold text-slate-900">
               {PRICES.lite.rub} ₽ / {PRICES.lite.byn} BYN
             </td>
-            <td className="px-4 py-4 text-slate-900">
+            <td className="bg-brand-100/50 px-5 py-4 font-semibold text-brand-900">
               {PRICES.pro.rub} ₽ / {PRICES.pro.byn} BYN
             </td>
           </tr>

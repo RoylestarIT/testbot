@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
-import { SectionHeading } from "@/components/SectionHeading";
+import { InnerPageHero } from "@/components/InnerPageHero";
 import { PricingTable } from "@/components/PricingTable";
 import { PRICES } from "@/content/constants";
 
@@ -13,14 +13,12 @@ export const metadata: Metadata = {
 export default function PricingPage() {
   return (
     <PageShell>
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <SectionHeading
-          title="Тарифы"
-          description={`Lite — ${PRICES.lite.rub} ₽ / ${PRICES.lite.byn} BYN · PRO — ${PRICES.pro.rub} ₽ / ${PRICES.pro.byn} BYN в месяц. Оплата в боте.`}
-        />
-        <div className="mt-10">
-          <PricingTable />
-        </div>
+      <InnerPageHero
+        title="Тарифы"
+        description={`Lite — ${PRICES.lite.rub} ₽ / ${PRICES.lite.byn} BYN · PRO — ${PRICES.pro.rub} ₽ / ${PRICES.pro.byn} BYN в месяц. Оплата в боте.`}
+      />
+      <div className="container-page section-y !pt-10">
+        <PricingTable />
         <div className="mt-12 grid gap-6 md:grid-cols-3">
           <CompareCard
             title="Мы"
@@ -65,14 +63,19 @@ function CompareCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-6 ${
-        positive ? "border-blue-200 bg-blue-50/50" : "border-slate-200 bg-white"
+      className={`card p-6 sm:p-7 ${
+        positive ? "ring-2 ring-brand-500/20 bg-brand-50/20" : ""
       }`}
     >
       <h3 className="font-semibold text-slate-900">{title}</h3>
-      <ul className="mt-4 space-y-2 text-sm text-slate-600">
+      <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
         {items.map((item) => (
-          <li key={item}>· {item}</li>
+          <li key={item} className="flex gap-2">
+            <span className="text-brand-500" aria-hidden>
+              ·
+            </span>
+            {item}
+          </li>
         ))}
       </ul>
     </div>
