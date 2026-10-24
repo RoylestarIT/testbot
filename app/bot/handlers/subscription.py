@@ -14,6 +14,11 @@ from app.bot.keyboards.subscription import (
     qr_plan_keyboard,
     subscription_menu_keyboard,
 )
+from app.bot.keyboards.subscription_calc import calculator_detail_keyboard, calculator_volumes_keyboard
+from app.services.payment.subscription_calculator import (
+    build_calculator_detail,
+    build_calculator_table,
+)
 from app.core.config import get_settings
 from app.bot.utils.callbacks import answer_and_edit, safe_edit_message
 from app.db.models import SubscriptionPlan, User as DbUser
@@ -71,7 +76,7 @@ def _subscription_menu_text(pricing: SubscriptionPricing) -> str:
         + muted(LITE_VS_PRO_SHORT)
         + "\n"
         + muted("Оплатить: «Способ оплаты» — крипта, карта РФ/РБ или безнал для юр. лиц.")
-        + footer_hint("Сравнение возможностей — кнопка «Сравнение тарифов».")
+        + footer_hint("Сравнение тарифов и калькулятор ₽/ответ — кнопки ниже.")
     )
 
 
@@ -179,6 +184,27 @@ async def subscription_compare(callback: CallbackQuery) -> None:
         callback,
         PLANS_COMPARISON_TEXT,
         reply_markup=subscription_menu_keyboard(pricing),
+    )
+
+
+@router.callback_query(F.data == "sub:calc")
+async def subscription_calculator_table(callback: CallbackQuery) -> None:
+    pricing = await get_subscription_pricing()
+    await answer_and_edit(
+        callback,
+        build_calculator_table(pricing),
+        reply_markup=calculator_volumes_keyboard(),
+    )
+
+
+@router.callback_query(F.data.regexp(r"^sub:calc:\d+$"))
+async def subscription_calculator_volume(callback: CallbackQuery) -> None:
+    volume = int(callback.data.split(":")[-1])
+    pricing = await get_subscription_pricing()
+    await answer_and_edit(
+        callback,
+        build_calculator_detail(pricing, volume),
+        reply_markup=calculator_detail_keyboard(),
     )
 
 

@@ -26,6 +26,7 @@ def subscription_menu_keyboard(pricing: SubscriptionPricing) -> InlineKeyboardMa
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="📊  Сравнение тарифов", callback_data="sub:compare")],
+            [InlineKeyboardButton(text="🧮  Калькулятор ₽/ответ", callback_data="sub:calc")],
             [InlineKeyboardButton(text="💳  Способ оплаты", callback_data="sub:pay:menu")],
             [InlineKeyboardButton(text="👤  Мой доступ", callback_data="sub:status")],
             [InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:dashboard")],
