@@ -230,7 +230,7 @@ async def payment_stars_plans(callback: CallbackQuery) -> None:
         "⭐ <b>Telegram Stars</b>\n\n"
         f"✨ Lite — <b>{lite}</b> ⭐\n"
         f"🚀 PRO — <b>{pro}</b> ⭐\n\n"
-        f"{muted(f'К карте/переводу +{markup:g}% — запас на комиссию Telegram при выводе Stars.')}\n\n"
+        f"{muted(f'К цене +{markup:g}% — запас на комиссию Telegram при выводе Stars.')}\n\n"
         "<i>Оплата внутри Telegram, без банковской карты в боте.</i>",
         reply_markup=stars_plan_keyboard(settings),
     )
