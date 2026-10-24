@@ -2,13 +2,13 @@
 
 export function TelegramMockup({ variant = "review" }: { variant?: "review" | "pricing" }) {
   return (
-    <div className="relative mx-auto w-full max-w-[340px] lg:max-w-md">
+    <div className="relative mx-auto w-full max-w-[340px] lg:max-w-[400px]">
       <div
-        className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-brand-400/30 to-telegram/20 blur-2xl"
+        className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-brand-300/35 via-clay-100/40 to-telegram/15 blur-3xl"
         aria-hidden
       />
       <div
-        className="relative overflow-hidden rounded-[1.75rem] border border-black/20 bg-[#17212b] shadow-mockup ring-1 ring-white/10"
+        className="relative animate-float overflow-hidden rounded-[1.75rem] border border-black/20 bg-[#17212b] shadow-mockup ring-1 ring-white/10"
         aria-hidden
       >
         <div className="flex items-center gap-3 border-b border-white/10 bg-[#1e2c3a] px-4 py-3.5">

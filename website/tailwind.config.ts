@@ -1,5 +1,9 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Шкала заголовков — Major Third (×1.25) от 16px:
+ * 20 → 25 → 31.25 → 39 → 48.8 → 61
+ */
 export default {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,25 +13,19 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        display: ["var(--font-onest)", "var(--font-inter)", "system-ui", "sans-serif"],
+        sans: ["var(--font-body)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-body)", "system-ui", "sans-serif"],
       },
       fontSize: {
-        "display-lg": [
-          "3.125rem",
-          { lineHeight: "1.06", letterSpacing: "-0.032em", fontWeight: "800" },
-        ],
-        display: [
-          "2.375rem",
-          { lineHeight: "1.14", letterSpacing: "-0.028em", fontWeight: "700" },
-        ],
-        title: [
-          "1.3125rem",
-          { lineHeight: "1.32", letterSpacing: "-0.018em", fontWeight: "600" },
-        ],
-        "body-lg": ["1.0625rem", { lineHeight: "1.68", letterSpacing: "-0.008em" }],
-        body: ["1rem", { lineHeight: "1.68", letterSpacing: "-0.004em" }],
-        caption: ["0.8125rem", { lineHeight: "1.52", letterSpacing: "0.005em" }],
+        "display-xl": ["3.815rem", { lineHeight: "1.04", letterSpacing: "-0.035em", fontWeight: "600" }],
+        "display-lg": ["3.052rem", { lineHeight: "1.08", letterSpacing: "-0.03em", fontWeight: "600" }],
+        display: ["2.441rem", { lineHeight: "1.12", letterSpacing: "-0.025em", fontWeight: "600" }],
+        headline: ["1.953rem", { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "600" }],
+        title: ["1.25rem", { lineHeight: "1.35", letterSpacing: "-0.012em", fontWeight: "600" }],
+        "body-lg": ["1.125rem", { lineHeight: "1.7", letterSpacing: "-0.003em" }],
+        body: ["1rem", { lineHeight: "1.65" }],
+        small: ["0.875rem", { lineHeight: "1.55" }],
+        caption: ["0.8rem", { lineHeight: "1.5", letterSpacing: "0.01em" }],
       },
       colors: {
         background: "var(--background)",
@@ -39,21 +37,28 @@ export default {
           faint: "var(--ink-faint)",
         },
         brand: {
-          50: "#f3f2fb",
-          100: "#eae8f8",
-          200: "#d5d1f0",
-          300: "#b8b1e4",
-          400: "#9489d4",
-          500: "#7266c4",
-          600: "#5a4fb3",
-          700: "#4a4196",
-          800: "#3f377a",
-          900: "#363065",
+          50: "#f1f6f5",
+          100: "#e0ebe8",
+          200: "#c1d6d1",
+          300: "#94b8b0",
+          400: "#62958b",
+          500: "#3f786e",
+          600: "#2c6359",
+          700: "#215149",
+          800: "#1b423c",
+          900: "#163430",
+        },
+        clay: {
+          50: "#fbf5ee",
+          100: "#f4e6d4",
+          300: "#e0b688",
+          500: "#c1803f",
+          600: "#a76a30",
         },
         success: {
-          DEFAULT: "#2d9a6f",
-          soft: "#e8f5ef",
-          muted: "#c5e6d6",
+          DEFAULT: "#2f7a5c",
+          soft: "#eaf4ef",
+          muted: "#cfe5da",
         },
         telegram: {
           DEFAULT: "#2a9fd6",
@@ -76,18 +81,47 @@ export default {
           muted: "var(--footer-muted)",
         },
       },
+      maxWidth: {
+        prose: "38rem",
+      },
+      borderRadius: {
+        "4xl": "2rem",
+      },
       boxShadow: {
-        card: "0 1px 2px rgba(22, 28, 45, 0.035), 0 10px 28px -8px rgba(22, 28, 45, 0.08)",
+        xs: "0 1px 2px rgba(20, 24, 22, 0.05)",
+        card: "0 1px 2px rgba(20, 24, 22, 0.04), 0 4px 16px -6px rgba(20, 24, 22, 0.06)",
         "card-hover":
-          "0 2px 4px rgba(22, 28, 45, 0.04), 0 18px 44px -10px rgba(90, 79, 179, 0.14)",
-        mockup: "0 24px 48px -12px rgba(22, 28, 45, 0.16), 0 0 0 1px rgba(22, 28, 45, 0.05)",
+          "0 2px 4px rgba(20, 24, 22, 0.04), 0 20px 40px -16px rgba(22, 52, 48, 0.18)",
+        button: "0 1px 2px rgba(22, 52, 48, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
+        "button-hover": "0 8px 20px -8px rgba(22, 52, 48, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.14)",
+        mockup: "0 40px 80px -32px rgba(20, 30, 28, 0.35), 0 0 0 1px rgba(20, 24, 22, 0.06)",
       },
       backgroundImage: {
         "hero-mesh":
-          "radial-gradient(ellipse 90% 60% at 50% -20%, rgba(114, 102, 196, 0.09), transparent 58%), radial-gradient(ellipse 50% 40% at 100% 0%, rgba(42, 159, 214, 0.06), transparent), radial-gradient(ellipse 45% 45% at -5% 30%, rgba(148, 137, 212, 0.05), transparent)",
-        "cta-gradient":
-          "linear-gradient(152deg, #3f377a 0%, #5a4fb3 48%, #2878a3 100%)",
-        "section-fade": "linear-gradient(180deg, var(--surface-muted) 0%, var(--background) 100%)",
+          "radial-gradient(ellipse 70% 55% at 85% 0%, rgba(63, 120, 110, 0.10), transparent 60%), radial-gradient(ellipse 50% 40% at 0% 20%, rgba(193, 128, 63, 0.06), transparent 60%)",
+        "grid-lines":
+          "linear-gradient(to right, rgba(20, 24, 22, 0.045) 1px, transparent 1px), linear-gradient(to bottom, rgba(20, 24, 22, 0.045) 1px, transparent 1px)",
+        "cta-gradient": "linear-gradient(150deg, #132623 0%, #1b423c 55%, #2c6359 100%)",
+      },
+      backgroundSize: {
+        grid: "56px 56px",
+      },
+      transitionTimingFunction: {
+        smooth: "cubic-bezier(0.22, 0.7, 0.18, 1)",
+      },
+      keyframes: {
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(14px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
+      },
+      animation: {
+        "fade-up": "fade-up 0.7s cubic-bezier(0.22, 0.7, 0.18, 1) both",
+        float: "float 6s ease-in-out infinite",
       },
     },
   },

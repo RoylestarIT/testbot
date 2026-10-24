@@ -1,24 +1,21 @@
-export function MarketplaceStrip() {
-  const items = [
-    { label: "Wildberries", className: "bg-[#fdf2f8] text-[#9d174d] border-[#f9d8e8]" },
-    { label: "Ozon", className: "bg-telegram-soft text-[#1e6a8a] border-[#cce9f5]" },
-    { label: "Telegram", className: "bg-[#eef6fc] text-[#2563a8] border-[#d6e9f7]" },
-    {
-      label: "ИИ + ваш контроль",
-      className: "bg-brand-50 text-brand-800 border-brand-100",
-    },
-  ];
+const items = [
+  { label: "Wildberries", dot: "bg-[#a13a7a]" },
+  { label: "Ozon", dot: "bg-[#2d6fd2]" },
+  { label: "Telegram", dot: "bg-telegram" },
+];
 
+export function MarketplaceStrip() {
   return (
-    <ul className="flex flex-wrap gap-2" aria-label="Площадки и формат">
-      {items.map((item) => (
-        <li
-          key={item.label}
-          className={`rounded-full border px-3.5 py-1 text-caption font-semibold ${item.className}`}
-        >
-          {item.label}
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-small text-ink-subtle">
+      <span>Работает с</span>
+      <ul className="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Площадки">
+        {items.map((item) => (
+          <li key={item.label} className="inline-flex items-center gap-2 font-medium text-ink-muted">
+            <span className={`h-2 w-2 rounded-full ${item.dot}`} aria-hidden />
+            {item.label}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

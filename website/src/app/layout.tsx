@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
-import { Inter, Onest } from "next/font/google";
+import { Geologica, Golos_Text } from "next/font/google";
 import "./globals.css";
 import { BRAND, SEO, SITE_URL } from "@/content/constants";
 
-const inter = Inter({
+const display = Geologica({
   subsets: ["latin", "cyrillic"],
-  variable: "--font-inter",
+  variable: "--font-display",
   display: "swap",
-  weight: ["400", "500", "600"],
+  weight: ["500", "600", "700"],
 });
 
-const onest = Onest({
+const body = Golos_Text({
   subsets: ["latin", "cyrillic"],
-  variable: "--font-onest",
+  variable: "--font-body",
   display: "swap",
-  weight: ["500", "600", "700", "800"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -53,7 +53,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${inter.variable} ${onest.variable}`}>
+    <html
+      lang="ru"
+      className={`${display.variable} ${body.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "document.documentElement.classList.add('js')",
+          }}
+        />
+      </head>
       <body className="font-sans antialiased">{children}</body>
     </html>
   );

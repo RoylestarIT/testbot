@@ -3,24 +3,28 @@
 @tailwind utilities;
 
 :root {
-  --background: #f4f5f8;
-  --foreground: #181e2a;
-  --ink: #181e2a;
-  --ink-muted: #565f73;
-  --ink-subtle: #848c9c;
-  --ink-faint: #a3aab8;
-  --line: rgba(24, 30, 42, 0.07);
-  --line-strong: rgba(24, 30, 42, 0.11);
+  --background: #fafaf8;
+  --foreground: #15181c;
+  --ink: #15181c;
+  --ink-muted: #565c63;
+  --ink-subtle: #868b91;
+  --ink-faint: #b0b4b8;
+  --line: rgba(21, 24, 28, 0.08);
+  --line-strong: rgba(21, 24, 28, 0.14);
   --surface: #ffffff;
-  --surface-muted: #eef0f4;
-  --surface-elevated: #fafbfc;
-  --footer-bg: #151b28;
+  --surface-muted: #f3f3ef;
+  --surface-elevated: #fcfcfa;
+  --footer-bg: #111a19;
   --footer-border: rgba(255, 255, 255, 0.08);
-  --footer-text: #9aa3b5;
-  --footer-muted: #6b7589;
+  --footer-text: #a7afad;
+  --footer-muted: #6f7977;
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     color: var(--ink);
     background: var(--background);
@@ -34,11 +38,30 @@
   h3,
   h4 {
     @apply font-display text-ink;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   ::selection {
-    background: rgba(90, 79, 179, 0.18);
+    background: rgba(63, 120, 110, 0.2);
     color: var(--ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
@@ -46,46 +69,76 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  .mask-fade-b {
+    mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+  }
 }
 
 @layer components {
   .section-y {
-    @apply py-16 sm:py-20 lg:py-24;
+    @apply py-20 sm:py-24 lg:py-32;
   }
 
   .container-page {
-    @apply mx-auto max-w-6xl px-4 sm:px-6;
+    @apply mx-auto max-w-6xl px-5 sm:px-8;
   }
 
   .card {
-    @apply rounded-2xl border border-line bg-surface shadow-card transition-all duration-300;
+    @apply rounded-3xl border border-line bg-surface shadow-card transition duration-300 ease-smooth;
   }
 
   .card-hover {
-    @apply card hover:border-brand-200/70 hover:shadow-card-hover;
+    @apply card hover:-translate-y-1 hover:border-brand-200 hover:shadow-card-hover;
   }
 
   .link-arrow {
-    @apply inline-flex items-center gap-1 text-body font-semibold text-brand-700 transition hover:gap-2 hover:text-brand-800;
+    @apply inline-flex items-center gap-1.5 text-small font-semibold text-brand-700 transition-all duration-200 ease-smooth hover:gap-2.5 hover:text-brand-900;
   }
 
   .badge-pill {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white/90 px-3.5 py-1.5 text-caption font-medium text-ink-muted shadow-sm backdrop-blur-sm;
+    @apply inline-flex items-center gap-2 rounded-full border border-line bg-white/80 px-3.5 py-1.5 text-caption font-medium text-ink-muted shadow-xs backdrop-blur;
   }
 
   .eyebrow {
-    @apply text-caption font-semibold uppercase tracking-[0.12em] text-brand-600;
+    @apply text-caption font-semibold uppercase tracking-[0.14em] text-brand-600;
   }
 
   .prose-muted {
-    @apply text-body-lg font-normal text-ink-muted;
+    @apply text-body-lg text-ink-muted;
   }
 
   .list-check {
-    @apply flex gap-2.5 text-body text-ink-muted;
+    @apply flex gap-3 text-body text-ink-muted;
   }
 
   .list-check-icon {
-    @apply mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success-soft text-success;
+    @apply mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600 ring-1 ring-brand-100;
+  }
+
+  .icon-tile {
+    @apply flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-brand-100 transition duration-300 ease-smooth;
+  }
+}
+
+/* Появление при скролле: прячем только когда JS доступен (класс .js ставится в layout). */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 0.7, 0.18, 1),
+    transform 0.7s cubic-bezier(0.22, 0.7, 0.18, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.js .reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal {
+    opacity: 1;
+    transform: none;
   }
 }

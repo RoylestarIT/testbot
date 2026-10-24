@@ -1,263 +1,323 @@
-import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
 import { SectionHeading } from "@/components/SectionHeading";
 import { TelegramButton } from "@/components/TelegramButton";
+import { Button } from "@/components/Button";
 import { TelegramMockup } from "@/components/TelegramMockup";
-import { PricingTable } from "@/components/PricingTable";
+import { PricingCards } from "@/components/PricingCards";
 import { FAQAccordion } from "@/components/FAQAccordion";
 import { FAQ_ITEMS } from "@/content/faq";
 import { MarketplaceStrip } from "@/components/MarketplaceStrip";
 import { FeatureCard } from "@/components/FeatureCard";
-import { IconShield, IconSpark, IconTelegram, IconWallet, IconCheck } from "@/components/icons";
+import { Reveal } from "@/components/Reveal";
+import {
+  IconArrowRight,
+  IconCheck,
+  IconShield,
+  IconSpark,
+  IconTelegram,
+  IconWallet,
+} from "@/components/icons";
+
+const stats = [
+  { value: "3", label: "варианта ответа на каждый отзыв" },
+  { value: "2", label: "маркетплейса в одном чате" },
+  { value: "4–5★", label: "можно отвечать автоматически" },
+  { value: "1–3★", label: "только после вашего одобрения" },
+];
+
+const benefits = [
+  {
+    icon: <IconTelegram />,
+    title: "Всё в Telegram",
+    text: "Новый отзыв приходит сообщением — отвечаете там же, между делами. Без лишних вкладок и кабинетов.",
+  },
+  {
+    icon: <IconSpark />,
+    title: "WB и Ozon вместе",
+    text: "Отзывы с обеих площадок в одной ленте. Отложить, получить дайджест, посмотреть историю.",
+  },
+  {
+    icon: <IconShield />,
+    title: "ИИ под контролем",
+    text: "Тон бренда, стоп-слова и шаблоны — ваши. Негатив никогда не уходит без вашего решения.",
+  },
+  {
+    icon: <IconWallet />,
+    title: "Цена без сюрпризов",
+    text: "Фиксированная подписка вместо оплаты за каждый ответ. Бюджет известен заранее.",
+  },
+];
 
 const steps = [
-  { n: "1", title: "Подключите кабинет", text: "WB/Ozon API в боте — ключи шифруются, на сайте не вводятся." },
-  { n: "2", title: "Sync отзывов", text: "Push о новых отзывах, snooze и дайджест — всё в Telegram." },
-  { n: "3", title: "3 варианта ответа", text: "ИИ предлагает черновики в вашем tone of voice." },
-  { n: "4", title: "Publish или копия", text: "PRO — отправка в API из бота; Lite — копия в личный кабинет." },
+  { title: "Подключите кабинет", text: "Добавьте API-ключ WB или Ozon в боте. Ключи шифруются." },
+  { title: "Получайте отзывы", text: "Бот присылает каждый новый отзыв — или дайджест раз в день." },
+  { title: "Выберите ответ", text: "Три черновика в тоне бренда. Возьмите любой или поправьте." },
+  { title: "Опубликуйте", text: "На PRO — прямо из бота. На Lite — скопируйте в кабинет." },
+];
+
+const nowFeatures = [
+  "Синхронизация отзывов WB и Ozon",
+  "Три варианта ответа от ИИ",
+  "Шаблоны и автоответы на 4–5★ (PRO)",
+  "История, экспорт в CSV, аналитика",
+  "Уведомления о вопросах WB",
+  "Калькулятор «подписка или оплата за ответ»",
 ];
 
 export default function HomePage() {
   return (
     <PageShell>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-hero-mesh">
-        <div className="container-page grid gap-12 pb-16 pt-10 sm:pt-14 lg:grid-cols-2 lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
-          <div>
+      <section className="relative -mt-16 overflow-hidden pt-16 sm:-mt-[4.5rem] sm:pt-[4.5rem]">
+        <div className="absolute inset-0 bg-hero-mesh" aria-hidden />
+        <div className="mask-fade-b absolute inset-0 bg-grid-lines bg-grid opacity-70" aria-hidden />
+        <div className="container-page relative grid gap-16 pb-24 pt-14 sm:pt-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-20 lg:pb-32 lg:pt-24">
+          <div className="animate-fade-up">
             <p className="badge-pill w-fit">
-              <span className="h-1.5 w-1.5 rounded-full bg-success shadow-[0_0_0_2px_rgba(45,154,111,0.2)]" aria-hidden />
-              Telegram-first для селлеров
+              <span className="relative flex h-2 w-2" aria-hidden>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-500" />
+              </span>
+              Для селлеров Wildberries и Ozon
             </p>
-            <h1 className="mt-6 text-balance font-display text-display-lg text-ink sm:text-[3.5rem]">
-              Голос бренда
+            <h1 className="mt-7 text-display sm:text-display-lg lg:text-display-xl">
+              Ответы на&nbsp;отзывы за&nbsp;минуты.{" "}
+              <span className="text-brand-700">Прямо в&nbsp;Telegram.</span>
             </h1>
-            <p className="mt-3 font-display text-body-lg font-semibold tracking-tight text-brand-700">
-              Время, деньги и лояльность покупателей — в одном Telegram
+            <p className="prose-muted mt-7 max-w-prose">
+              Бот собирает отзывы с WB и Ozon и предлагает три ответа в тоне вашего бренда.
+              Вы выбираете — покупатель получает живой ответ.
             </p>
-            <p className="prose-muted mt-5 max-w-xl text-pretty">
-              Отзывы не должны съедать ваш день. Подтягиваем WB/Ozon, предлагаем 3
-              варианта ответа — вы решаете, что увидит покупатель.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <TelegramButton trackSite className="!rounded-full">
+            <div className="mt-10 flex flex-wrap items-center gap-3">
+              <TelegramButton trackSite size="lg">
                 Начать бесплатно
               </TelegramButton>
-              <TelegramButton variant="secondary" className="!rounded-full">
-                Попробовать PRO
-              </TelegramButton>
+              <Button
+                href="/how-it-works"
+                variant="secondary"
+                size="lg"
+                trailing={<IconArrowRight />}
+              >
+                Как это работает
+              </Button>
             </div>
-            <p className="mt-4 text-caption text-ink-subtle">
-              Trial PRO в боте · Free: 5 генераций в день · негатив только вручную
+            <p className="mt-5 text-small text-ink-subtle">
+              Без карты · 5 ответов в день бесплатно · Негатив — только с вашего одобрения
             </p>
-            <div className="mt-8">
+            <div className="mt-12 border-t border-line pt-6">
               <MarketplaceStrip />
             </div>
           </div>
-          <div className="lg:justify-self-end">
+          <div className="animate-fade-up [animation-delay:150ms] lg:justify-self-end">
             <TelegramMockup />
           </div>
         </div>
       </section>
 
-      {/* Trust stats */}
+      {/* Stats */}
       <section className="border-y border-line bg-surface">
-        <div className="container-page grid grid-cols-2 gap-6 py-11 sm:grid-cols-4 sm:gap-8">
-          {[
-            ["3", "варианта ответа ИИ"],
-            ["2", "маркетплейса в одном боте"],
-            ["4–5★", "авто только на PRO"],
-            ["1–3★", "только с вашего OK"],
-          ].map(([val, label]) => (
-            <div key={label} className="text-center sm:text-left">
-              <p className="font-display text-3xl font-bold tracking-tight text-brand-700 sm:text-[2rem]">
-                {val}
+        <div className="container-page grid grid-cols-2 divide-line lg:grid-cols-4 lg:divide-x">
+          {stats.map((s, i) => (
+            <Reveal key={s.label} delay={i * 70} className="px-2 py-10 sm:py-12 lg:px-8 lg:first:pl-0">
+              <p className="font-display text-headline font-semibold text-ink sm:text-display">
+                {s.value}
               </p>
-              <p className="mt-1.5 text-caption text-ink-muted">{label}</p>
-            </div>
+              <p className="mt-2 max-w-[14rem] text-small text-ink-muted">{s.label}</p>
+            </Reveal>
           ))}
         </div>
       </section>
 
-      {/* Problem / solution */}
+      {/* Problem / approach */}
       <section className="section-y">
-        <div className="container-page grid gap-10 lg:grid-cols-2 lg:items-center">
-          <SectionHeading
-            align="left"
-            eyebrow="Задача"
-            title="30–1000+ отзывов в месяц — некому «сидеть в кабинете»"
-            description="Селлер или маленькая команда: отзывы важны для карточки, но каждый день уходит на копипаст и прыжки между WB и Ozon."
-          />
-          <div className="card p-8 lg:p-9">
-            <p className="eyebrow">Наш подход</p>
-            <h3 className="mt-2 font-display text-title text-ink">
-              Co-pilot, а не «чёрный ящик»
-            </h3>
-            <p className="mt-4 text-body text-ink-muted">
-              Sync → три черновика → вы правите → publish (PRO) или копия (Lite). Авто
-              только на 4–5★; негатив не уходит без человека.
-            </p>
-            <blockquote className="mt-6 rounded-xl border border-brand-100/80 bg-brand-50/50 p-4 text-body italic text-ink-muted">
-              «Раньше отзывы копились к вечеру. Сейчас отвечаю между созвонами — из
-              Telegram.» — селлер WB/Ozon
-            </blockquote>
-          </div>
+        <div className="container-page grid gap-14 lg:grid-cols-2 lg:items-center lg:gap-20">
+          <Reveal>
+            <SectionHeading
+              align="left"
+              eyebrow="Знакомо?"
+              title="Отзывов всё больше, а времени — нет"
+              description="Сотни отзывов в месяц, два кабинета и бесконечный копипаст. Отвечать важно — но не ценой всего рабочего дня."
+            />
+          </Reveal>
+          <Reveal delay={100}>
+            <div className="card p-8 sm:p-10">
+              <p className="eyebrow">Наш подход</p>
+              <h3 className="mt-4 text-headline">Бот готовит — решаете вы</h3>
+              <p className="mt-4 text-body text-ink-muted">
+                Отзыв → три черновика → ваша правка → публикация. Автоответы — только на
+                4–5★. Негативные отзывы без вашего решения не уходят никогда.
+              </p>
+              <figure className="mt-8 border-l-2 border-clay-300 pl-5">
+                <blockquote className="text-body-lg text-ink">
+                  «Раньше отзывы копились к вечеру. Теперь отвечаю между созвонами — прямо из
+                  Telegram».
+                </blockquote>
+                <figcaption className="mt-3 text-small text-ink-subtle">
+                  Селлер на WB и Ozon
+                </figcaption>
+              </figure>
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Benefits */}
-      <section className="section-y bg-surface-muted/80">
+      <section className="section-y bg-surface-muted">
         <div className="container-page">
-          <SectionHeading
-            title="Почему селлеры выбирают нас"
-            description="Контроль и экономия времени — без обещаний «магии ИИ» и 100% автопилота."
-          />
-          <ul className="mt-14 grid gap-6 sm:grid-cols-2">
-            <FeatureCard icon={<IconTelegram />} title="Telegram-first co-pilot" highlight>
-              Уведомление → три черновика → правка → publish или копия. Без перегруженного
-              web-SaaS — вся работа там, где вы и так онлайн.
-            </FeatureCard>
-            <FeatureCard icon={<IconSpark />} title="WB + Ozon в одном боте">
-              Синхронизация, push, snooze, дайджест, история и калькулятор «подписка vs ₽
-              за ответ».
-            </FeatureCard>
-            <FeatureCard icon={<IconShield />} title="ИИ с контролем">
-              Tone of voice, стоп-слова, шаблоны для 4–5★. Негатив 1–3★ — только после
-              вашего решения.
-            </FeatureCard>
-            <FeatureCard icon={<IconWallet />} title="Предсказуемый фикс">
-              Lite и PRO — фикс в месяц. На рынке часто pay-per-answer (~1–3 ₽/ответ) или
-              штат «только отзывы» (~30–80 тыс. ₽/мес).
-            </FeatureCard>
-          </ul>
+          <Reveal>
+            <SectionHeading
+              eyebrow="Преимущества"
+              title="Всё для ответов. Ничего лишнего"
+              description="Экономим ваше время, а не обещаем магию ИИ и стопроцентный автопилот."
+            />
+          </Reveal>
+          <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:mt-20">
+            {benefits.map((b, i) => (
+              <Reveal key={b.title} delay={i * 80}>
+                <FeatureCard icon={b.icon} title={b.title}>
+                  {b.text}
+                </FeatureCard>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* How it works */}
       <section className="section-y">
         <div className="container-page">
-          <SectionHeading
-            title="Как это работает"
-            description="Четыре шага — вся работа в @FeedBackReview_bot"
-          />
-          <ol className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((s) => (
-              <li
-                key={s.n}
-                className="card-hover relative flex flex-col p-6 before:absolute before:left-6 before:top-0 before:hidden before:h-full before:w-px before:bg-gradient-to-b before:from-brand-200 before:to-transparent lg:before:-right-3 lg:before:left-auto lg:before:block lg:last:before:hidden"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-brand-500 text-sm font-bold text-white shadow-md">
-                  {s.n}
-                </span>
-                <h3 className="mt-5 font-display text-title text-ink">{s.title}</h3>
-                <p className="mt-2 flex-1 text-body text-ink-muted">{s.text}</p>
+          <Reveal>
+            <SectionHeading
+              eyebrow="Как это работает"
+              title="Четыре шага до первого ответа"
+              description="Никаких внедрений и обучений — всё происходит в @FeedBackReview_bot."
+            />
+          </Reveal>
+          <ol className="mt-16 grid gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-2 lg:mt-20 lg:grid-cols-4">
+            {steps.map((s, i) => (
+              <li key={s.title} className="group bg-surface p-8 transition-colors duration-300 hover:bg-surface-elevated">
+                <Reveal delay={i * 90}>
+                  <span className="font-display text-small font-semibold text-brand-600">
+                    0{i + 1}
+                  </span>
+                  <div className="mt-8 h-px w-10 bg-brand-300 transition-all duration-500 ease-smooth group-hover:w-20 group-hover:bg-brand-600" />
+                  <h3 className="mt-8 text-title">{s.title}</h3>
+                  <p className="mt-3 text-body text-ink-muted">{s.text}</p>
+                </Reveal>
               </li>
             ))}
           </ol>
           <p className="mt-10 text-center">
-            <Link href="/how-it-works" className="link-arrow">
-              Подробнее со схемой →
-            </Link>
+            <Button href="/how-it-works" variant="ghost" trailing={<IconArrowRight />}>
+              Подробнее о процессе
+            </Button>
           </p>
         </div>
       </section>
 
-      {/* Features bento */}
+      {/* Features */}
       <section className="section-y border-y border-line bg-surface">
-        <div className="container-page">
-          <SectionHeading
-            title="Возможности платформы"
-            description="Уже в боте — плюс roadmap по запросу селлеров"
-          />
-          <div className="mt-14 grid gap-6 lg:grid-cols-3">
-            <div className="card p-8 lg:col-span-2">
-              <h3 className="font-display text-title text-ink">В продукте сейчас</h3>
-              <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-                {[
-                  "Синхронизация отзывов WB/Ozon, push, snooze, дайджест",
-                  "3 варианта ответа (LLM), шаблоны 4–5★, правила авто (PRO)",
-                  "История, экспорт CSV, аналитика 7/30 дней",
-                  "Вопросы WB (уведомления; ответ в кабинете)",
-                  "Калькулятор подписка vs ₽ за ответ",
-                  "Промокоды, поддержка с контекстом, onboarding",
-                ].map((item) => (
-                  <li key={item} className="list-check">
-                    <span className="list-check-icon" aria-hidden>
-                      <IconCheck className="h-3 w-3" />
-                    </span>
-                    {item}
-                  </li>
-                ))}
+        <div className="container-page grid gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
+          <Reveal>
+            <SectionHeading
+              align="left"
+              eyebrow="Возможности"
+              title="Что уже умеет бот"
+              description="Работает сегодня. Новые функции добавляем по запросам селлеров."
+            />
+            <div className="mt-10 rounded-2xl border border-dashed border-brand-200 bg-brand-50/50 p-6">
+              <p className="eyebrow">Скоро</p>
+              <ul className="mt-3 space-y-1.5 text-body text-ink-muted">
+                <li>Рекомендация товара в ответе</li>
+                <li>Очередь вопросов Ozon</li>
+                <li>Расширенная аналитика</li>
               </ul>
             </div>
-            <div className="flex flex-col gap-4">
-              <div className="card flex-1 border-dashed border-brand-200 bg-brand-50/30 p-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-brand-600">
-                  Скоро
-                </p>
-                <ul className="mt-4 space-y-2 text-body text-ink-muted">
-                  <li>Рекомендация товара в ответе (PRO)</li>
-                  <li>Очередь вопросов Ozon</li>
-                  <li>Расширенная аналитика</li>
-                </ul>
-              </div>
-              <p className="text-caption leading-relaxed text-ink-subtle">
-                Не в фокусе: Яндекс Маркет, автомат на 1–3★, отдельный web-кабинет вместо
-                Telegram.
+          </Reveal>
+          <Reveal delay={100}>
+            <ul className="grid gap-x-8 sm:grid-cols-2">
+              {nowFeatures.map((item) => (
+                <li key={item} className="list-check border-b border-line py-5">
+                  <span className="list-check-icon" aria-hidden>
+                    <IconCheck className="h-3 w-3" />
+                  </span>
+                  <span className="text-ink">{item}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-6 text-small text-ink-subtle">
+              Пока не планируем: Яндекс Маркет, автоответы на 1–3★, отдельный веб-кабинет.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="section-y">
+        <div className="container-page">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Тарифы"
+              title="Платите за подписку, а не за каждый ответ"
+              description="Начните бесплатно и переходите на платный тариф, когда отзывов станет больше."
+            />
+          </Reveal>
+          <div className="mt-16 lg:mt-20">
+            <PricingCards />
+          </div>
+          <p className="mt-10 text-center">
+            <Button href="/pricing" variant="ghost" trailing={<IconArrowRight />}>
+              Сравнить тарифы подробно
+            </Button>
+          </p>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="section-y bg-surface-muted">
+        <div className="container-page grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
+          <Reveal>
+            <SectionHeading
+              align="left"
+              eyebrow="FAQ"
+              title="Частые вопросы"
+              description="Не нашли ответ? Напишите в поддержку прямо в боте."
+            />
+            <div className="mt-8">
+              <Button href="/faq" variant="secondary" trailing={<IconArrowRight />}>
+                Все вопросы
+              </Button>
+            </div>
+          </Reveal>
+          <Reveal delay={100}>
+            <FAQAccordion items={FAQ_ITEMS.slice(0, 5)} />
+          </Reveal>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="px-5 py-20 sm:px-8 sm:py-24">
+        <Reveal className="mx-auto max-w-6xl">
+          <div className="relative overflow-hidden rounded-4xl bg-cta-gradient px-6 py-20 text-center sm:px-12 sm:py-24">
+            <div
+              className="mask-fade-b absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-grid"
+              aria-hidden
+            />
+            <div className="relative mx-auto max-w-2xl">
+              <h2 className="text-headline text-white sm:text-display-lg">
+                Первый ответ — уже сегодня
+              </h2>
+              <p className="mx-auto mt-6 max-w-md text-body-lg text-brand-100">
+                Подключите кабинет за пару минут. Бесплатно и без карты.
               </p>
+              <div className="mt-10 flex justify-center">
+                <TelegramButton variant="white" size="lg" trackSite>
+                  Открыть бота в Telegram
+                </TelegramButton>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Pricing preview */}
-      <section className="section-y bg-surface-muted/80">
-        <div className="container-page">
-          <SectionHeading title="Тарифы" description="Актуальные цифры — в боте при оплате" />
-          <div className="mt-12">
-            <PricingTable compact />
-          </div>
-          <p className="mt-8 text-center">
-            <Link href="/pricing" className="link-arrow">
-              Полная таблица и способы оплаты →
-            </Link>
-          </p>
-        </div>
-      </section>
-
-      {/* FAQ preview */}
-      <section className="section-y">
-        <div className="container-page max-w-3xl">
-          <SectionHeading title="Частые вопросы" />
-          <div className="mt-12">
-            <FAQAccordion items={FAQ_ITEMS.slice(0, 5)} />
-          </div>
-          <p className="mt-8 text-center">
-            <Link href="/faq" className="link-arrow">
-              Все вопросы →
-            </Link>
-          </p>
-        </div>
-      </section>
-
-      {/* Footer CTA */}
-      <section className="relative overflow-hidden bg-cta-gradient py-16 sm:py-20">
-        <div
-          className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1vcGFjaXR5PSIuMDUiPjxjaXJjbGUgY3g9IjEiIGN5PSIxIiByPSIxIiBmaWxsPSIjZmZmIi8+PC9nPjwvc3ZnPg==')] opacity-40"
-          aria-hidden
-        />
-        <div className="container-page relative max-w-3xl text-center">
-          <h2 className="text-balance font-display text-display text-white sm:text-[2.75rem]">
-            Подключите первый кабинет за пару минут
-          </h2>
-          <p className="mx-auto mt-4 max-w-lg text-pretty text-body-lg font-normal text-white/85">
-            @FeedBackReview_bot · Free без карты · PRO trial в один клик
-          </p>
-          <div className="mt-9 flex flex-wrap justify-center gap-3">
-            <TelegramButton variant="white" trackSite className="!rounded-full">
-              Открыть в Telegram
-            </TelegramButton>
-          </div>
-        </div>
+        </Reveal>
       </section>
     </PageShell>
   );

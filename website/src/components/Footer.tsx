@@ -12,22 +12,22 @@ import { TelegramButton } from "./TelegramButton";
 export function Footer() {
   return (
     <footer className="border-t border-line bg-footer-bg text-footer-text">
-      <div className="container-page py-14">
-        <div className="flex flex-col gap-10 lg:flex-row lg:justify-between">
+      <div className="container-page py-16 sm:py-20">
+        <div className="flex flex-col gap-14 lg:flex-row lg:justify-between">
           <div className="max-w-sm">
             <Logo inverted />
-            <p className="mt-4 text-body leading-relaxed text-footer-text">
-              Co-pilot для отзывов WB и Ozon в Telegram. Контроль текста у вас —
-              рутину забирает бот.
+            <p className="mt-5 text-body text-footer-text">
+              Помощник для ответов на отзывы WB и Ozon в Telegram. Текст решаете вы —
+              рутину берёт бот.
             </p>
-            <div className="mt-5">
-              <TelegramButton variant="white" trackSite className="!rounded-full">
+            <div className="mt-7">
+              <TelegramButton variant="white" trackSite>
                 Начать бесплатно
               </TelegramButton>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-10 text-small sm:grid-cols-3 sm:gap-16">
             <div>
               <p className="font-display font-semibold text-white">Продукт</p>
               <ul className="mt-4 space-y-2.5">
@@ -78,7 +78,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-2 border-t border-footer-border pt-8 text-caption text-footer-muted">
+        <div className="mt-16 flex flex-col gap-2 border-t border-footer-border pt-8 text-caption text-footer-muted">
           <p>
             Бот: @{BOT_USERNAME} · Поддержка: бот → «Поддержка» ·{" "}
             <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-footer-text">

@@ -8,14 +8,16 @@ export function Logo({
   inverted?: boolean;
 }) {
   return (
-    <span className="flex items-center gap-2.5">
+    <span className="group flex items-center gap-2.5">
       <span
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brand-600 to-brand-500 shadow-sm ring-1 ring-black/5"
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 ease-smooth group-hover:rotate-[-4deg] ${
+          inverted ? "bg-white text-brand-800" : "bg-brand-700 text-white"
+        }`}
         aria-hidden
       >
-        <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none">
+        <svg viewBox="0 0 24 24" className="h-[1.125rem] w-[1.125rem]" fill="none">
           <path
-            d="M4 14v-2M8 16V8M12 14V10M16 16V6M20 12v0"
+            d="M4 13v-2M8 16V8M12 18V6M16 15V9M20 13v-2"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
@@ -24,7 +26,7 @@ export function Logo({
       </span>
       {!compact && (
         <span
-          className={`font-display text-[1.05rem] font-bold tracking-tight ${
+          className={`font-display text-[1.0625rem] font-semibold tracking-[-0.02em] ${
             inverted ? "text-white" : "text-ink"
           }`}
         >

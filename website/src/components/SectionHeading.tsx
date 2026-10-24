@@ -9,15 +9,15 @@ export function SectionHeading({
   description?: string;
   align?: "center" | "left";
 }) {
-  const alignClass = align === "center" ? "text-center mx-auto" : "text-left";
+  const alignClass = align === "center" ? "mx-auto text-center" : "text-left";
   return (
     <div className={`max-w-2xl ${alignClass}`}>
       {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-      <h2 className="mt-3 text-balance font-display text-display text-ink sm:text-[2.625rem]">
-        {title}
-      </h2>
+      <h2 className={`${eyebrow ? "mt-4" : ""} text-headline sm:text-display`}>{title}</h2>
       {description && (
-        <p className="prose-muted mt-4 text-pretty">{description}</p>
+        <p className={`prose-muted mt-5 ${align === "center" ? "mx-auto" : ""} max-w-prose`}>
+          {description}
+        </p>
       )}
     </div>
   );
