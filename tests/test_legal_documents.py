@@ -22,6 +22,7 @@ def test_privacy_pages_within_telegram_limit() -> None:
         assert page is not None
         assert len(page) <= 4096
         assert "Otveto" not in page and "АИ ВЭЙ" not in page
+        assert "LEGAL_OPERATOR_NAME" not in page
         assert "Голос бренда" in page
 
 
