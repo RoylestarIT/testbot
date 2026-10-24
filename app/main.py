@@ -164,7 +164,9 @@ async def main() -> None:
             await on_shutdown()
     else:
         logger.info("Starting ReviewPilot bot (polling)")
-        await dp.start_polling(bot)
+        await bot.delete_webhook(drop_pending_updates=False)
+        logger.info("Webhook cleared (polling mode)")
+        await dp.start_polling(bot, handle_as_tasks=True)
 
 
 if __name__ == "__main__":
