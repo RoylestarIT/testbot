@@ -8,6 +8,7 @@ def settings_menu_keyboard() -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = [
         [InlineKeyboardButton(text="🏪  Кабинеты WB/Ozon", callback_data="settings:accounts")],
         [InlineKeyboardButton(text="🎨 Тон ответа", callback_data="settings:tone")],
+        [InlineKeyboardButton(text="👤  Профиль", callback_data="settings:profile")],
         [InlineKeyboardButton(text="🔔  Уведомления", callback_data="settings:notifications")],
         [InlineKeyboardButton(text="📝  Мои шаблоны", callback_data="settings:templates")],
         [

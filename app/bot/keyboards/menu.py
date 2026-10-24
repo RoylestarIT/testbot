@@ -11,6 +11,10 @@ def more_menu_keyboard(*, show_admin: bool = False) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🆘 Поддержка", callback_data="menu:support"),
             InlineKeyboardButton(text="📖 Справка", callback_data="menu:help"),
         ],
+        [
+            InlineKeyboardButton(text="🛰 Статус", callback_data="menu:service_status"),
+            InlineKeyboardButton(text="📜 Обновления", callback_data="menu:changelog"),
+        ],
         [InlineKeyboardButton(text="📜 Документы", callback_data="menu:legal")],
         [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
     ]

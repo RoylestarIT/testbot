@@ -6,6 +6,7 @@ from app.bot.handlers import (
     legal,
     marketplace_reviews,
     onboarding,
+    product_maturity,
     reviews,
     settings,
     start,
@@ -21,6 +22,7 @@ main_router.include_router(legal.router)
 main_router.include_router(dashboard.router)
 main_router.include_router(onboarding.router)
 main_router.include_router(support.router)
+main_router.include_router(product_maturity.router)
 main_router.include_router(subscription.router)
 main_router.include_router(admin.router)
 main_router.include_router(settings.router)

@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.bot.keyboards.nav import nav_home_queue
+from app.services.queue_diagnosis import EmptyQueueReason
 
 
 def no_cabinets_keyboard() -> InlineKeyboardMarkup:
@@ -17,18 +18,43 @@ def no_cabinets_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def no_new_reviews_keyboard() -> InlineKeyboardMarkup:
+def no_new_reviews_keyboard(reason: EmptyQueueReason | None = None) -> InlineKeyboardMarkup:
     from app.bot.keyboards.reviews import reviews_queue_toolbar
 
+    if reason == EmptyQueueReason.SYNC_ERROR:
+        action = [
+            InlineKeyboardButton(text="⚙️ Проверить ключ", callback_data="menu:settings"),
+            InlineKeyboardButton(text="🛰 Статус", callback_data="menu:service_status"),
+        ]
+    elif reason == EmptyQueueReason.NEEDS_SYNC:
+        action = [
+            InlineKeyboardButton(text="🔄 Sync", callback_data="review:sync"),
+            InlineKeyboardButton(text="🛰 Статус", callback_data="menu:service_status"),
+        ]
+    else:
+        action = [
+            InlineKeyboardButton(text="🔄 Sync", callback_data="review:sync"),
+            InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu:settings"),
+        ]
     return nav_home_queue(
         extra=[
             reviews_queue_toolbar(),
-            [
-                InlineKeyboardButton(text="🔄 Sync", callback_data="review:sync"),
-                InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu:settings"),
-            ],
+            action,
         ]
     )
+
+
+def empty_queue_message(reason: EmptyQueueReason) -> str:
+    if reason == EmptyQueueReason.NO_CABINETS:
+        return "Подключите кабинет WB или Ozon в ⚙️ Настройки."
+    if reason == EmptyQueueReason.SYNC_ERROR:
+        return (
+            "Очередь пуста, но при последнем sync была ошибка API.\n"
+            "Проверьте ключ в ⚙️ Настройки или откройте 🛰 Статус сервиса."
+        )
+    if reason == EmptyQueueReason.NEEDS_SYNC:
+        return "Новых отзывов нет — давно не было sync. Нажмите 🔄 Sync."
+    return "Все новые отзывы обработаны. Отличная работа!"
 
 
 def poller_notify_keyboard() -> InlineKeyboardMarkup:

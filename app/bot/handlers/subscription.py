@@ -1,6 +1,10 @@
 from aiogram import Bot, F, Router
 from aiogram.filters import Command
-from aiogram.types import CallbackQuery, Message, PreCheckoutQuery
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message, PreCheckoutQuery
+
+from app.bot.states.promo import PromoRedeemStates
+from app.services.promo import redeem_promo_code
 
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.subscription import (
@@ -481,3 +485,34 @@ async def qr_mark_paid(callback: CallbackQuery, bot: Bot, db_user: DbUser) -> No
             "После проверки перевода администратор активирует подписку.",
             reply_markup=subscription_menu_keyboard(pricing),
         )
+
+
+@router.callback_query(F.data == "sub:promo")
+async def promo_start(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(PromoRedeemStates.waiting_code)
+    await callback.answer()
+    if callback.message:
+        await safe_edit_message(
+            callback.message,
+            "🎟 <b>Промокод</b>\n\nВведите код одним сообщением (Trial PRO и др.).",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="◀️ Подписка", callback_data="menu:subscription")],
+                ]
+            ),
+        )
+
+
+@router.message(PromoRedeemStates.waiting_code, F.text)
+async def promo_redeem_message(message: Message, state: FSMContext, db_user: DbUser) -> None:
+    code = (message.text or "").strip()
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        ok, text = await redeem_promo_code(session, db_user.id, code)
+        await session.commit()
+    await state.clear()
+    pricing = await get_subscription_pricing()
+    await message.answer(
+        text,
+        reply_markup=subscription_menu_keyboard(pricing) if ok else main_menu_keyboard(),
+    )

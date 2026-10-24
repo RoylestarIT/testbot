@@ -6,6 +6,7 @@ from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.bot.ui import BRAND, ICON, brand_title, muted, progress_bar
+from app.services.onboarding_checklist import onboarding_is_complete
 
 router = Router(name="onboarding")
 
@@ -41,7 +42,7 @@ def _step_keyboard(step: int) -> InlineKeyboardMarkup:
     rows = [action, [InlineKeyboardButton(text="➡️ Далее", callback_data=next_data)]]
     if step > 0:
         rows.append([InlineKeyboardButton(text="◀️ Назад", callback_data=f"onboarding:step:{step - 1}")])
-    rows.append([InlineKeyboardButton(text="⏭ Пропустить", callback_data="onboarding:done")])
+    rows.append([InlineKeyboardButton(text="⏭ К сводке", callback_data="onboarding:skip")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -61,10 +62,35 @@ async def onboarding_step(callback: CallbackQuery) -> None:
         await callback.message.edit_text(STEPS[step], reply_markup=_step_keyboard(step))
 
 
+@router.callback_query(F.data == "onboarding:skip")
+async def onboarding_skip(callback: CallbackQuery) -> None:
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            f"{ICON} <b>{BRAND}</b>\n"
+            "Чеклист быстрого старта остаётся на сводке — вернитесь, когда будет время.",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
+                ]
+            ),
+        )
+
+
 @router.callback_query(F.data == "onboarding:done")
 async def onboarding_done(callback: CallbackQuery, db_user: DbUser) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            await callback.answer("Ошибка профиля", show_alert=True)
+            return
+        if not await onboarding_is_complete(session, user):
+            await callback.answer(
+                "Сначала выполните шаги чеклиста (кабинет, тон, первый ответ).",
+                show_alert=True,
+            )
+            return
         await UserRepository(session).complete_onboarding(db_user.id)
         await session.commit()
     await callback.answer("Готово!")

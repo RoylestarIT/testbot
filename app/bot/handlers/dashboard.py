@@ -145,6 +145,10 @@ async def menu_dashboard_details(callback: CallbackQuery, db_user: DbUser) -> No
     await callback.answer()
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
+            [
+                InlineKeyboardButton(text="📆 Отчёт 30 дн.", callback_data="menu:monthly_report"),
+                InlineKeyboardButton(text="❓ Вопросы WB", callback_data="menu:wb_questions"),
+            ],
             [InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:dashboard")],
         ]
     )

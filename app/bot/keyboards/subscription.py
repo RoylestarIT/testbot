@@ -31,6 +31,7 @@ def subscription_hub_keyboard(_pricing: SubscriptionPricing | None = None) -> In
                 InlineKeyboardButton(text="📊 Тарифы", callback_data="sub:compare"),
                 InlineKeyboardButton(text="🧮 Калькулятор", callback_data="sub:calc"),
             ],
+            [InlineKeyboardButton(text="🎟 Промокод", callback_data="sub:promo")],
             [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
         ]
     )

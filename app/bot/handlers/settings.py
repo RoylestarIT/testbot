@@ -2,9 +2,15 @@ from __future__ import annotations
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.bot.copy import NOTIFICATIONS_INTRO, SETTINGS_INTRO as SETTINGS_TEXT
+from app.services.notification_previews import (
+    preview_buyer_questions,
+    preview_daily_digest,
+    preview_new_reviews,
+    preview_stale_reviews,
+)
 from app.bot.utils.callbacks import safe_edit_message
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.autopublish import autopublish_detail_keyboard
@@ -145,6 +151,21 @@ async def settings_accounts(callback: CallbackQuery, db_user: DbUser) -> None:
             callback.message,text, reply_markup=accounts_menu_keyboard(accounts))
 
 
+WB_KEY_HELP = (
+    "<b>Как получить ключ WB</b>\n\n"
+    "1. seller.wildberries.ru → Настройки → Доступ к API\n"
+    "2. Создайте ключ с категорией «Вопросы и отзывы»\n"
+    "3. Скопируйте ключ сюда одним сообщением"
+)
+
+
+@router.callback_query(F.data == "help:wb_key")
+async def help_wb_key(callback: CallbackQuery) -> None:
+    await callback.answer()
+    if callback.message:
+        await safe_edit_message(callback.message, WB_KEY_HELP)
+
+
 @router.callback_query(F.data == "settings:connect:wb")
 async def connect_wb_start(callback: CallbackQuery, state: FSMContext, db_user: DbUser) -> None:
     session_factory = get_session_factory()
@@ -161,6 +182,12 @@ async def connect_wb_start(callback: CallbackQuery, state: FSMContext, db_user: 
             "<b>Wildberries</b>\n\n"
             "Пришлите API-ключ категории «Вопросы и отзывы» одним сообщением.\n"
             "Ключ будет зашифрован и сохранён в БД.",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="❓ Как получить ключ", callback_data="help:wb_key")],
+                    [InlineKeyboardButton(text="◀️ Назад", callback_data="settings:accounts")],
+                ]
+            ),
         )
 
 
@@ -843,6 +870,70 @@ async def settings_tone_edit_finish(message: Message, state: FSMContext, db_user
     )
 
 
+def _profile_keyboard(user) -> InlineKeyboardMarkup:
+    tz = user.ui_timezone or "Europe/Minsk"
+    tz_label = "Минск (UTC+3)" if "Minsk" in tz else "Москва (UTC+3)"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=f"🕐 Часовой пояс: {tz_label}", callback_data="settings:profile:tz")],
+            [InlineKeyboardButton(text="🌐 Язык: русский", callback_data="settings:profile:lang")],
+            [InlineKeyboardButton(text="◀️ Настройки", callback_data="menu:settings")],
+        ]
+    )
+
+
+@router.callback_query(F.data == "settings:profile")
+async def settings_profile(callback: CallbackQuery, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+    if user is None:
+        await callback.answer("Ошибка")
+        return
+    await callback.answer()
+    if callback.message:
+        await safe_edit_message(
+            callback.message,
+            "👤 <b>Профиль</b>\n\n"
+            f"Telegram ID: <code>{user.tg_id}</code>\n"
+            f"Часовой пояс UI: <b>{user.ui_timezone}</b>\n"
+            f"Язык: <b>{user.ui_language}</b>",
+            reply_markup=_profile_keyboard(user),
+        )
+
+
+@router.callback_query(F.data == "settings:profile:tz")
+async def settings_profile_tz_toggle(callback: CallbackQuery, db_user: DbUser) -> None:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            return
+        new_tz = "Europe/Moscow" if "Minsk" in (user.ui_timezone or "") else "Europe/Minsk"
+        await UserRepository(session).set_ui_prefs(db_user.id, ui_timezone=new_tz)
+        await session.commit()
+        user = await UserRepository(session).get_by_id(db_user.id)
+    await callback.answer("Сохранено")
+    if callback.message and user:
+        await safe_edit_message(
+            callback.message,
+            "👤 <b>Профиль</b>\n\n"
+            f"Telegram ID: <code>{user.tg_id}</code>\n"
+            f"Часовой пояс UI: <b>{user.ui_timezone}</b>\n"
+            f"Язык: <b>{user.ui_language}</b>",
+            reply_markup=_profile_keyboard(user),
+        )
+
+
+@router.callback_query(F.data == "settings:profile:lang")
+async def settings_profile_lang(callback: CallbackQuery) -> None:
+    await callback.answer("Пока доступен только русский интерфейс.", show_alert=True)
+
+
+async def _send_notify_preview(message: Message, preview_html: str) -> None:
+    await message.answer(preview_html)
+
+
 @router.callback_query(F.data == "settings:notifications")
 async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> None:
     from app.bot.keyboards.notifications import notifications_keyboard
@@ -878,9 +969,10 @@ async def settings_notify_toggle_new(callback: CallbackQuery, db_user: DbUser) -
         user = await UserRepository(session).get_by_id(db_user.id)
         if user is None:
             return
+        new_val = not user.notify_new_reviews
         await UserRepository(session).set_notification_prefs(
             db_user.id,
-            notify_new_reviews=not user.notify_new_reviews,
+            notify_new_reviews=new_val,
         )
         await session.commit()
         user = await UserRepository(session).get_by_id(db_user.id)
@@ -898,6 +990,11 @@ async def settings_notify_toggle_new(callback: CallbackQuery, db_user: DbUser) -
                 soft_recommend=user.soft_product_recommend,
             ),
         )
+        if new_val:
+            await _send_notify_preview(
+                callback.message,
+                preview_new_reviews(negative_only=user.notify_negative_only),
+            )
 
 
 @router.callback_query(F.data == "settings:notify:toggle_negative")
@@ -940,9 +1037,10 @@ async def settings_notify_toggle_questions(callback: CallbackQuery, db_user: DbU
         user = await UserRepository(session).get_by_id(db_user.id)
         if user is None:
             return
+        new_val = not user.notify_buyer_questions
         await UserRepository(session).set_notification_prefs(
             db_user.id,
-            notify_buyer_questions=not user.notify_buyer_questions,
+            notify_buyer_questions=new_val,
         )
         await session.commit()
         user = await UserRepository(session).get_by_id(db_user.id)
@@ -960,6 +1058,8 @@ async def settings_notify_toggle_questions(callback: CallbackQuery, db_user: DbU
                 soft_recommend=user.soft_product_recommend,
             ),
         )
+        if new_val:
+            await _send_notify_preview(callback.message, preview_buyer_questions())
 
 
 @router.callback_query(F.data == "settings:notify:toggle_digest")
@@ -971,9 +1071,10 @@ async def settings_notify_toggle_digest(callback: CallbackQuery, db_user: DbUser
         user = await UserRepository(session).get_by_id(db_user.id)
         if user is None:
             return
+        new_val = not user.notify_daily_digest
         await UserRepository(session).set_notification_prefs(
             db_user.id,
-            notify_daily_digest=not user.notify_daily_digest,
+            notify_daily_digest=new_val,
         )
         await session.commit()
         user = await UserRepository(session).get_by_id(db_user.id)
@@ -991,6 +1092,8 @@ async def settings_notify_toggle_digest(callback: CallbackQuery, db_user: DbUser
                 soft_recommend=user.soft_product_recommend,
             ),
         )
+        if new_val:
+            await _send_notify_preview(callback.message, preview_daily_digest())
 
 
 @router.callback_query(F.data == "settings:notify:toggle_stale")
@@ -1002,9 +1105,10 @@ async def settings_notify_toggle_stale(callback: CallbackQuery, db_user: DbUser)
         user = await UserRepository(session).get_by_id(db_user.id)
         if user is None:
             return
+        new_val = not user.notify_stale_reviews
         await UserRepository(session).set_notification_prefs(
             db_user.id,
-            notify_stale_reviews=not user.notify_stale_reviews,
+            notify_stale_reviews=new_val,
         )
         await session.commit()
         user = await UserRepository(session).get_by_id(db_user.id)
@@ -1022,6 +1126,8 @@ async def settings_notify_toggle_stale(callback: CallbackQuery, db_user: DbUser)
                 soft_recommend=user.soft_product_recommend,
             ),
         )
+        if new_val:
+            await _send_notify_preview(callback.message, preview_stale_reviews())
 
 
 @router.callback_query(F.data == "settings:notify:toggle_recommend")

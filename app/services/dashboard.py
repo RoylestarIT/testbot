@@ -21,7 +21,7 @@ from app.services.plans import (
 )
 from app.services.subscription import get_effective_subscription
 from app.bot.product_news import build_product_news_banner, user_should_see_product_news
-from app.services.onboarding_checklist import build_onboarding_nudge
+from app.services.onboarding_checklist import build_onboarding_checklist_block, build_onboarding_nudge
 from app.services.period_analytics import build_publish_activity_line
 from app.services.user_stats import avg_rating_new_reviews, build_dashboard_today_line
 from app.tasks.poller import get_poller_status_line
@@ -163,7 +163,10 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
 
     settings = get_settings()
     show_product_news = user_should_see_product_news(user, settings)
+    checklist = await build_onboarding_checklist_block(session, user)
     nudge = await build_onboarding_nudge(session, user)
+    if checklist:
+        nudge = f"{checklist}\n\n{nudge}" if nudge else checklist
     if show_product_news:
         nudge_line = build_product_news_banner(settings)
         if nudge:

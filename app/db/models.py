@@ -95,6 +95,11 @@ class User(Base):
     reply_templates: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True)
     product_news_seen_version: Mapped[str] = mapped_column(String(32), default="", nullable=False)
     calc_preset_volume: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ui_timezone: Mapped[str] = mapped_column(String(64), default="Europe/Minsk", nullable=False)
+    ui_language: Mapped[str] = mapped_column(String(8), default="ru", nullable=False)
+    publish_actions_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    reply_feedback_up: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    reply_feedback_down: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     marketplace_accounts: Mapped[list["MarketplaceAccount"]] = relationship(
         back_populates="user",

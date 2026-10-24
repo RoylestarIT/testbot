@@ -89,6 +89,31 @@ class UserRepository:
         await self._session.flush()
         return user
 
+    async def record_publish_action(self, user_id: int) -> int:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            return 0
+        user.publish_actions_count += 1
+        await self._session.flush()
+        return user.publish_actions_count
+
+    async def set_ui_prefs(
+        self,
+        user_id: int,
+        *,
+        ui_timezone: str | None = None,
+        ui_language: str | None = None,
+    ) -> User | None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            return None
+        if ui_timezone is not None:
+            user.ui_timezone = ui_timezone.strip()[:64] or "Europe/Minsk"
+        if ui_language is not None:
+            user.ui_language = ui_language.strip()[:8] or "ru"
+        await self._session.flush()
+        return user
+
     async def set_calc_preset_volume(self, user_id: int, volume: int) -> User | None:
         user = await self.get_by_id(user_id)
         if user is None:

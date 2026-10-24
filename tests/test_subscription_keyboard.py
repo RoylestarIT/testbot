@@ -24,7 +24,8 @@ def test_subscription_hub_compact_layout() -> None:
     assert texts[0] == "💳 Оплатить"
     assert "🧮 Калькулятор" in texts
     assert "📊 Тарифы" in texts
-    assert len(kb.inline_keyboard) == 3
+    assert len(kb.inline_keyboard) == 4
+    assert "sub:promo" in callbacks
     assert "sub:pay:menu" in callbacks
     assert "sub:stars:lite" not in callbacks
 

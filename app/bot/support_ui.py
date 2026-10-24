@@ -34,6 +34,7 @@ def support_keyboard() -> InlineKeyboardMarkup:
         rows.append(
             [InlineKeyboardButton(text="💬 Написать в поддержку", url=f"https://t.me/{uname}")]
         )
+    rows.append([InlineKeyboardButton(text="✉️ Написать из бота", callback_data="support:write")])
     rows.append(legal_open_from_terms_row(back="s"))
     rows.append([InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
