@@ -6,11 +6,16 @@ def positioning_keyboard(*, back: str = "menu:dashboard") -> InlineKeyboardMarku
         inline_keyboard=[
             [
                 InlineKeyboardButton(text="📊 Сравнение", callback_data="menu:market_compare"),
+            ],
+            [
                 InlineKeyboardButton(text="🎯 Для кого", callback_data="menu:for_whom"),
             ],
             [
                 InlineKeyboardButton(text="🗺 Функции", callback_data="menu:roadmap"),
             ],
-            [InlineKeyboardButton(text="◀️ Назад", callback_data=back)],
+            [
+                InlineKeyboardButton(text="💎 Подписка", callback_data="menu:subscription"),
+                InlineKeyboardButton(text="◀️ Сводка", callback_data=back),
+            ],
         ]
     )
