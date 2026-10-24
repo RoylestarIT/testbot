@@ -1,14 +1,21 @@
 [Unit]
 Description=ReviewPilot Telegram Bot
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
+User=ubuntu
+Group=ubuntu
 WorkingDirectory=/workspace
-EnvironmentFile=-/workspace/.env
+# Settings load from .env via pydantic (WorkingDirectory); do not use EnvironmentFile (emoji/special chars break systemd).
+ExecStartPre=/bin/bash /workspace/scripts/ensure-datastores.sh
+ExecStartPre=/usr/bin/python3 -m alembic upgrade head
 ExecStart=/usr/bin/python3 -m app.main
-Restart=on-failure
-RestartSec=5
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=300
+StartLimitBurst=10
 
 [Install]
 WantedBy=multi-user.target
