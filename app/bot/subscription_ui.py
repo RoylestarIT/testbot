@@ -25,7 +25,7 @@ def build_subscription_hub(
         f"✨  Lite — {pricing.lite_price_label()}",
         f"🚀  PRO — {pricing.pro_price_label()}",
         "",
-        muted("Оплата: крипта · карта РФ/РБ · СБП/перевод"),
+        muted("Оплата: Stars · крипта · карта РФ/РБ · СБП/перевод"),
     ]
     if trial_line:
         lines.extend(["", trial_line])
