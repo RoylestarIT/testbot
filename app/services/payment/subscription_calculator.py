@@ -11,6 +11,18 @@ PER_ANSWER_RUB_HIGH = 3.0
 PRESET_VOLUMES = (100, 200, 300, 500, 800, 1000)
 
 
+def suggest_plan_for_volume(volume: int, pricing: SubscriptionPricing) -> str:
+    """lite | pro — подсказка для кнопок оплаты."""
+    lite_rub = pricing.rub_for(pricing.lite_usd)
+    pro_rub = pricing.rub_for(pricing.pro_usd)
+    mid_market = _pay_per_answer_total(volume, PER_ANSWER_RUB_MID)
+    if mid_market > pro_rub or volume >= 800:
+        return "pro"
+    if mid_market > lite_rub or volume >= 400:
+        return "lite"
+    return "lite"
+
+
 def _pay_per_answer_total(volume: int, rub_per_answer: float) -> int:
     return int(round(volume * rub_per_answer))
 

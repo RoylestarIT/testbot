@@ -12,7 +12,9 @@ from app.services.marketplace.base import MarketplaceAPIError
 from app.services.marketplace.auto_publish_types import AutoPublishOutcome
 from app.services.marketplace.product_context import product_context_for_llm
 from app.services.marketplace.publish_service import publish_reply_to_marketplace
+from app.services.auto_stop_words import review_matches_stop_words
 from app.services.tone_resolver import resolve_tone_input
+from app.db.repositories.user import UserRepository
 
 DEFAULT_AUTO_PUBLISH_MIN_RATING = 4
 
@@ -38,9 +40,13 @@ async def try_auto_publish_review(
         return AutoPublishOutcome("skipped")
     if account.auto_publish_stars_only and _review_has_text(review):
         return AutoPublishOutcome("skipped")
+    if review_matches_stop_words(review.text, account.auto_publish_stop_words):
+        return AutoPublishOutcome("skipped")
 
     settings = settings or get_settings()
     tone = await resolve_tone_input(session, account.user_id, "default")
+    user = await UserRepository(session).get_by_id(account.user_id)
+    soft_rec = bool(user and user.soft_product_recommend)
     try:
         product_context = product_context_for_llm(review.raw_json, account.marketplace)
         variants = await generate_replies(
@@ -49,6 +55,7 @@ async def try_auto_publish_review(
             tone,
             count=1,
             product_context=product_context,
+            soft_product_recommend=soft_rec,
             settings=settings,
         )
     except LLMError as exc:

@@ -5,7 +5,6 @@ from app.core.config import get_settings
 from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
-from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.ui import BRAND, ICON, brand_title, muted, progress_bar
 
 router = Router(name="onboarding")
@@ -70,9 +69,14 @@ async def onboarding_done(callback: CallbackQuery, db_user: DbUser) -> None:
         await session.commit()
     await callback.answer("Готово!")
     tg_id = callback.from_user.id if callback.from_user else 0
+    rows = [
+        [InlineKeyboardButton(text="📬 Ответы на отзывы", callback_data="review:mp:list")],
+        [InlineKeyboardButton(text="💎 Тарифы", callback_data="menu:subscription")],
+        [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
+    ]
     if callback.message:
         await callback.message.edit_text(
             f"{ICON} <b>{BRAND}</b>\n🎉 Настройка завершена.\n"
             "<i>Отзывы в Telegram: 3 варианта, правка, негатив — только вы.</i>",
-            reply_markup=main_menu_keyboard(show_admin=tg_id in get_settings().admin_ids),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
         )

@@ -3,7 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.bot.copy import differentiators_section
-from app.bot.marketing import feature_roadmap_text, market_compare_text
+from app.bot.marketing import feature_roadmap_text, for_whom_text, market_compare_text
 from app.bot.keyboards.menu import dashboard_keyboard, main_menu_keyboard
 from app.bot.keyboards.positioning import positioning_keyboard
 from app.bot.utils.callbacks import safe_edit_message
@@ -84,6 +84,17 @@ async def menu_market_compare(callback: CallbackQuery) -> None:
         await safe_edit_message(
             callback.message,
             market_compare_text(),
+            reply_markup=positioning_keyboard(back="menu:why_us"),
+        )
+
+
+@router.callback_query(F.data == "menu:for_whom")
+async def menu_for_whom(callback: CallbackQuery) -> None:
+    await callback.answer()
+    if callback.message:
+        await safe_edit_message(
+            callback.message,
+            for_whom_text(),
             reply_markup=positioning_keyboard(back="menu:why_us"),
         )
 

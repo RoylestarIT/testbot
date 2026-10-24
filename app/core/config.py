@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     fx_fallback_usd_rub: float = Field(default=90.0, validation_alias="FX_FALLBACK_USD_RUB")
     fx_fallback_usd_byn: float = Field(default=3.3, validation_alias="FX_FALLBACK_USD_BYN")
     poll_interval_minutes: int = Field(default=15, validation_alias="POLL_INTERVAL_MINUTES")
+    poller_stale_minutes: int = Field(default=35, validation_alias="POLLER_STALE_MINUTES")
     digest_hour_utc: int = Field(default=6, validation_alias="DIGEST_HOUR_UTC")
     stale_review_hours: int = Field(default=24, validation_alias="STALE_REVIEW_HOURS")
     stale_reminder_hour_utc: int = Field(default=15, validation_alias="STALE_REMINDER_HOUR_UTC")

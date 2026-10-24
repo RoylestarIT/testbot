@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from app.services.payment.subscription_calculator import PRESET_VOLUMES
+from app.services.payment.subscription_calculator import PRESET_VOLUMES, suggest_plan_for_volume
+from app.services.payment.fx_rates import SubscriptionPricing
 
 
 def calculator_volumes_keyboard() -> InlineKeyboardMarkup:
@@ -19,10 +20,17 @@ def calculator_volumes_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def calculator_detail_keyboard() -> InlineKeyboardMarkup:
+def calculator_detail_keyboard(*, volume: int, pricing: SubscriptionPricing) -> InlineKeyboardMarkup:
+    plan = suggest_plan_for_volume(volume, pricing)
+    primary = (
+        InlineKeyboardButton(text="🚀 Оформить PRO", callback_data="sub:pay:menu")
+        if plan == "pro"
+        else InlineKeyboardButton(text="✨ Оформить Lite", callback_data="sub:pay:menu")
+    )
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [primary],
             [InlineKeyboardButton(text="◀️ К таблице", callback_data="sub:calc")],
-            [InlineKeyboardButton(text="💳 Способ оплаты", callback_data="sub:pay:menu")],
+            [InlineKeyboardButton(text="◀️ Подписка", callback_data="menu:subscription")],
         ]
     )

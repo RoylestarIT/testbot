@@ -132,6 +132,9 @@ async def _generate_and_persist(
 
     settings = get_settings()
     product_context = await _llm_product_context(review_id)
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(user_id)
+        soft_rec = bool(user and user.soft_product_recommend)
 
     async def _call_llm() -> list[str]:
         return await generate_replies(
@@ -140,6 +143,7 @@ async def _generate_and_persist(
             tone,
             count=3,
             product_context=product_context,
+            soft_product_recommend=soft_rec,
             settings=settings,
         )
 
@@ -242,7 +246,7 @@ async def _render_history(
             [r.id for r in reviews]
         )
     if not reviews:
-        text = "📚 История пуста — ответы появятся после копирования или publish."
+        text = "📚 <b>История пуста</b>\n\n" + "<i>👇 Ответьте на отзыв — здесь появятся копии и publish.</i>"
         kb = reviews_menu_keyboard()
     else:
         label = {"all": "все", "published": "publish", "copied": "копия"}.get(filter_key, "все")

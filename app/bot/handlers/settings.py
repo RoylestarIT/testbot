@@ -18,6 +18,7 @@ from app.bot.keyboards.settings import (
 )
 from app.db.models import MarketplaceAccount
 from app.bot.states.settings import (
+    AutoStopWordsStates,
     ConnectOzonStates,
     ConnectWbStates,
     ReplyTemplateStates,
@@ -72,12 +73,14 @@ def _autopublish_detail_text(account: MarketplaceAccount) -> str:
     min_r = account.auto_publish_min_rating or 4
     rule = "только <b>5★</b>" if min_r >= 5 else "<b>4–5★</b>"
     stars_only = "да" if account.auto_publish_stars_only else "нет"
+    stops = (account.auto_publish_stop_words or "").strip() or "—"
     state = "включена" if account.auto_publish_enabled else "выключена"
     return (
         f"<b>Авто-публикация</b> · {name}\n\n"
         f"Статус: <b>{state}</b>\n"
         f"Звёзды: {rule} · 1–3★ всегда вручную\n"
-        f"Только оценка без текста: <b>{stars_only}</b>"
+        f"Только оценка без текста: <b>{stars_only}</b>\n"
+        f"Стоп-слова: <i>{stops[:120]}</i>"
     )
 
 
@@ -435,6 +438,73 @@ async def settings_autopublish_stars_only(callback: CallbackQuery, db_user: DbUs
         )
 
 
+@router.callback_query(F.data.startswith("settings:autopublish_stops:"))
+async def settings_autopublish_stops_start(
+    callback: CallbackQuery, state: FSMContext, db_user: DbUser
+) -> None:
+    account_id = int(callback.data.split(":")[-1])
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        if not await is_pro_user(session, db_user.id):
+            await callback.answer("Только для PRO", show_alert=True)
+            return
+        account = await AccountRepository(session).get_by_id(account_id)
+        if account is None or account.user_id != db_user.id:
+            await callback.answer("Нет доступа", show_alert=True)
+            return
+    await state.set_state(AutoStopWordsStates.waiting_words)
+    await state.update_data(autopublish_stop_account_id=account_id)
+    await callback.answer()
+    current = (account.auto_publish_stop_words or "").strip() or "—"
+    if callback.message:
+        await safe_edit_message(
+            callback.message,
+            "<b>Стоп-слова для авто-публикации</b>\n\n"
+            "Если в тексте отзыва есть одно из слов — авто не сработает, отзыв останется в очереди.\n\n"
+            f"Сейчас: <i>{current[:200]}</i>\n\n"
+            "Пришлите список через запятую или с новой строки.\n"
+            "Чтобы очистить — отправьте «-».",
+        )
+
+
+@router.message(AutoStopWordsStates.waiting_words, F.text)
+async def settings_autopublish_stops_save(
+    message: Message, state: FSMContext, db_user: DbUser
+) -> None:
+    data = await state.get_data()
+    account_id = int(data.get("autopublish_stop_account_id", 0))
+    raw = (message.text or "").strip()
+    words: str | None
+    if raw in {"", "-", "—"}:
+        words = None
+    else:
+        words = raw[:512]
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        if not await is_pro_user(session, db_user.id):
+            await state.clear()
+            await message.answer("Только для PRO.", reply_markup=settings_menu_keyboard())
+            return
+        repo = AccountRepository(session)
+        account = await repo.get_by_id(account_id)
+        if account is None or account.user_id != db_user.id:
+            await state.clear()
+            await message.answer("Кабинет не найден.", reply_markup=settings_menu_keyboard())
+            return
+        account = await repo.set_auto_publish_stop_words(account_id, words)
+        await session.commit()
+    await state.clear()
+    if account is None:
+        await message.answer("Не удалось сохранить.", reply_markup=settings_menu_keyboard())
+        return
+    await message.answer(
+        "✅ Стоп-слова сохранены.",
+        reply_markup=autopublish_detail_keyboard(account),
+    )
+    await message.answer(_autopublish_detail_text(account))
+
+
 @router.callback_query(F.data.startswith("settings:account_toggle:"))
 async def settings_account_toggle(callback: CallbackQuery, db_user: DbUser) -> None:
     account_id = int(callback.data.split(":")[-1])
@@ -786,7 +856,8 @@ async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> No
         "«Только негатив» — только 1–3★.\n"
         "«Утренний дайджест» — сводка раз в день (~9:00 Минск, UTC+3).\n"
         "«Напоминание об очереди» — если отзывы без ответа дольше 24 ч (~18:00 Минск).\n"
-        "«Вопросы в кабинете» — push, если на WB появились новые вопросы без ответа."
+        "«Вопросы в кабинете» — push, если на WB появились новые вопросы без ответа.\n"
+        "«Мягкая рекомендация» — одна ненавязчивая фраза о линейке в ИИ-ответах (Lite/PRO)."
     )
     if callback.message:
         await safe_edit_message(
@@ -798,6 +869,7 @@ async def settings_notifications(callback: CallbackQuery, db_user: DbUser) -> No
                 daily_digest=user.notify_daily_digest,
                 notify_stale=user.notify_stale_reviews,
                 notify_questions=user.notify_buyer_questions,
+                soft_recommend=user.soft_product_recommend,
             ),
         )
 
@@ -828,6 +900,7 @@ async def settings_notify_toggle_new(callback: CallbackQuery, db_user: DbUser) -
                 daily_digest=user.notify_daily_digest,
                 notify_stale=user.notify_stale_reviews,
                 notify_questions=user.notify_buyer_questions,
+                soft_recommend=user.soft_product_recommend,
             ),
         )
 
@@ -858,6 +931,7 @@ async def settings_notify_toggle_negative(callback: CallbackQuery, db_user: DbUs
                 daily_digest=user.notify_daily_digest,
                 notify_stale=user.notify_stale_reviews,
                 notify_questions=user.notify_buyer_questions,
+                soft_recommend=user.soft_product_recommend,
             ),
         )
 
@@ -888,6 +962,7 @@ async def settings_notify_toggle_questions(callback: CallbackQuery, db_user: DbU
                 daily_digest=user.notify_daily_digest,
                 notify_stale=user.notify_stale_reviews,
                 notify_questions=user.notify_buyer_questions,
+                soft_recommend=user.soft_product_recommend,
             ),
         )
 
@@ -918,6 +993,7 @@ async def settings_notify_toggle_digest(callback: CallbackQuery, db_user: DbUser
                 daily_digest=user.notify_daily_digest,
                 notify_stale=user.notify_stale_reviews,
                 notify_questions=user.notify_buyer_questions,
+                soft_recommend=user.soft_product_recommend,
             ),
         )
 
@@ -948,6 +1024,38 @@ async def settings_notify_toggle_stale(callback: CallbackQuery, db_user: DbUser)
                 daily_digest=user.notify_daily_digest,
                 notify_stale=user.notify_stale_reviews,
                 notify_questions=user.notify_buyer_questions,
+                soft_recommend=user.soft_product_recommend,
+            ),
+        )
+
+
+@router.callback_query(F.data == "settings:notify:toggle_recommend")
+async def settings_notify_toggle_recommend(callback: CallbackQuery, db_user: DbUser) -> None:
+    from app.bot.keyboards.notifications import notifications_keyboard
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            return
+        await UserRepository(session).set_notification_prefs(
+            db_user.id,
+            soft_product_recommend=not user.soft_product_recommend,
+        )
+        await session.commit()
+        user = await UserRepository(session).get_by_id(db_user.id)
+    await callback.answer("Сохранено")
+    if callback.message and user:
+        await safe_edit_message(
+            callback.message,
+            "🔔 <b>Уведомления</b>",
+            reply_markup=notifications_keyboard(
+                notify_new=user.notify_new_reviews,
+                negative_only=user.notify_negative_only,
+                daily_digest=user.notify_daily_digest,
+                notify_stale=user.notify_stale_reviews,
+                notify_questions=user.notify_buyer_questions,
+                soft_recommend=user.soft_product_recommend,
             ),
         )
 

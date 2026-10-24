@@ -16,13 +16,14 @@ from app.bot.keyboards.subscription import (
     subscription_menu_keyboard,
     subscription_subscreen_keyboard,
 )
-from app.bot.subscription_ui import build_payment_hub, build_subscription_hub
+from app.bot.subscription_ui import build_my_access_text, build_payment_hub, build_subscription_hub
+from app.services.pro_access import has_paid_pro
+from app.core.config import get_settings
 from app.bot.keyboards.subscription_calc import calculator_detail_keyboard, calculator_volumes_keyboard
 from app.services.payment.subscription_calculator import (
     build_calculator_detail,
     build_calculator_table,
 )
-from app.core.config import get_settings
 from app.bot.utils.callbacks import answer_and_edit, safe_edit_message
 from app.db.models import SubscriptionPlan, User as DbUser
 from app.db.repositories.user import UserRepository
@@ -53,7 +54,6 @@ from app.services.subscription import (
     activate_from_telegram_invoice,
     create_crypto_pending,
     create_qr_pending,
-    format_subscription_summary,
     get_effective_subscription,
 )
 from app.tasks.crypto_pay_poller import process_crypto_pending_once
@@ -72,7 +72,15 @@ async def _subscription_access_line(db_user: DbUser) -> str:
 
 async def _subscription_hub_text(db_user: DbUser, pricing: SubscriptionPricing) -> str:
     access = await _subscription_access_line(db_user)
-    return build_subscription_hub(pricing, access_line=access)
+    trial_line: str | None = None
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        paid = await has_paid_pro(session, db_user.id)
+        if user and not user.trial_pro_used and not paid:
+            days = get_settings().trial_pro_days
+            trial_line = muted(f"🎁 Trial PRO {days} дн. — кнопка на сводке")
+    return build_subscription_hub(pricing, access_line=access, trial_line=trial_line)
 
 
 async def _subscription_status_text(db_user: DbUser) -> str:
@@ -82,8 +90,10 @@ async def _subscription_status_text(db_user: DbUser) -> str:
         subscription = await get_effective_subscription(session, db_user.id)
         remaining = await remaining_generations_today(session, db_user.id)
         tier_line = await describe_access_tier(session, user, subscription) if user else None
-    return format_subscription_summary(
-        db_user,
+    if user is None:
+        return "Ошибка профиля."
+    return build_my_access_text(
+        user,
         subscription,
         generations_remaining=remaining,
         access_tier_line=tier_line,
@@ -164,7 +174,7 @@ async def subscription_calculator_volume(callback: CallbackQuery) -> None:
     await answer_and_edit(
         callback,
         build_calculator_detail(pricing, volume),
-        reply_markup=calculator_detail_keyboard(),
+        reply_markup=calculator_detail_keyboard(volume=volume, pricing=pricing),
     )
 
 

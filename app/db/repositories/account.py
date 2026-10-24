@@ -82,6 +82,17 @@ class AccountRepository:
         await self._session.flush()
         return account
 
+    async def set_auto_publish_stop_words(
+        self, account_id: int, words: str | None
+    ) -> MarketplaceAccount | None:
+        account = await self.get_by_id(account_id)
+        if account is None:
+            return None
+        cleaned = (words or "").strip()[:512] or None
+        account.auto_publish_stop_words = cleaned
+        await self._session.flush()
+        return account
+
     async def toggle_auto_publish_stars_only(self, account_id: int) -> MarketplaceAccount | None:
         account = await self.get_by_id(account_id)
         if account is None:

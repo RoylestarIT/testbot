@@ -41,6 +41,15 @@ python3 -m app.main
 Перезапуск на VM: `./scripts/restart-bot.sh`  
 Бэкап SQLite: `./scripts/backup-db.sh`
 
+### Go-live (чеклист)
+
+1. `.env`: `BOT_TOKEN`, `FERNET_KEY`, `OPENAI_API_KEY`, `ADMIN_IDS`; для prod — `DATABASE_URL` (PostgreSQL), `FSM_REDIS_URL`, `WEBHOOK_URL`.
+2. `alembic upgrade head` — на чистой БД один раз; дальше при старте бота миграции применяются сами.
+3. Health: `GET /health` на `HEALTH_PORT` — смотрите `poller.last_ok_minsk`; при зависании poller админам уйдёт push (`POLLER_STALE_MINUTES`, по умолчанию 35).
+4. Бэкап по cron (SQLite на VM): `0 3 * * * cd /path/to/reviewpilot && ./scripts/backup-db.sh /var/backups/reviewpilot`
+5. Crypto Pay: webhook на `HEALTH_PORT` + `CRYPTO_PAY_WEBHOOK_PATH`, либо poller оплат (~90 с).
+6. После деплоя: `/start` → сводка, «Подписка», тестовый кабинет WB/Ozon, одна генерация ответа.
+
 ## Тарифы (кратко)
 
 | | Бесплатно | Lite | PRO |
