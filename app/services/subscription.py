@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import (
@@ -190,10 +191,12 @@ async def create_crypto_pending(
 ) -> Subscription:
     repo = SubscriptionRepository(session)
     for existing in await repo.list_by_user_id(user_id):
+        # A row that already has an invoice stays bound to it: the user may still pay the old link.
         if (
             existing.status == SubscriptionStatus.PENDING
             and existing.payment_method == PaymentMethod.CRYPTO
             and existing.plan == plan
+            and not existing.external_payment_id
         ):
             return existing
     return await repo.create(
@@ -222,13 +225,21 @@ async def activate_from_crypto_invoice(
     subscription_id: int,
     invoice_id: str,
 ) -> Subscription | None:
-    repo = SubscriptionRepository(session)
-    subscription = await repo.get_by_id(subscription_id)
+    # Webhook, background poller and the "check payment" button can race; the conditional
+    # UPDATE row-locks in PostgreSQL so only one caller gets rowcount == 1.
+    claimed = await session.execute(
+        update(Subscription)
+        .where(
+            Subscription.id == subscription_id,
+            Subscription.status == SubscriptionStatus.PENDING,
+            Subscription.payment_method == PaymentMethod.CRYPTO,
+        )
+        .values(external_payment_id=invoice_id)
+    )
+    if claimed.rowcount != 1:
+        return None
+    subscription = await SubscriptionRepository(session).get_by_id(subscription_id)
     if subscription is None:
-        return None
-    if subscription.status != SubscriptionStatus.PENDING:
-        return None
-    if subscription.payment_method != PaymentMethod.CRYPTO:
         return None
     return await activate_subscription(
         session,
