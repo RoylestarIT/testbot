@@ -18,6 +18,7 @@ from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.services.dashboard import build_user_dashboard
 from app.services.dashboard_details import build_dashboard_details
+from app.services.access_messaging import trial_pro_activated_text
 from app.services.pro_access import activate_trial_pro, has_paid_pro
 
 router = Router(name="dashboard")
@@ -170,9 +171,7 @@ async def activate_trial(callback: CallbackQuery, db_user: DbUser) -> None:
     if callback.message and user and user.trial_pro_until:
         await safe_edit_message(
             callback.message,
-            f"🎁 Trial PRO на <b>{settings.trial_pro_days}</b> дней до "
-            f"<b>{user.trial_pro_until.strftime('%d.%m.%Y')}</b>.\n"
-            f"Бесплатных publish: <b>{user.free_api_publishes_remaining}</b>",
+            trial_pro_activated_text(user, settings),
             reply_markup=main_menu_keyboard(
                 show_admin=_show_admin(callback.from_user.id if callback.from_user else 0)
             ),

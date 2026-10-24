@@ -4,13 +4,23 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.ui import muted
-from app.db.models import MarketplaceAccount, Review, ReviewStatus, User
+from app.constants import MANUAL_SHOP_NAME
+from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus, User
+from app.db.repositories.account import AccountRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.services.plans import count_user_api_accounts
 
 
 async def onboarding_step_states(session: AsyncSession, user: User) -> list[tuple[str, bool]]:
     has_cabinet = await count_user_api_accounts(session, user.id) > 0
+    accounts = await AccountRepository(session).list_by_user_id(user.id, active_only=True)
+    api_accounts = [
+        a
+        for a in accounts
+        if a.marketplace in (Marketplace.WB, Marketplace.OZON)
+        and (a.shop_name is None or a.shop_name != MANUAL_SHOP_NAME)
+    ]
+    has_sync = any(a.last_sync_at is not None for a in api_accounts)
     tones = await ToneProfileRepository(session).list_by_user_id(user.id)
     has_tone = bool(tones)
 
@@ -27,6 +37,7 @@ async def onboarding_step_states(session: AsyncSession, user: User) -> list[tupl
 
     return [
         ("Подключить кабинет WB или Ozon", has_cabinet),
+        ("Синхронизировать отзывы (Sync)", has_sync),
         ("Настроить тон ответа", has_tone),
         ("Ответить на первый отзыв", has_reply),
     ]
