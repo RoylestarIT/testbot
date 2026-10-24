@@ -19,7 +19,7 @@ const paths = [
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = SITE_URL.replace(/\/$/, "");
   return paths.map((path) => ({
-    url: `${base}${path}`,
+    url: `${base}${path}/`,
     lastModified: new Date(),
     changeFrequency: path === "" ? "weekly" : "monthly",
     priority: path === "" ? 1 : 0.7,

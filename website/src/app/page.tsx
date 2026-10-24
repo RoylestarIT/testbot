@@ -10,6 +10,8 @@ import { MarketplaceStrip } from "@/components/MarketplaceStrip";
 import { FeatureCard } from "@/components/FeatureCard";
 import { Reveal } from "@/components/Reveal";
 import { CtaBanner } from "@/components/CtaBanner";
+import { SavingsCalculator } from "@/components/SavingsCalculator";
+import { JsonLd, faqSchema, softwareSchema } from "@/components/JsonLd";
 import {
   IconArrowRight,
   IconCheck,
@@ -68,6 +70,8 @@ const nowFeatures = [
 export default function HomePage() {
   return (
     <PageShell>
+      <JsonLd data={softwareSchema()} />
+      <JsonLd data={faqSchema(FAQ_ITEMS.slice(0, 5))} />
       {/* Hero */}
       <section className="relative -mt-16 overflow-hidden pt-16 sm:-mt-[4.5rem] sm:pt-[4.5rem]">
         <div className="absolute inset-0 bg-hero-mesh" aria-hidden />
@@ -253,8 +257,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Calculator */}
       <section className="section-y">
+        <div className="container-page">
+          <Reveal>
+            <SavingsCalculator />
+          </Reveal>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="section-y !pt-0">
         <div className="container-page">
           <Reveal>
             <SectionHeading

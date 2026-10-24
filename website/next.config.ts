@@ -5,6 +5,7 @@ const basePath = ghPages ? "/testbot" : "";
 
 const nextConfig: NextConfig = {
   output: "export",
+  trailingSlash: true,
   basePath,
   assetPrefix: basePath ? `${basePath}/` : undefined,
   images: {

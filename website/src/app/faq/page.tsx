@@ -5,6 +5,7 @@ import { FAQAccordion } from "@/components/FAQAccordion";
 import { FAQ_ITEMS } from "@/content/faq";
 import { TelegramButton } from "@/components/TelegramButton";
 import { Reveal } from "@/components/Reveal";
+import { JsonLd, faqSchema } from "@/components/JsonLd";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
 export default function FaqPage() {
   return (
     <PageShell>
+      <JsonLd data={faqSchema(FAQ_ITEMS)} />
       <InnerPageHero
         eyebrow="FAQ"
         title="Частые вопросы"

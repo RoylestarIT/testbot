@@ -7,6 +7,7 @@ import { Reveal } from "@/components/Reveal";
 import { SectionHeading } from "@/components/SectionHeading";
 import { FAQAccordion } from "@/components/FAQAccordion";
 import { CtaBanner } from "@/components/CtaBanner";
+import { SavingsCalculator } from "@/components/SavingsCalculator";
 import { FAQ_ITEMS } from "@/content/faq";
 import { PRICING_UPDATED } from "@/content/constants";
 
@@ -60,6 +61,14 @@ export default function PricingPage() {
           <p className="mt-8 text-center text-small text-ink-subtle">
             Цены на {PRICING_UPDATED}. Актуальная сумма всегда показывается в боте перед оплатой.
           </p>
+        </div>
+      </section>
+
+      <section className="pb-20 sm:pb-24 lg:pb-32">
+        <div className="container-page">
+          <Reveal>
+            <SavingsCalculator />
+          </Reveal>
         </div>
       </section>
 

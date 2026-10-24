@@ -121,6 +121,51 @@
   }
 }
 
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #2c6359 0%,
+    #2c6359 var(--range-pct, 50%),
+    #e6e7e2 var(--range-pct, 50%),
+    #e6e7e2 100%
+  );
+  cursor: pointer;
+}
+
+.range:focus-visible {
+  outline: 2px solid #3f786e;
+  outline-offset: 6px;
+}
+
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid #215149;
+  box-shadow: 0 2px 8px rgba(22, 52, 48, 0.25);
+  transition: transform 0.2s cubic-bezier(0.22, 0.7, 0.18, 1);
+}
+
+.range::-webkit-slider-thumb:hover,
+.range:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid #215149;
+  box-shadow: 0 2px 8px rgba(22, 52, 48, 0.25);
+}
+
 /* Появление при скролле: прячем только когда JS доступен (класс .js ставится в layout). */
 .js .reveal {
   opacity: 0;
