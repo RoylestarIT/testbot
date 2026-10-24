@@ -23,8 +23,8 @@ export function LegalDocument({
           <section key={section.title}>
             <h2 className="text-lg font-semibold text-slate-900">{section.title}</h2>
             <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-700">
-              {section.paragraphs.map((p) => (
-                <p key={p.slice(0, 40)}>{p}</p>
+              {section.paragraphs.map((p, i) => (
+                <p key={`${section.title}-${i}`}>{p}</p>
               ))}
             </div>
           </section>
