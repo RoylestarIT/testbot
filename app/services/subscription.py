@@ -14,6 +14,7 @@ from app.db.models import (
     User,
 )
 from app.db.repositories.subscription import SubscriptionRepository
+from app.constants import FREE_DAILY_GENERATIONS
 
 SUBSCRIPTION_PERIOD_DAYS = 30
 
@@ -290,7 +291,7 @@ def format_subscription_summary(
         lines.extend(
             [
                 "Оплаченная подписка: <b>нет</b>",
-                f"Генераций сегодня: <b>{generations_remaining if generations_remaining is not None else '—'}</b> из 5",
+                f"Генераций сегодня: <b>{generations_remaining if generations_remaining is not None else '—'}</b> из {FREE_DAILY_GENERATIONS}",
                 "Publish в WB/Ozon из бота: <b>только PRO</b> (или trial / бесплатная квота)",
                 "",
                 "Лимиты бесплатного тарифа: 1 кабинет WB/Ozon, 1 tone-профиль.\n"
@@ -321,10 +322,15 @@ def format_subscription_summary(
             lines.append("Генерации: <b>без лимита</b>")
             lines.append("Publish в API: <b>нет</b> — используйте «Скопировать ответ»")
     elif generations_remaining is not None:
-        lines.append(f"Генераций сегодня (бесплатно): <b>{generations_remaining}</b> из 5")
+        lines.append(
+            f"Генераций сегодня (бесплатно): <b>{generations_remaining}</b> из {FREE_DAILY_GENERATIONS}"
+        )
 
     if subscription.status == SubscriptionStatus.PENDING:
         lines.append("")
-        lines.append("Заявка на оплату QR ожидает подтверждения администратором.")
+        if subscription.payment_method == PaymentMethod.CRYPTO:
+            lines.append("Счёт Crypto Bot ожидает оплаты — после оплаты доступ включится сам.")
+        else:
+            lines.append("Заявка на оплату ожидает подтверждения администратором.")
 
     return "\n".join(lines)

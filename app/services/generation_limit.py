@@ -3,10 +3,10 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import FREE_DAILY_GENERATIONS
 from app.db.models import GeneratedReply, MarketplaceAccount, Review
 from app.services.plans import has_unlimited_generations
 
-FREE_DAILY_GENERATIONS = 5
 VARIANTS_PER_GENERATION = 3
 
 

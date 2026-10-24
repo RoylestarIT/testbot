@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import User
@@ -46,11 +46,10 @@ class UserRepository:
 
     async def get_by_username(self, username: str) -> User | None:
         clean = username.lstrip("@").lower()
-        result = await self._session.execute(select(User).where(User.username.isnot(None)))
-        for user in result.scalars().all():
-            if user.username and user.username.lower() == clean:
-                return user
-        return None
+        result = await self._session.execute(
+            select(User).where(func.lower(User.username) == clean).order_by(User.id).limit(1)
+        )
+        return result.scalars().first()
 
     async def set_notification_prefs(
         self,
