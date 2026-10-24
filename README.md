@@ -64,11 +64,22 @@ python3 -m app.main
 Подробно: **Подписка → Сравнение тарифов** в боте.  
 Позиционирование vs рынок: **Сводка → ℹ️ Почему мы → Сравнение / Функции**. Backlog команды: [ROADMAP.md](ROADMAP.md).
 
-### Crypto Bot (без Stars / без ИП)
+### Telegram Stars (XTR)
+
+Как в [гайде на Habr](https://habr.com/ru/articles/907158/): `send_invoice` с `currency=XTR` и пустым `provider_token`. Можно включить **вместе** с картой (`PAYMENT_PROVIDER_TOKEN`).
+
+```env
+PAYMENT_ENABLE_STARS=true
+SUBSCRIPTION_LITE_STARS=750
+SUBSCRIPTION_PRO_STARS=2250
+```
+
+В боте: **Подписка → Оплатить → ⭐ Telegram Stars**. Суммы в Stars подстройте под ваши цены в ₽.
+
+### Crypto Bot (без ИП)
 
 ```env
 CRYPTO_PAY_API_TOKEN=...   # @CryptoBot → Crypto Pay → Create App
-PAYMENT_ENABLE_STARS=false
 CRYPTO_LITE_AMOUNT_USD=10
 CRYPTO_PRO_AMOUNT_USD=20
 ```
