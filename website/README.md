@@ -61,18 +61,30 @@ CTA везде ведёт в бота; для рекламы используе�
 
 ## Деплой
 
-### Vercel
+### Vercel (рекомендуется)
 
-1. Root Directory: `website`
-2. Build Command: `npm run build`
-3. Output Directory: `out`
-4. Задать env из таблицы выше
+1. Откройте [Import в Vercel](https://vercel.com/new/import?s=https%3A%2F%2Fgithub.com%2FRoylestarIT%2Ftestbot&root-directory=website&project-name=golos-brenda) (репозиторий `RoylestarIT/testbot`).
+2. **Root Directory:** `website` (важно: в корне репозитория — Python-бот).
+3. Framework: **Next.js** (подхватится из `vercel.json`).
+4. Deploy. Preview-URL появится после первой сборки (`*.vercel.app`).
+5. **Production env** (Settings → Environment Variables):
+   - `NEXT_PUBLIC_SITE_URL` — ваш домен или `https://<project>.vercel.app`
+   - `NEXT_PUBLIC_LEGAL_OPERATOR_NAME`, `NEXT_PUBLIC_SUPPORT_EMAIL` — перед публичным запуском
+6. После деплоя пропишите в боте `PRIVACY_POLICY_URL` и `TERMS_OF_SERVICE_URL`.
+
+Без `NEXT_PUBLIC_SITE_URL` sitemap/OG на сборке Vercel используют `VERCEL_URL` автоматически.
+
+**CLI** (если есть `VERCEL_TOKEN`):
+
+```bash
+cd website
+npx vercel link
+npx vercel --prod
+```
 
 ### Cloudflare Pages
 
-- Framework preset: Next.js (Static HTML Export) или custom: `npm run build`, output `out`
-
-После деплоя обновите `public/robots.txt` (строка `Sitemap:`) или генерируйте robots при сборке.
+- `npm run build`, output `out`
 
 ## Что уточнить у заказчика
 

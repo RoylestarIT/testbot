@@ -7,8 +7,16 @@ export const BOT_URL =
   process.env.NEXT_PUBLIC_BOT_URL ?? "https://t.me/FeedBackReview_bot";
 export const BOT_URL_SITE = `${BOT_URL}${BOT_URL.includes("?") ? "&" : "?"}start=site`;
 
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://golos-brenda.example";
+/** Канонический URL: env → VERCEL_URL при сборке на Vercel → placeholder. */
+export function resolveSiteUrl(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) return `https://${vercel.replace(/\/$/, "")}`;
+  return "https://golos-brenda.example";
+}
+
+export const SITE_URL = resolveSiteUrl();
 
 export const SUPPORT_EMAIL =
   process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "support@example.com";
