@@ -1,3 +1,5 @@
+import { BOT_USERNAME } from "./constants";
+
 export type FaqItem = { question: string; answer: string };
 
 export const FAQ_ITEMS: FaqItem[] = [
@@ -19,7 +21,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Что такое Trial PRO?",
     answer:
-      "Пробный доступ к возможностям PRO (по умолчанию 3 дня, один раз на аккаунт Telegram). Актуальные условия и кнопка «Попробовать PRO» — в боте @FeedBackReview_bot.",
+      `Пробный доступ к возможностям PRO (по умолчанию 3 дня, один раз на аккаунт Telegram). Актуальные условия и кнопка «Попробовать PRO» — в боте @${BOT_USERNAME}.`,
   },
   {
     question: "Как оплатить и когда активируется подписка?",

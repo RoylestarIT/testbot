@@ -1,4 +1,4 @@
-import { BRAND, LEGAL_OPERATOR } from "./constants";
+import { BOT_USERNAME, BRAND, LEGAL_OPERATOR } from "./constants";
 
 export type LegalSection = { title: string; paragraphs: string[] };
 
@@ -8,7 +8,7 @@ function privacySections(): LegalSection[] {
     {
       title: "1. Общие положения",
       paragraphs: [
-        `Настоящая политика описывает, как ${op} («Оператор») обрабатывает персональные данные при использовании сервиса «${BRAND}» (Telegram-бот @FeedBackReview_bot и связанный сайт).`,
+        `Настоящая политика описывает, как ${op} («Оператор») обрабатывает персональные данные при использовании сервиса «${BRAND}» (Telegram-бот @${BOT_USERNAME} и связанный сайт).`,
         `Используя бот после принятия условий, вы подтверждаете ознакомление с политикой.`,
         `«${BRAND}» не является маркетплейсом и не действует от имени Wildberries или Ozon.`,
       ],

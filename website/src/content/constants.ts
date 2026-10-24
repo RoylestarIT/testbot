@@ -4,7 +4,7 @@ export const BRAND = "Голос бренда";
 export const BRAND_TECH = "ReviewPilot";
 export const BOT_USERNAME = "FeedBackReview_bot";
 export const BOT_URL =
-  process.env.NEXT_PUBLIC_BOT_URL ?? "https://t.me/FeedBackReview_bot";
+  process.env.NEXT_PUBLIC_BOT_URL ?? `https://t.me/${BOT_USERNAME}`;
 export const BOT_URL_SITE = `${BOT_URL}${BOT_URL.includes("?") ? "&" : "?"}start=site`;
 
 /** Канонический URL: env → VERCEL_URL при сборке на Vercel → placeholder. */

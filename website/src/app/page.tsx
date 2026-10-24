@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { canonical } from "@/content/constants";
+import { BOT_USERNAME, canonical } from "@/content/constants";
 import { PageShell } from "@/components/PageShell";
 import { SectionHeading } from "@/components/SectionHeading";
 import { TelegramButton } from "@/components/TelegramButton";
@@ -143,7 +143,7 @@ export default function HomePage() {
         <div className="container-page">
           <SectionHeading
             title="Как это работает"
-            description="Четыре шага — вся работа в @FeedBackReview_bot"
+            description={`Четыре шага — вся работа в @${BOT_USERNAME}`}
           />
           <ol className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((s) => (
@@ -259,7 +259,7 @@ export default function HomePage() {
             Подключите первый кабинет за пару минут
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-pretty text-blue-50/95">
-            @FeedBackReview_bot · Free без карты · PRO trial в один клик
+            @{BOT_USERNAME} · Free без карты · PRO trial в один клик
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">
             <TelegramButton variant="white" trackSite>
