@@ -18,7 +18,7 @@ def test_calculator_table_contains_lite_pro_rub() -> None:
     assert "1 600" in text
     assert "Калькулятор" in text
     assert "<pre>" not in text
-    assert "500</b> отв." in text
+    assert "500</b> отв" in text
 
 
 def test_calculator_detail_high_volume_favors_subscription() -> None:
@@ -32,7 +32,7 @@ def test_calculator_detail_high_volume_favors_subscription() -> None:
     text = build_calculator_detail(pricing, 1000)
     assert "1000" in text
     assert "Lite" in text or "PRO" in text
-    assert "Почему здесь смотреть на подписку" in text
+    assert "Почему подписка" in text
     assert "Telegram" in text
 
 
@@ -45,5 +45,5 @@ def test_calculator_detail_low_volume_honest() -> None:
         source="test",
     )
     text = build_calculator_detail(pricing, 100)
-    assert "Если объём небольшой" in text
-    assert "не скрываем" in text
+    assert "Небольшой объём" in text
+    assert "честные" in text
