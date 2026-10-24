@@ -46,15 +46,34 @@ async def expire_active_subscriptions(session: AsyncSession, user_id: int) -> No
     await session.flush()
 
 
+def _as_utc(value: datetime) -> datetime:
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
+
+
+async def _renewal_start(session: AsyncSession, subscription: Subscription, now: datetime) -> datetime:
+    """Same-plan renewal continues from the current expiry so prepaid days are kept."""
+    current = await get_effective_subscription(session, subscription.user_id)
+    if (
+        current is None
+        or current.id == subscription.id
+        or current.plan != subscription.plan
+        or current.expires_at is None
+    ):
+        return now
+    return max(now, _as_utc(current.expires_at))
+
+
 async def activate_subscription(
     session: AsyncSession,
     subscription: Subscription,
     *,
     external_payment_id: str | None = None,
 ) -> Subscription:
+    now = datetime.now(UTC)
+    starts_at = await _renewal_start(session, subscription, now)
     await expire_active_subscriptions(session, subscription.user_id)
     subscription.status = SubscriptionStatus.ACTIVE
-    subscription.expires_at = datetime.now(UTC) + timedelta(days=SUBSCRIPTION_PERIOD_DAYS)
+    subscription.expires_at = starts_at + timedelta(days=SUBSCRIPTION_PERIOD_DAYS)
     if external_payment_id:
         subscription.external_payment_id = external_payment_id
     await session.flush()

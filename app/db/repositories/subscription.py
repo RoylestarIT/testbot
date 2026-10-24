@@ -40,8 +40,9 @@ class SubscriptionRepository:
                 or_(Subscription.expires_at.is_(None), Subscription.expires_at > now),
             )
             .order_by(Subscription.id.desc())
+            .limit(1)
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def create(
         self,
