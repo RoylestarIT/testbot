@@ -68,6 +68,8 @@ from app.services.marketplace.auto_publish import try_auto_publish_review
 from app.services.marketplace.sync_service import sync_account_reviews
 from app.tasks.poller import format_ui_time
 from app.services.onboarding_checklist import try_complete_onboarding
+from app.services.poller_notify import PollerUserNotify
+from app.services.sync_review_notify import apply_review_to_notify_stats, send_new_reviews_notify_if_needed
 
 router = Router(name="marketplace_reviews")
 
@@ -195,6 +197,8 @@ async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: l
     session_factory = get_session_factory()
     total_new = 0
     errors: list[str] = []
+    notify_stats = PollerUserNotify()
+    notify_user = None
     async with session_factory() as session:
         accounts = await AccountRepository(session).list_by_user_id(db_user.id, active_only=True)
         mp_accounts = [
@@ -209,9 +213,17 @@ async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: l
                 created, _, new_reviews = await sync_account_reviews(session, account)
                 total_new += created
                 for review in new_reviews:
-                    await try_auto_publish_review(
+                    outcome = await try_auto_publish_review(
                         session, account=account, review=review, settings=settings
                     )
+                    if outcome.status in ("llm_failed", "api_failed"):
+                        min_r = account.auto_publish_min_rating or 4
+                        if account.auto_publish_enabled and (
+                            review.rating is None or review.rating >= min_r
+                        ):
+                            notify_stats.auto_failed += 1
+                    await session.refresh(review)
+                    apply_review_to_notify_stats(notify_stats, review, outcome)
             except MarketplaceAPIError as exc:
                 logger.warning("Sync failed account_id={} err={}", account.id, exc)
                 msg = str(exc)
@@ -228,6 +240,13 @@ async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: l
         if user is not None:
             await try_complete_onboarding(session, user)
         await session.commit()
+        notify_user = user
+
+    if notify_user is not None and total_new > 0:
+        try:
+            await send_new_reviews_notify_if_needed(callback.bot, notify_user, notify_stats)
+        except Exception:
+            logger.warning("Sync notify failed user_id={}", db_user.id)
 
     lines = [SYNC_DONE.format(count=total_new)]
     if errors:

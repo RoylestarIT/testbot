@@ -15,7 +15,7 @@ from loguru import logger
 from app.bot.keyboards.empty_states import poller_notify_keyboard
 from app.bot.utils.proactive_notify import send_proactive
 from app.core.config import Settings, get_settings
-from app.db.models import Marketplace, ReviewStatus
+from app.db.models import Marketplace
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.user import UserRepository
 from app.services.marketplace.auto_publish import try_auto_publish_review
@@ -28,6 +28,7 @@ from app.services.marketplace.questions_poll import (
 from app.services.marketplace.sync_service import sync_account_reviews
 from app.services.marketplace.wildberries import WildberriesClient
 from app.services.poller_notify import PollerUserNotify, build_poller_notify_text
+from app.services.sync_review_notify import apply_review_to_notify_stats, send_new_reviews_notify_if_needed
 from app.db.session import get_session_factory
 
 _last_poller_ok_at: datetime | None = None
@@ -87,21 +88,14 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
                 outcome = await try_auto_publish_review(
                     session, account=account, review=review, settings=settings
                 )
-                if outcome.status == "published":
-                    stats.auto_published += 1
-                    if outcome.reply_preview:
-                        stats.auto_previews.append(outcome.reply_preview)
-                elif outcome.status in ("llm_failed", "api_failed"):
+                if outcome.status in ("llm_failed", "api_failed"):
                     min_r = account.auto_publish_min_rating or 4
                     if account.auto_publish_enabled and (
                         review.rating is None or review.rating >= min_r
                     ):
                         stats.auto_failed += 1
                 await session.refresh(review)
-                if review.status == ReviewStatus.NEW:
-                    stats.queue_new += 1
-                    if review.rating is not None and review.rating <= 3:
-                        stats.queue_negative += 1
+                apply_review_to_notify_stats(stats, review, outcome)
 
             if wb_client is not None and account.marketplace == Marketplace.WB:
                 try:
@@ -130,16 +124,10 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
 
     for user_id, stats in user_stats.items():
         user = users.get(user_id)
-        if user is None or not user.notify_new_reviews:
-            continue
-        notify_text = build_poller_notify_text(
-            stats=stats,
-            negative_only=user.notify_negative_only,
-        )
-        if notify_text is None:
+        if user is None:
             continue
         try:
-            await send_proactive(bot, user.tg_id, notify_text, reply_markup=poller_notify_keyboard())
+            await send_new_reviews_notify_if_needed(bot, user, stats)
         except Exception:
             logger.warning("Failed to notify user_id={} about new reviews", user_id)
 

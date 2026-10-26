@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from loguru import logger
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AuthenticationError, PermissionDeniedError, RateLimitError
 
 from app.core.config import Settings, get_settings
 from app.services.reply_validation import find_reply_violation
@@ -209,7 +209,15 @@ async def generate_replies(
             response_format={"type": "json_object"},
             temperature=0.7,
         )
+    except (AuthenticationError, PermissionDeniedError):
+        raise LLMError(
+            "Сервис генерации отклонил ключ API (OPENAI_API_KEY). "
+            "Проверьте ключ и адрес OPENAI_BASE_URL в настройках сервера."
+        )
+    except RateLimitError:
+        raise LLMError("Слишком много запросов к модели. Подождите минуту и попробуйте снова.")
     except Exception as exc:
+        logger.warning("LLM request failed: {}", exc)
         raise LLMError("Запрос к модели не удался. Попробуйте позже.") from exc
 
     message = response.choices[0].message.content if response.choices else None

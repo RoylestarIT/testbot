@@ -61,9 +61,13 @@ def user_error_from_exception(exc: BaseException) -> UserFacingError:
             ),
         )
     if isinstance(exc, LLMError):
+        hint = (
+            "Если лимит не исчерпан — обычно это настройка ключа OpenAI на сервере."
+            if "OPENAI" in str(exc) or "ключ" in str(exc).lower()
+            else "Проверьте лимит тарифа или попробуйте позже."
+        )
         return UserFacingError(
-            f"🤖 <b>Генерация временно недоступна</b>\n\n{exc}\n\n"
-            "Проверьте лимит тарифа или попробуйте позже.",
+            f"🤖 <b>Генерация временно недоступна</b>\n\n{exc}\n\n{hint}",
             reply_markup=_kb(
                 [("💎 Подписка", "menu:subscription")],
                 [("📬 Очередь", "review:mp:list")],

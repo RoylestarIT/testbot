@@ -32,7 +32,7 @@ def test_build_prompt_includes_product_context() -> None:
         3,
         None,
         2,
-        product_context="Название: Куртка; Артикул WB (nmId): 42",
+        product_context="Название: Куртка; Артикул WB: 42",
     )
     assert "Товар:" in user
     assert "Куртка" in user

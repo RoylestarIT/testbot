@@ -13,6 +13,8 @@ def test_product_context_wb_from_raw_json() -> None:
     assert "Кружка" in ctx
     assert "123456" in ctx
     assert "HomeBrand" in ctx
+    assert "(nmId)" not in ctx
+    assert "Артикул WB:" in ctx
 
 
 def test_product_context_ozon_sku_and_name() -> None:

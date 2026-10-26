@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.bot.ui import REVIEW_CARD_STEPS, muted, quote, review_stars
+from app.bot.ui import muted, quote, review_stars
 from app.db.models import Marketplace, MarketplaceAccount, Review
 from app.services.marketplace.product_context import product_hint_short
 
@@ -44,8 +44,7 @@ def format_review_card(
     lines.append("")
     lines.append(quote(text))
     lines.append("")
-    lines.append(muted(REVIEW_CARD_STEPS))
-    lines.append(muted("Выберите тон или ⚡ шаблон:"))
+    lines.append(muted("🎨 Выберите стандартный тон ответа или шаблон:"))
     if isinstance(rating, int) and rating <= 3:
         lines.insert(2, "⚠️ Низкая оценка — проверьте ответ перед отправкой")
     return "\n".join(lines)

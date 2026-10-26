@@ -21,7 +21,7 @@ def product_context_for_llm(
             parts.append(f"Название: {name.strip()[:160]}")
         nm = raw.get("nmId") or raw.get("productDetails", {}).get("nmId")
         if nm is not None:
-            parts.append(f"Артикул WB (nmId): {nm}")
+            parts.append(f"Артикул WB: {nm}")
         brand = raw.get("brandName") or raw.get("productDetails", {}).get("brandName")
         if isinstance(brand, str) and brand.strip():
             parts.append(f"Бренд: {brand.strip()[:80]}")
