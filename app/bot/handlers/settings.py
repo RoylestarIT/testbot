@@ -50,7 +50,7 @@ from app.tasks.poller import format_ui_time
 from app.services.reply_templates import add_template, list_templates, remove_template
 from app.services.generation_limit import is_pro_user
 from app.services.marketplace.base import MarketplaceAPIError
-from app.services.marketplace.wildberries import normalize_wb_api_key
+from app.services.marketplace.wildberries import normalize_wb_api_key, wb_token_is_test
 from app.services.plans import (
     FREE_MAX_MARKETPLACE_ACCOUNTS,
     FREE_MAX_TONE_PROFILES,
@@ -250,6 +250,11 @@ async def connect_wb_finish(message: Message, state: FSMContext, db_user: DbUser
 
     await state.clear()
     hint = "Тестовый запрос выполнен." if sample is None else "Получен 1 отзыв — ключ работает."
+    if wb_token_is_test(str(api_key)):
+        hint += (
+            "\n\n🧪 Это <b>тестовый</b> токен WB (sandbox): данные демо, не отзывы вашего магазина. "
+            "Для продакшена создайте персональный токен с категорией «Вопросы и отзывы»."
+        )
     sync_line = ""
     try:
         async with session_factory() as session:

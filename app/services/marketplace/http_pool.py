@@ -4,7 +4,6 @@ import httpx
 
 from app.services.http_client import DEFAULT_TIMEOUT
 from app.services.marketplace.ozon import OZON_SELLER_BASE_URL
-from app.services.marketplace.wildberries import WB_FEEDBACKS_BASE_URL
 
 _wb_client: httpx.AsyncClient | None = None
 _ozon_client: httpx.AsyncClient | None = None
@@ -13,7 +12,7 @@ _ozon_client: httpx.AsyncClient | None = None
 def get_wb_http_client() -> httpx.AsyncClient:
     global _wb_client
     if _wb_client is None:
-        _wb_client = httpx.AsyncClient(base_url=WB_FEEDBACKS_BASE_URL, timeout=DEFAULT_TIMEOUT)
+        _wb_client = httpx.AsyncClient(timeout=DEFAULT_TIMEOUT)
     return _wb_client
 
 

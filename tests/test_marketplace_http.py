@@ -6,7 +6,10 @@ from app.services.marketplace.wildberries import (
     WildberriesClient,
     WB_FEEDBACKS_ANSWER_PATH,
     WB_FEEDBACKS_LIST_PATH,
+    WB_FEEDBACKS_SANDBOX_BASE_URL,
     normalize_wb_api_key,
+    wb_feedbacks_api_root,
+    wb_token_is_test,
 )
 
 
@@ -14,6 +17,17 @@ def test_normalize_wb_api_key() -> None:
     jwt = "a.b.c"
     assert normalize_wb_api_key(f"Bearer {jwt}") == jwt
     assert normalize_wb_api_key(f"```\n{jwt}\n```") == jwt
+
+
+def test_wb_test_token_routes_to_sandbox() -> None:
+    # acc=2, t=true (WB test token shape)
+    import base64
+    import json
+
+    payload = base64.urlsafe_b64encode(json.dumps({"acc": 2, "t": True}).encode()).decode().rstrip("=")
+    token = f"hdr.{payload}.sig"
+    assert wb_token_is_test(token)
+    assert wb_feedbacks_api_root(token) == WB_FEEDBACKS_SANDBOX_BASE_URL
 
 
 @pytest.mark.asyncio
