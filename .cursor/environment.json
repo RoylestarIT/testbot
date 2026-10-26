@@ -1,0 +1,6 @@
+{
+  "name": "ReviewPilot bot (local VM)",
+  "user": "ubuntu",
+  "install": "sudo DEBIAN_FRONTEND=noninteractive apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y redis-server postgresql postgresql-contrib && pip3 install -r requirements.txt || pip3 install --break-system-packages -r requirements.txt",
+  "start": "bash scripts/start-on-agent-vm.sh"
+}
