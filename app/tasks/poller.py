@@ -13,6 +13,7 @@ from aiogram import Bot
 from loguru import logger
 
 from app.bot.keyboards.empty_states import poller_notify_keyboard
+from app.bot.utils.proactive_notify import send_proactive
 from app.core.config import Settings, get_settings
 from app.db.models import Marketplace, ReviewStatus
 from app.db.repositories.account import AccountRepository
@@ -138,7 +139,7 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
         if notify_text is None:
             continue
         try:
-            await bot.send_message(user.tg_id, notify_text, reply_markup=poller_notify_keyboard())
+            await send_proactive(bot, user.tg_id, notify_text, reply_markup=poller_notify_keyboard())
         except Exception:
             logger.warning("Failed to notify user_id={} about new reviews", user_id)
 
@@ -150,7 +151,8 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
         if user is None or not user.notify_buyer_questions or not items:
             continue
         try:
-            await bot.send_message(
+            await send_proactive(
+                bot,
                 user.tg_id,
                 format_questions_message(items),
                 reply_markup=poller_notify_keyboard(),
@@ -166,7 +168,8 @@ async def poll_marketplace_reviews_once(bot: Bot, settings: Settings | None = No
         if user is None:
             continue
         try:
-            await bot.send_message(
+            await send_proactive(
+                bot,
                 user.tg_id,
                 f"⚠️ Кабинет #{account_id}: API-ключ не принят. "
                 "Кабинет отключён — обновите ключ в «Настройках» → кабинет → «Обновить ключ».",

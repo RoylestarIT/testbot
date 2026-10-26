@@ -11,6 +11,7 @@ from sqlalchemy import select
 from app.core.config import Settings, get_settings
 from app.db.models import Subscription, SubscriptionStatus, User
 from app.db.session import get_session_factory
+from app.bot.utils.proactive_notify import send_proactive
 from app.services.subscription import plan_label
 
 
@@ -60,7 +61,7 @@ async def subscription_reminder_once(bot: Bot, settings: Settings | None = None)
                 "<i>Не уверены в тарифе? Откройте «Калькулятор» ниже.</i>"
             )
             try:
-                await bot.send_message(user.tg_id, text, reply_markup=_renewal_keyboard())
+                await send_proactive(bot, user.tg_id, text, reply_markup=_renewal_keyboard())
                 user.last_subscription_reminder_at = now
             except Exception:
                 logger.warning("subscription reminder failed user_id={}", user.id)
@@ -79,7 +80,8 @@ async def subscription_reminder_once(bot: Bot, settings: Settings | None = None)
         for subscription, user in expired_result.all():
             subscription.status = SubscriptionStatus.EXPIRED
             try:
-                await bot.send_message(
+                await send_proactive(
+                    bot,
                     user.tg_id,
                     "📭 Подписка закончилась — вы на <b>Free</b> "
                     "(5 генераций/день, 1 кабинет, ответы вручную в кабинете).\n"

@@ -11,6 +11,7 @@ from sqlalchemy import select
 from app.core.config import Settings, get_settings
 from app.db.models import User
 from app.db.session import get_session_factory
+from app.bot.utils.proactive_notify import send_proactive
 from app.services.access_messaging import trial_ended_screen_text
 from app.services.pro_access import has_paid_pro, is_trial_pro_active
 
@@ -46,7 +47,8 @@ async def trial_ended_notice_once(bot: Bot, settings: Settings | None = None) ->
                 user.trial_ended_notice_at = now
                 continue
             try:
-                await bot.send_message(
+                await send_proactive(
+                    bot,
                     user.tg_id,
                     trial_ended_screen_text(user),
                     reply_markup=_keyboard(),

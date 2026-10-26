@@ -12,6 +12,7 @@ from app.services.notification_previews import (
     preview_stale_reviews,
 )
 from app.bot.utils.callbacks import safe_edit_message
+from app.bot.utils.ui_message import bind_ui_message, edit_bound_ui_message
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.autopublish import autopublish_detail_keyboard
 from app.bot.keyboards.settings import (
@@ -715,6 +716,7 @@ async def settings_tone_add(callback: CallbackQuery, state: FSMContext, db_user:
     await state.set_state(ToneProfileStates.waiting_description)
     await callback.answer()
     if callback.message:
+        await bind_ui_message(state, callback.message)
         await safe_edit_message(
             callback.message,
             "Опишите желаемый тон ответов (1–3 предложения), например: "
@@ -726,12 +728,20 @@ async def settings_tone_add(callback: CallbackQuery, state: FSMContext, db_user:
 async def settings_tone_description(message: Message, state: FSMContext) -> None:
     desc = (message.text or "").strip()
     if len(desc) < 5:
-        await message.answer("Описание слишком короткое.")
+        await edit_bound_ui_message(
+            message,
+            state,
+            "Описание слишком короткое. Напишите хотя бы 5 символов.",
+            delete_user_message=True,
+        )
         return
     await state.update_data(tone_description=desc)
     await state.set_state(ToneProfileStates.waiting_examples)
-    await message.answer(
-        "Пришлите 1–3 примера ваших ответов (каждый с новой строки) или «-» без примеров."
+    await edit_bound_ui_message(
+        message,
+        state,
+        "Пришлите 1–3 примера ваших ответов (каждый с новой строки) или «-» без примеров.",
+        delete_user_message=True,
     )
 
 
@@ -741,7 +751,7 @@ async def settings_tone_examples(message: Message, state: FSMContext, db_user: D
     desc = data.get("tone_description")
     if not desc:
         await state.clear()
-        await message.answer("Сессия сброшена.")
+        await edit_bound_ui_message(message, state, "Сессия сброшена.", reply_markup=settings_menu_keyboard())
         return
     raw = (message.text or "").strip()
     examples: list[str] | None = None
@@ -753,7 +763,13 @@ async def settings_tone_examples(message: Message, state: FSMContext, db_user: D
         allowed, limit_msg = await can_add_tone_profile(session, db_user.id)
         if not allowed:
             await state.clear()
-            await message.answer(limit_msg or "Лимит профилей тона.", reply_markup=settings_menu_keyboard())
+            await edit_bound_ui_message(
+                message,
+                state,
+                limit_msg or "Лимит профилей тона.",
+                reply_markup=settings_menu_keyboard(),
+                delete_user_message=True,
+            )
             return
         profile = await ToneProfileRepository(session).create(
             user_id=db_user.id,
@@ -763,9 +779,12 @@ async def settings_tone_examples(message: Message, state: FSMContext, db_user: D
         await session.commit()
 
     await state.clear()
-    await message.answer(
+    await edit_bound_ui_message(
+        message,
+        state,
         f"✅ Профиль тона #{profile.id} сохранён.",
         reply_markup=settings_menu_keyboard(),
+        delete_user_message=True,
     )
 
 
@@ -823,6 +842,7 @@ async def settings_tone_edit_start(callback: CallbackQuery, state: FSMContext, d
     await state.set_state(ToneProfileStates.waiting_edit_description)
     await callback.answer()
     if callback.message:
+        await bind_ui_message(state, callback.message)
         await safe_edit_message(
             callback.message,
             f"Новое описание тона для профиля #{profile_id}:\n\n"
@@ -834,11 +854,16 @@ async def settings_tone_edit_start(callback: CallbackQuery, state: FSMContext, d
 async def settings_tone_edit_description(message: Message, state: FSMContext) -> None:
     desc = (message.text or "").strip()
     if len(desc) < 5:
-        await message.answer("Слишком коротко.")
+        await edit_bound_ui_message(message, state, "Слишком коротко.", delete_user_message=True)
         return
     await state.update_data(tone_description=desc)
     await state.set_state(ToneProfileStates.waiting_edit_examples)
-    await message.answer("Примеры ответов (строки) или «-» оставить без изменений примеров.")
+    await edit_bound_ui_message(
+        message,
+        state,
+        "Примеры ответов (строки) или «-» оставить без изменений примеров.",
+        delete_user_message=True,
+    )
 
 
 @router.message(ToneProfileStates.waiting_edit_examples, F.text)
@@ -848,7 +873,7 @@ async def settings_tone_edit_finish(message: Message, state: FSMContext, db_user
     desc = data.get("tone_description")
     if not profile_id or not desc:
         await state.clear()
-        await message.answer("Сессия сброшена.")
+        await edit_bound_ui_message(message, state, "Сессия сброшена.")
         return
     raw = (message.text or "").strip()
     examples: list[str] | None | str = None
@@ -870,11 +895,14 @@ async def settings_tone_edit_finish(message: Message, state: FSMContext, db_user
         await session.commit()
     await state.clear()
     if profile is None:
-        await message.answer("Не удалось сохранить.")
+        await edit_bound_ui_message(message, state, "Не удалось сохранить.", delete_user_message=True)
         return
-    await message.answer(
+    await edit_bound_ui_message(
+        message,
+        state,
         f"✅ Профиль #{profile.id} обновлён.",
         reply_markup=settings_menu_keyboard(),
+        delete_user_message=True,
     )
 
 

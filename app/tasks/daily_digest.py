@@ -13,6 +13,7 @@ from app.db.models import MarketplaceAccount, Review, ReviewStatus, User
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.bot.ui import BRAND, ICON, REVIEWS_HUB_BUTTON
+from app.bot.utils.proactive_notify import send_proactive
 from app.services.subscription import get_effective_subscription, plan_label
 
 
@@ -103,7 +104,7 @@ async def send_digests_once(bot: Bot, settings: Settings | None = None) -> None:
             db_user.last_daily_digest_at = now
             await session.commit()
         try:
-            await bot.send_message(user.tg_id, text, reply_markup=_digest_keyboard())
+            await send_proactive(bot, user.tg_id, text, reply_markup=_digest_keyboard())
         except Exception:
             logger.warning("Daily digest failed for user_id={}", user.id)
 

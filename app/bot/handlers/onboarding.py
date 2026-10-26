@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.bot.ui import BRAND, ICON, brand_title, muted, progress_bar
+from app.bot.utils.callbacks import safe_edit_message
 from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
@@ -12,7 +13,7 @@ router = Router(name="onboarding")
 _STEP_META = [
     ("Кабинет WB/Ozon", "⚙️ Настройки → API-ключ.", "menu:settings"),
     ("Первый Sync", "🔄 Sync на сводке — подтянуть отзывы.", "review:sync"),
-    ("Тон ответа", "🎨 В очереди отзывов — профиль tone.", "review:mp:list"),
+    ("Тон ответа", "⚙️ Настройки → «Тон ответа» — профиль для генерации.", "settings:tone"),
     ("Первый ответ", "📬 Отправить или скопировать ответ.", "review:mp:list"),
 ]
 
@@ -77,7 +78,7 @@ async def _render_onboarding(callback: CallbackQuery, db_user: DbUser, step: int
     if step is None:
         step = _first_incomplete_step(states)
     text = _step_body(step, states)
-    await callback.message.edit_text(text, reply_markup=_step_keyboard(step, states))
+    await safe_edit_message(callback.message, text, reply_markup=_step_keyboard(step, states))
 
 
 @router.callback_query(F.data == "menu:onboarding")

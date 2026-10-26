@@ -9,6 +9,7 @@ from loguru import logger
 from sqlalchemy import select
 
 from app.bot.ui import BRAND, ICON, REVIEWS_HUB_BUTTON
+from app.bot.utils.proactive_notify import send_proactive
 from app.core.config import Settings, get_settings
 from app.db.models import User
 from app.db.repositories.review import ReviewRepository
@@ -62,7 +63,7 @@ async def send_stale_reminders_once(bot: Bot, settings: Settings | None = None) 
             "<i>Откройте очередь и ответьте, пока покупатель не остыл.</i>"
         )
         try:
-            await bot.send_message(user.tg_id, text, reply_markup=_stale_keyboard())
+            await send_proactive(bot, user.tg_id, text, reply_markup=_stale_keyboard())
         except Exception:
             logger.warning("Stale review reminder failed user_id={}", user.id)
 

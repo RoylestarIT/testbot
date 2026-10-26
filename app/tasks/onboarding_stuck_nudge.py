@@ -11,6 +11,7 @@ from sqlalchemy import select
 from app.core.config import Settings, get_settings
 from app.db.models import User
 from app.db.session import get_session_factory
+from app.bot.utils.proactive_notify import send_proactive
 from app.services.onboarding_checklist import onboarding_is_complete
 
 
@@ -44,7 +45,8 @@ async def onboarding_stuck_nudge_once(bot: Bot, settings: Settings | None = None
             if await onboarding_is_complete(session, user):
                 continue
             try:
-                await bot.send_message(
+                await send_proactive(
+                    bot,
                     user.tg_id,
                     "👋 <b>Быстрый старт</b>\n\n"
                     "Вы начали настройку, но ещё не отправили первый ответ на отзыв. "
