@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.bot.ui import brand_title, bullet, muted, quote
 from app.constants import MANUAL_SHOP_NAME
 from app.core.config import get_settings
+from app.core.datetime_utils import as_utc
 from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus
 from app.db.repositories.account import AccountRepository
 from app.tasks.poller import format_ui_time, get_poller_health, get_poller_status_line
@@ -35,7 +36,8 @@ def _account_issue(acc: MarketplaceAccount, now: datetime) -> str | None:
         return acc.last_sync_error[:80]
     if acc.last_sync_at is None:
         return "sync ещё не было — нажмите Sync на сводке"
-    if acc.last_sync_at < now - timedelta(hours=2):
+    last_sync = as_utc(acc.last_sync_at)
+    if last_sync is not None and last_sync < now - timedelta(hours=2):
         return "sync давно — проверьте ключ или нажмите Sync"
     return None
 

@@ -5,6 +5,7 @@ from enum import Enum
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.datetime_utils import as_utc
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.review import ReviewRepository
 from app.services.plans import count_user_api_accounts
@@ -31,7 +32,7 @@ async def diagnose_empty_queue(session: AsyncSession, user_id: int) -> EmptyQueu
 
     now = datetime.now(UTC)
     synced_recently = any(
-        a.last_sync_at is not None and a.last_sync_at >= now - timedelta(hours=3)
+        as_utc(a.last_sync_at) is not None and as_utc(a.last_sync_at) >= now - timedelta(hours=3)
         for a in accounts
     )
     if not synced_recently:
