@@ -8,6 +8,7 @@ from app.db.models import Marketplace, MarketplaceAccount
 from app.db.repositories.account import AccountRepository
 from app.services.marketplace.base import MarketplaceAPIError, MarketplaceReviewDTO
 from app.services.marketplace.factory import get_marketplace_client
+from app.services.marketplace.wildberries import normalize_wb_api_key
 
 
 async def test_and_create_wb_account(
@@ -17,7 +18,8 @@ async def test_and_create_wb_account(
     api_key: str,
     shop_name: str | None,
 ) -> tuple[MarketplaceAccount, MarketplaceReviewDTO | None]:
-    encrypted = encrypt_secret(api_key.strip())
+    plain = normalize_wb_api_key(api_key)
+    encrypted = encrypt_secret(plain)
     probe = MarketplaceAccount(
         user_id=user_id,
         marketplace=Marketplace.WB,
@@ -28,8 +30,8 @@ async def test_and_create_wb_account(
     client = get_marketplace_client(Marketplace.WB)
     try:
         sample = await client.test_connection(probe)
-    except MarketplaceAPIError:
-        logger.info("WB connection test failed for user_id={}", user_id)
+    except MarketplaceAPIError as exc:
+        logger.info("WB connection test failed for user_id={}: {}", user_id, exc)
         raise
     finally:
         if hasattr(client, "aclose"):
@@ -90,7 +92,8 @@ async def test_and_update_wb_api_key(
     *,
     api_key: str,
 ) -> None:
-    encrypted = encrypt_secret(api_key.strip())
+    plain = normalize_wb_api_key(api_key)
+    encrypted = encrypt_secret(plain)
     probe = MarketplaceAccount(
         user_id=account.user_id,
         marketplace=Marketplace.WB,

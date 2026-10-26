@@ -2,7 +2,18 @@ import httpx
 import pytest
 
 from app.db.models import Marketplace, MarketplaceAccount
-from app.services.marketplace.wildberries import WildberriesClient, WB_FEEDBACKS_ANSWER_PATH, WB_FEEDBACKS_LIST_PATH
+from app.services.marketplace.wildberries import (
+    WildberriesClient,
+    WB_FEEDBACKS_ANSWER_PATH,
+    WB_FEEDBACKS_LIST_PATH,
+    normalize_wb_api_key,
+)
+
+
+def test_normalize_wb_api_key() -> None:
+    jwt = "a.b.c"
+    assert normalize_wb_api_key(f"Bearer {jwt}") == jwt
+    assert normalize_wb_api_key(f"```\n{jwt}\n```") == jwt
 
 
 @pytest.mark.asyncio

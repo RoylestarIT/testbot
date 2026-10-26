@@ -50,6 +50,7 @@ from app.tasks.poller import format_ui_time
 from app.services.reply_templates import add_template, list_templates, remove_template
 from app.services.generation_limit import is_pro_user
 from app.services.marketplace.base import MarketplaceAPIError
+from app.services.marketplace.wildberries import normalize_wb_api_key
 from app.services.plans import (
     FREE_MAX_MARKETPLACE_ACCOUNTS,
     FREE_MAX_TONE_PROFILES,
@@ -195,7 +196,7 @@ async def connect_wb_start(callback: CallbackQuery, state: FSMContext, db_user: 
 
 @router.message(ConnectWbStates.waiting_api_key, F.text)
 async def connect_wb_api_key(message: Message, state: FSMContext) -> None:
-    key = (message.text or "").strip()
+    key = normalize_wb_api_key(message.text or "")
     if len(key) < 10:
         await message.answer("Ключ слишком короткий. Проверьте и отправьте снова.")
         return

@@ -19,9 +19,46 @@ WB_FEEDBACKS_ANSWER_PATH = "/api/v1/feedbacks/answer"
 WB_QUESTIONS_LIST_PATH = "/api/v1/questions"
 
 
+def normalize_wb_api_key(raw: str) -> str:
+    """Trim Telegram paste artifacts; WB expects raw JWT in Authorization."""
+    key = (raw or "").strip().strip('"').strip("'")
+    if key.startswith("```"):
+        lines = [ln for ln in key.splitlines() if not ln.strip().startswith("```")]
+        key = "\n".join(lines).strip()
+    if key.lower().startswith("bearer "):
+        key = key[7:].strip()
+    return key
+
+
 def _auth_headers(api_key: str) -> dict[str, str]:
     # WB API: токен в заголовке Authorization (категория Feedbacks and Questions)
     return {"Authorization": api_key}
+
+
+def _wb_error_message(response: httpx.Response, *, context: str) -> str:
+    detail = ""
+    try:
+        body = response.json()
+        if isinstance(body, dict):
+            detail = str(body.get("detail") or body.get("title") or "").strip()
+    except Exception:
+        detail = (response.text or "")[:200].strip()
+    code = response.status_code
+    if code == 401:
+        hint = "Проверьте, что ключ скопирован целиком и из категории «Вопросы и отзывы»."
+        if detail:
+            return f"WB: не авторизован — {detail}. {hint}"
+        return f"WB: не авторизован (проверьте API-ключ). {hint}"
+    if code == 403:
+        return (
+            "WB: доступ запрещён (403). Создайте новый ключ в seller.wildberries.ru → "
+            "Настройки → Доступ к API → категория «Вопросы и отзывы» (не «Статистика» и не «Контент»)."
+        )
+    if code == 429:
+        return "WB: слишком много запросов (429). Подождите минуту и попробуйте снова."
+    if detail:
+        return f"WB: {context} ({code}) — {detail}"
+    return f"WB: {context} ({code})"
 
 
 def _parse_wb_feedback(item: dict[str, Any]) -> MarketplaceReviewDTO:
@@ -57,7 +94,13 @@ class WildberriesClient(MarketplaceClient):
             await self._client.aclose()
 
     def _token(self, account: MarketplaceAccount) -> str:
-        return decrypt_secret(account.encrypted_api_key)
+        token = normalize_wb_api_key(decrypt_secret(account.encrypted_api_key))
+        if token.count(".") != 2:
+            raise MarketplaceAPIError(
+                "WB: ключ не похож на API-токен. Скопируйте JWT целиком из кабинета "
+                "(категория «Вопросы и отзывы»), без пробелов и переносов строк."
+            )
+        return token
 
     async def fetch_reviews(
         self,
@@ -86,11 +129,9 @@ class WildberriesClient(MarketplaceClient):
                 headers=headers,
                 params=params,
             )
-            if response.status_code == 401:
-                raise MarketplaceAPIError("WB: не авторизован (проверьте API-ключ)", status_code=401)
             if response.status_code >= 400:
                 raise MarketplaceAPIError(
-                    f"WB: ошибка получения отзывов ({response.status_code})",
+                    _wb_error_message(response, context="ошибка получения отзывов"),
                     status_code=response.status_code,
                 )
             payload = response.json()
@@ -127,12 +168,11 @@ class WildberriesClient(MarketplaceClient):
         if response.status_code == 204:
             logger.info("WB reply published for review_id={}", review_external_id)
             return
-        if response.status_code == 401:
-            raise MarketplaceAPIError("WB: не авторизован при публикации", status_code=401)
-        raise MarketplaceAPIError(
-            f"WB: не удалось опубликовать ответ ({response.status_code})",
-            status_code=response.status_code,
-        )
+        if response.status_code >= 400:
+            raise MarketplaceAPIError(
+                _wb_error_message(response, context="не удалось опубликовать ответ"),
+                status_code=response.status_code,
+            )
 
     async def test_connection(self, account: MarketplaceAccount) -> MarketplaceReviewDTO | None:
         reviews = await self.fetch_reviews(account, limit=1, unanswered_only=False)
@@ -158,11 +198,9 @@ class WildberriesClient(MarketplaceClient):
                 headers=headers,
                 params=params,
             )
-            if response.status_code == 401:
-                raise MarketplaceAPIError("WB: не авторизован (вопросы)", status_code=401)
             if response.status_code >= 400:
                 raise MarketplaceAPIError(
-                    f"WB: ошибка получения вопросов ({response.status_code})",
+                    _wb_error_message(response, context="ошибка получения вопросов"),
                     status_code=response.status_code,
                 )
             payload = response.json()
@@ -196,11 +234,9 @@ class WildberriesClient(MarketplaceClient):
             headers=headers,
             params=params,
         )
-        if response.status_code == 401:
-            raise MarketplaceAPIError("WB: не авторизован (вопросы)", status_code=401)
         if response.status_code >= 400:
             raise MarketplaceAPIError(
-                f"WB: ошибка получения вопросов ({response.status_code})",
+                _wb_error_message(response, context="ошибка получения вопросов"),
                 status_code=response.status_code,
             )
         payload = response.json()
