@@ -67,6 +67,7 @@ from app.services.conversion_upsell import first_reply_upsell_suffix
 from app.services.marketplace.auto_publish import try_auto_publish_review
 from app.services.marketplace.sync_service import sync_account_reviews
 from app.tasks.poller import format_ui_time
+from app.services.onboarding_checklist import try_complete_onboarding
 
 router = Router(name="marketplace_reviews")
 
@@ -223,6 +224,9 @@ async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: l
                     "Не удалось прочитать API-ключ кабинета (сменился FERNET_KEY или ключ повреждён). "
                     "⚙️ Настройки → удалите кабинет и подключите ключ заново."
                 )
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is not None:
+            await try_complete_onboarding(session, user)
         await session.commit()
 
     lines = [SYNC_DONE.format(count=total_new)]

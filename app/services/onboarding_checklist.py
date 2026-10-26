@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.ui import muted
 from app.constants import MANUAL_SHOP_NAME
-from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus, User
+from app.db.models import Marketplace, MarketplaceAccount, User
 from app.db.repositories.account import AccountRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
+from app.db.repositories.user import UserRepository
 from app.services.plans import count_user_api_accounts
 
 
@@ -24,28 +24,26 @@ async def onboarding_step_states(session: AsyncSession, user: User) -> list[tupl
     tones = await ToneProfileRepository(session).list_by_user_id(user.id)
     has_tone = bool(tones)
 
-    first_reply_stmt = (
-        select(func.count(Review.id))
-        .select_from(Review)
-        .join(MarketplaceAccount, Review.account_id == MarketplaceAccount.id)
-        .where(
-            MarketplaceAccount.user_id == user.id,
-            Review.status.in_((ReviewStatus.PROCESSED, ReviewStatus.PUBLISHED)),
-        )
-    )
-    has_reply = int((await session.scalar(first_reply_stmt)) or 0) > 0
-
     return [
         ("Подключить кабинет WB или Ozon", has_cabinet),
         ("Синхронизировать отзывы (Sync)", has_sync),
         ("Настроить тон ответа", has_tone),
-        ("Ответить на первый отзыв", has_reply),
     ]
 
 
 async def onboarding_is_complete(session: AsyncSession, user: User) -> bool:
     steps = await onboarding_step_states(session, user)
     return all(done for _, done in steps)
+
+
+async def try_complete_onboarding(session: AsyncSession, user: User) -> bool:
+    """Закрывает быстрый старт, когда выполнены все 3 шага подключения."""
+    if user.onboarding_completed_at is not None:
+        return False
+    if not await onboarding_is_complete(session, user):
+        return False
+    await UserRepository(session).complete_onboarding(user.id)
+    return True
 
 
 async def build_onboarding_checklist_block(session: AsyncSession, user: User) -> str:

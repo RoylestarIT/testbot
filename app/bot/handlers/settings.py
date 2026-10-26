@@ -12,7 +12,9 @@ from app.services.notification_previews import (
     preview_stale_reviews,
 )
 from app.bot.utils.callbacks import safe_edit_message
+from app.bot.handlers.onboarding import onboarding_finished_screen
 from app.bot.utils.ui_message import bind_ui_message, edit_bound_ui_message
+from app.services.onboarding_checklist import try_complete_onboarding
 from app.bot.keyboards.menu import main_menu_keyboard
 from app.bot.keyboards.autopublish import autopublish_detail_keyboard
 from app.bot.keyboards.settings import (
@@ -776,16 +778,22 @@ async def settings_tone_examples(message: Message, state: FSMContext, db_user: D
             description=str(desc),
             example_replies=examples,
         )
+        user = await UserRepository(session).get_by_id(db_user.id)
+        finished = bool(user and await try_complete_onboarding(session, user))
         await session.commit()
 
     await state.clear()
-    await edit_bound_ui_message(
-        message,
-        state,
-        f"✅ Профиль тона #{profile.id} сохранён.",
-        reply_markup=settings_menu_keyboard(),
-        delete_user_message=True,
-    )
+    if finished:
+        done_text, done_kb = onboarding_finished_screen()
+        await edit_bound_ui_message(message, state, done_text, reply_markup=done_kb, delete_user_message=True)
+    else:
+        await edit_bound_ui_message(
+            message,
+            state,
+            f"✅ Профиль тона #{profile.id} сохранён.",
+            reply_markup=settings_menu_keyboard(),
+            delete_user_message=True,
+        )
 
 
 @router.callback_query(F.data.startswith("settings:tone:view:"))

@@ -6,7 +6,11 @@ from app.bot.utils.callbacks import safe_edit_message
 from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
-from app.services.onboarding_checklist import onboarding_is_complete, onboarding_step_states
+from app.services.onboarding_checklist import (
+    onboarding_is_complete,
+    onboarding_step_states,
+    try_complete_onboarding,
+)
 
 router = Router(name="onboarding")
 
@@ -14,7 +18,6 @@ _STEP_META = [
     ("Кабинет WB/Ozon", "⚙️ Настройки → API-ключ.", "menu:settings"),
     ("Первый Sync", "🔄 Sync на сводке — подтянуть отзывы.", "review:sync"),
     ("Тон ответа", "⚙️ Настройки → «Тон ответа» — профиль для генерации.", "settings:tone"),
-    ("Первый ответ", "📬 Отправить или скопировать ответ.", "review:mp:list"),
 ]
 
 
@@ -61,6 +64,36 @@ def _step_keyboard(step: int, states: list[tuple[str, bool]]) -> InlineKeyboardM
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def onboarding_finished_screen() -> tuple[str, InlineKeyboardMarkup]:
+    return _onboarding_complete_text(), _onboarding_complete_keyboard()
+
+
+def _onboarding_complete_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📬 Ответы на отзывы", callback_data="review:mp:list")],
+            [InlineKeyboardButton(text="💎 Тарифы", callback_data="menu:subscription")],
+            [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
+        ]
+    )
+
+
+def _onboarding_complete_text() -> str:
+    return (
+        f"{ICON} <b>{BRAND}</b>\n🎉 Подключение завершено (3 из 3).\n"
+        "<i>Отзывы в Telegram: 3 варианта, правка, негатив — только вы.</i>"
+    )
+
+
+async def _show_onboarding_complete(callback: CallbackQuery) -> None:
+    if callback.message:
+        await safe_edit_message(
+            callback.message,
+            _onboarding_complete_text(),
+            reply_markup=_onboarding_complete_keyboard(),
+        )
+
+
 def _first_incomplete_step(states: list[tuple[str, bool]]) -> int:
     for i, (_, ok) in enumerate(states):
         if not ok:
@@ -69,12 +102,18 @@ def _first_incomplete_step(states: list[tuple[str, bool]]) -> int:
 
 
 async def _render_onboarding(callback: CallbackQuery, db_user: DbUser, step: int | None = None) -> None:
+    if callback.message is None:
+        return
     session_factory = get_session_factory()
     async with session_factory() as session:
         user = await UserRepository(session).get_by_id(db_user.id)
-        if user is None or callback.message is None:
+        if user is None:
             return
         states = await onboarding_step_states(session, user)
+        if await try_complete_onboarding(session, user):
+            await session.commit()
+            await _show_onboarding_complete(callback)
+            return
     if step is None:
         step = _first_incomplete_step(states)
     text = _step_body(step, states)
@@ -119,22 +158,11 @@ async def onboarding_done(callback: CallbackQuery, db_user: DbUser) -> None:
             return
         if not await onboarding_is_complete(session, user):
             await callback.answer(
-                "Сначала выполните шаги чеклиста (кабинет, sync, тон, первый ответ).",
+                "Сначала выполните 3 шага: кабинет, Sync и тон ответа.",
                 show_alert=True,
             )
             return
         await UserRepository(session).complete_onboarding(db_user.id)
         await session.commit()
     await callback.answer("Готово!")
-    tg_id = callback.from_user.id if callback.from_user else 0
-    rows = [
-        [InlineKeyboardButton(text="📬 Ответы на отзывы", callback_data="review:mp:list")],
-        [InlineKeyboardButton(text="💎 Тарифы", callback_data="menu:subscription")],
-        [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
-    ]
-    if callback.message:
-        await callback.message.edit_text(
-            f"{ICON} <b>{BRAND}</b>\n🎉 Настройка завершена.\n"
-            "<i>Отзывы в Telegram: 3 варианта, правка, негатив — только вы.</i>",
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
-        )
+    await _show_onboarding_complete(callback)
