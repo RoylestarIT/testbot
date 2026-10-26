@@ -15,7 +15,7 @@ if command -v pg_isready >/dev/null && pg_isready -q; then
   bash "$ROOT/scripts/setup-local-postgres.sh" || true
 fi
 
-if [[ ! -f "$ROOT/.env" ]] || ! grep -qE '^BOT_TOKEN=.+$' "$ROOT/.env" 2>/dev/null; then
+if [[ ! -f "$ROOT/.env" ]] || ! python3 -c "import re; t=open('.env',encoding='utf-8').read(); import sys; sys.exit(0 if re.search(r'^BOT_TOKEN=\\S+', t, re.M) else 1)" 2>/dev/null; then
   bash "$ROOT/scripts/write-env-from-secrets.sh" || {
     echo "ReviewPilot not started: configure BOT_TOKEN (and FERNET_KEY) in Cloud Agent secrets." | tee -a "$LOG"
     exit 0
