@@ -1,5 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from app.bot.ui import SYNC_BUTTON
+
 from app.bot.keyboards.nav import nav_home_queue
 from app.db.models import Marketplace, MarketplaceAccount, ToneProfile
 
@@ -75,7 +77,7 @@ def account_detail_keyboard(
     rows.append(
         [
             InlineKeyboardButton(
-                text="🔄 Sync этого кабинета",
+                text=f"{SYNC_BUTTON} (кабинет)",
                 callback_data=f"settings:account_sync:{account_id}",
             )
         ]

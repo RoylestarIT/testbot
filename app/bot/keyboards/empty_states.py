@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.bot.keyboards.nav import nav_home_queue
+from app.bot.ui import SYNC_BUTTON
 from app.services.queue_diagnosis import EmptyQueueReason
 
 
@@ -9,7 +10,7 @@ def no_cabinets_keyboard() -> InlineKeyboardMarkup:
 
     return nav_home_queue(
         extra=[
-            reviews_queue_toolbar(),
+            reviews_queue_toolbar(include_history=False),
             [
                 InlineKeyboardButton(text="🟣 Подключить WB", callback_data="settings:connect:wb"),
                 InlineKeyboardButton(text="🔵 Подключить Ozon", callback_data="settings:connect:ozon"),
@@ -28,17 +29,17 @@ def no_new_reviews_keyboard(reason: EmptyQueueReason | None = None) -> InlineKey
         ]
     elif reason == EmptyQueueReason.NEEDS_SYNC:
         action = [
-            InlineKeyboardButton(text="🔄 Sync", callback_data="review:sync"),
+            InlineKeyboardButton(text=SYNC_BUTTON, callback_data="review:sync"),
             InlineKeyboardButton(text="🛰 Статус", callback_data="menu:service_status"),
         ]
     else:
         action = [
-            InlineKeyboardButton(text="🔄 Sync", callback_data="review:sync"),
+            InlineKeyboardButton(text=SYNC_BUTTON, callback_data="review:sync"),
             InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu:settings"),
         ]
     return nav_home_queue(
         extra=[
-            reviews_queue_toolbar(),
+            reviews_queue_toolbar(include_history=False),
             action,
         ]
     )
@@ -53,7 +54,7 @@ def empty_queue_message(reason: EmptyQueueReason) -> str:
             "Проверьте ключ в ⚙️ Настройки или откройте 🛰 Статус сервиса."
         )
     if reason == EmptyQueueReason.NEEDS_SYNC:
-        return "Новых отзывов нет — давно не было sync. Нажмите 🔄 Sync."
+        return f"Новых отзывов нет — давно не обновляли отзывы. Нажмите «{SYNC_BUTTON}»."
     return "Все новые отзывы обработаны. Отличная работа!"
 
 

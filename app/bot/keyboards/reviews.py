@@ -2,14 +2,18 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.db.models import ToneProfile
 from app.bot.keyboards.nav import nav_home_queue
-from app.bot.ui import REVIEWS_HUB_BUTTON
+from app.bot.ui import REVIEWS_HUB_BUTTON, SYNC_BUTTON
 
 
-def reviews_queue_toolbar() -> list[InlineKeyboardButton]:
-    return [
-        InlineKeyboardButton(text="✍️ Ручной ответ", callback_data="review:manual:start"),
-        InlineKeyboardButton(text="📚 История", callback_data="review:history"),
-    ]
+def reviews_manual_reply_button() -> InlineKeyboardButton:
+    return InlineKeyboardButton(text="✍️ Ручной ответ", callback_data="review:manual:start")
+
+
+def reviews_queue_toolbar(*, include_history: bool = True) -> list[InlineKeyboardButton]:
+    row = [reviews_manual_reply_button()]
+    if include_history:
+        row.append(InlineKeyboardButton(text="📚 История", callback_data="review:history"))
+    return row
 
 
 def manual_entry_keyboard() -> InlineKeyboardMarkup:
@@ -28,7 +32,7 @@ def reviews_menu_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text=REVIEWS_HUB_BUTTON, callback_data="review:mp:list")],
             reviews_queue_toolbar(),
             [
-                InlineKeyboardButton(text="🔄 Sync", callback_data="review:sync"),
+                InlineKeyboardButton(text=SYNC_BUTTON, callback_data="review:sync"),
             ],
         ]
     )

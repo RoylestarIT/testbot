@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from app.bot.ui import REVIEWS_HUB_BUTTON
+from app.bot.ui import REVIEWS_HUB_BUTTON, SYNC_BUTTON
 from app.core.config import get_settings
 
 
@@ -70,7 +70,7 @@ def dashboard_keyboard(
         [
             [InlineKeyboardButton(text=REVIEWS_HUB_BUTTON, callback_data="review:mp:list")],
             [
-                InlineKeyboardButton(text="🔄 Sync", callback_data="review:sync"),
+                InlineKeyboardButton(text=SYNC_BUTTON, callback_data="review:sync"),
                 InlineKeyboardButton(text="📚 История", callback_data="review:history"),
             ],
             [

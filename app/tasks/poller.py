@@ -47,8 +47,8 @@ def get_poller_status_line() -> str:
         return "ожидание первого цикла"
     ts = format_ui_time(_last_poller_ok_at)
     if _last_poller_error:
-        return f"sync {ts} (Минск) · ⚠️ была ошибка"
-    return f"sync {ts} (Минск) · ✅ OK"
+        return f"{ts} (Минск) · ⚠️ была ошибка"
+    return f"{ts} (Минск) · ✅ OK"
 
 
 def get_poller_health() -> dict[str, object]:

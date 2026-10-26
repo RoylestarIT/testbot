@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.ui import REVIEWS_HUB_BUTTON, dashboard_home, muted, quote
+from app.bot.ui import REVIEWS_HUB_BUTTON, SYNC_BUTTON, dashboard_home, muted, quote
 from app.core.config import get_settings
 from app.constants import MANUAL_SHOP_NAME
 from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus, SubscriptionPlan, User
@@ -58,7 +58,7 @@ def _status_block(
     else:
         head = "📭  Новых отзывов нет"
         if has_cabinets:
-            tail = muted("→ 🔄 Sync, если нужно подтянуть сейчас")
+            tail = muted(f"→ {SYNC_BUTTON}, если нужно подтянуть сейчас")
         else:
             tail = muted("→ ⚙️ Настройки: подключите WB или Ozon")
     return quote(f"{head}\n{tail}")
@@ -197,7 +197,7 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
 
     footer_parts: list[str] = []
     if has_cabinets:
-        footer_parts.append(f"авто-sync каждые {poll_min} мин")
+        footer_parts.append(f"Синхронизация каждые {poll_min} мин")
     poller = get_poller_status_line().strip()
     if poller:
         footer_parts.append(poller)

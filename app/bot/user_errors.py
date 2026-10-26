@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from app.bot.ui import SYNC_BUTTON
 from app.services.llm import LLMError
 from app.services.marketplace.base import MarketplaceAPIError
 from app.core.security import EncryptionError
@@ -43,20 +44,20 @@ def user_error_from_exception(exc: BaseException) -> UserFacingError:
                 "Проверьте API-ключ в личном кабинете WB/Ozon и обновите его в настройках.",
                 reply_markup=_kb(
                     [("⚙️ Кабинеты", "menu:settings")],
-                    [("🔄 Sync", "review:sync")],
+                    [(SYNC_BUTTON, "review:sync")],
                 ),
             )
         if code == 429:
             return UserFacingError(
                 "⏳ <b>Слишком много запросов к API</b>\n\n"
-                "Подождите 1–2 минуты и нажмите Sync снова.",
-                reply_markup=_kb([("🔄 Sync", "review:sync")]),
+                f"Подождите 1–2 минуты и нажмите «{SYNC_BUTTON}» снова.",
+                reply_markup=_kb([(SYNC_BUTTON, "review:sync")]),
             )
         return UserFacingError(
             f"🛒 <b>Ошибка маркетплейса</b>\n\n{exc}\n\n"
             "Если повторяется — напишите в поддержку с временем ошибки.",
             reply_markup=_kb(
-                [("🔄 Sync", "review:sync")],
+                [(SYNC_BUTTON, "review:sync")],
                 [("🆘 Поддержка", "support:write")],
             ),
         )

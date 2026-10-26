@@ -26,7 +26,7 @@ async def onboarding_step_states(session: AsyncSession, user: User) -> list[tupl
 
     return [
         ("Подключить кабинет WB или Ozon", has_cabinet),
-        ("Синхронизировать отзывы (Sync)", has_sync),
+        ("Синхронизировать отзывы", has_sync),
         ("Настроить тон ответа", has_tone),
     ]
 

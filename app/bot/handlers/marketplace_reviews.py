@@ -37,7 +37,12 @@ from app.bot.handlers.reviews import (
     _tone_input,
 )
 from app.bot.keyboards.nav import after_review_action_keyboard, nav_home_queue
-from app.bot.keyboards.reviews import reviews_menu_keyboard, reviews_queue_toolbar, tone_keyboard, variants_keyboard
+from app.bot.keyboards.reviews import (
+    reviews_manual_reply_button,
+    reviews_menu_keyboard,
+    tone_keyboard,
+    variants_keyboard,
+)
 from app.bot.ui import REVIEWS_HUB_BUTTON
 from app.bot.keyboards.settings import sync_accounts_keyboard
 from app.bot.states.marketplace_review import MarketplaceReviewStates
@@ -108,7 +113,6 @@ def _mp_reviews_keyboard(
     bulk_count: int = 0,
 ) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
-    rows.append([*reviews_queue_toolbar()])
     if bulk_count > 0:
         rows.append(
             [
@@ -144,6 +148,7 @@ def _mp_reviews_keyboard(
         )
     if nav:
         rows.append(nav)
+    rows.append([reviews_manual_reply_button()])
     rows.extend(nav_home_queue().inline_keyboard)
     return InlineKeyboardMarkup(inline_keyboard=rows)
 

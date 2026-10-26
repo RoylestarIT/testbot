@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.ui import brand_title, bullet, muted, quote
+from app.bot.ui import SYNC_BUTTON, brand_title, bullet, muted, quote
 from app.constants import MANUAL_SHOP_NAME
 from app.core.config import get_settings
 from app.core.datetime_utils import as_utc
@@ -19,11 +19,11 @@ def _poller_summary() -> tuple[str, str]:
     line = get_poller_status_line()
     last_ok = health.get("last_ok_at")
     if not last_ok:
-        return "⏳", "Фоновая синхронизация ещё не выполнялась с момента запуска бота."
+        return "⏳", "Синхронизация ещё не выполнялась с момента запуска бота."
     err = health.get("last_error")
     if err:
-        return "⚠️", f"Последний цикл sync: {line}\n{muted(f'Детали: {str(err)[:120]}')}"
-    return "✅", f"Фоновая синхронизация: {line}"
+        return "⚠️", f"Последний цикл: {line}\n{muted(f'Детали: {str(err)[:120]}')}"
+    return "✅", f"Последняя синхронизация: {line}"
 
 
 def _account_issue(acc: MarketplaceAccount, now: datetime) -> str | None:
@@ -35,10 +35,10 @@ def _account_issue(acc: MarketplaceAccount, now: datetime) -> str | None:
     if acc.last_sync_error:
         return acc.last_sync_error[:80]
     if acc.last_sync_at is None:
-        return "sync ещё не было — нажмите Sync на сводке"
+        return f"ещё не синхронизировали — нажмите «{SYNC_BUTTON}» на сводке"
     last_sync = as_utc(acc.last_sync_at)
     if last_sync is not None and last_sync < now - timedelta(hours=2):
-        return "sync давно — проверьте ключ или нажмите Sync"
+        return f"давно не обновлялось — проверьте ключ или «{SYNC_BUTTON}»"
     return None
 
 
@@ -83,11 +83,11 @@ async def build_service_status_text(session: AsyncSession, user_id: int) -> str:
     elif issue_count == 0 and not poller_bad:
         headline = "✅  Всё работает — бот получает отзывы и готов к ответам"
     elif issue_count and poller_bad:
-        headline = f"⚠️  {issue_count} кабинет(ов) и фоновый sync требуют внимания"
+        headline = f"⚠️  {issue_count} кабинет(ов) и фоновая синхронизация требуют внимания"
     elif issue_count:
         headline = f"⚠️  Проверьте {issue_count} кабинет(ов) — см. ниже"
     else:
-        headline = "⚠️  Фоновая синхронизация — сбой, нажмите Sync на сводке"
+        headline = f"⚠️  Фоновая синхронизация — сбой, нажмите «{SYNC_BUTTON}» на сводке"
 
     lines = [
         brand_title("Здоровье аккаунта", tagline="Почему бот молчит или нет отзывов", icon="🩺"),
@@ -96,7 +96,7 @@ async def build_service_status_text(session: AsyncSession, user_id: int) -> str:
         "",
         f"📬  В очереди ответов: <b>{queue_n}</b>",
         "",
-        f"{icon}  <b>Фоновый sync</b>",
+        f"{icon}  <b>Синхронизация</b>",
         poller_body,
         "",
         f"⏱  Интервал опроса: <b>{settings.poll_interval_minutes}</b> мин",
@@ -104,16 +104,14 @@ async def build_service_status_text(session: AsyncSession, user_id: int) -> str:
         "<b>🏪 Ваши кабинеты</b>",
     ]
 
-    lines.append("")
-    lines.append("<b>🏪 Кабинеты</b>")
     if not api_accounts:
-        lines.append(muted("Кабинеты не подключены — статус sync появится после подключения."))
+        lines.append(muted("Пока не подключены — статус появится после добавления API-ключа."))
     else:
         for acc, issue in zip(api_accounts[:10], issues[:10], strict=False):
             mp = "🟣 WB" if acc.marketplace.value == "wb" else "🔵 Ozon"
             name = acc.shop_name or f"#{acc.id}"
             if issue is None:
-                st = f"✅ sync {format_ui_time(acc.last_sync_at)}"
+                st = f"✅ {format_ui_time(acc.last_sync_at)}"
             else:
                 st = f"⚠️ {issue}"
             lines.append(bullet(f"{mp} <b>{name}</b> — {st}"))
@@ -121,9 +119,14 @@ async def build_service_status_text(session: AsyncSession, user_id: int) -> str:
     lines.extend(
         [
             "",
-            muted("Если бот не отвечает в Telegram — обычно другой процесс с тем же токеном или нет сети."),
-            muted("Ключ не читается — ⚙️ Настройки → удалите кабинет и введите API-ключ заново."),
-            muted("При сбоях API WB/Ozon очередь обновляется с задержкой."),
+            muted(
+                "Бот не отвечает в чате — чаще всего запущена вторая копия с тем же токеном "
+                "или нет сети на сервере."
+            ),
+            muted(
+                "Ошибка ключа — ⚙️ Настройки → кабинет → обновите API-ключ или подключите заново."
+            ),
+            muted("При сбоях WB/Ozon отзывы в очереди обновляются с небольшой задержкой."),
         ]
     )
     return "\n".join(lines)

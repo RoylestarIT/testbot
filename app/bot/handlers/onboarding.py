@@ -16,7 +16,7 @@ router = Router(name="onboarding")
 
 _STEP_META = [
     ("Кабинет WB/Ozon", "⚙️ Настройки → API-ключ.", "menu:settings"),
-    ("Первый Sync", "🔄 Sync на сводке — подтянуть отзывы.", "review:sync"),
+    ("Синхронизация", "🔄 На сводке — «Синхронизировать», подтянуть отзывы.", "review:sync"),
     ("Тон ответа", "⚙️ Настройки → «Тон ответа» — профиль для генерации.", "settings:tone"),
 ]
 
@@ -158,7 +158,7 @@ async def onboarding_done(callback: CallbackQuery, db_user: DbUser) -> None:
             return
         if not await onboarding_is_complete(session, user):
             await callback.answer(
-                "Сначала выполните 3 шага: кабинет, Sync и тон ответа.",
+                "Сначала выполните 3 шага: кабинет, синхронизация и тон ответа.",
                 show_alert=True,
             )
             return
