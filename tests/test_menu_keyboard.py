@@ -22,7 +22,9 @@ def test_more_menu_only_help_support() -> None:
     assert "📖 Справка" in texts
     assert "review:sync" not in callbacks
     assert "review:mp:list" not in callbacks
-    assert "menu:service_status" in callbacks
+    assert "menu:why_us" in callbacks
+    assert "menu:wb_questions" in callbacks
+    assert "menu:service_status" not in callbacks
     assert "menu:changelog" in callbacks
 
 
@@ -38,9 +40,10 @@ def test_dashboard_keyboard_primary_reviews_hub() -> None:
     assert first == REVIEWS_HUB_BUTTON
 
 
-def test_dashboard_keyboard_has_why_us() -> None:
+def test_dashboard_keyboard_compact_secondary_actions() -> None:
     kb = dashboard_keyboard(show_trial=False, show_onboarding=False, show_admin=False)
-    texts = [button.text for row in kb.inline_keyboard for button in row]
-    assert "ℹ️ Почему мы" in texts
     callbacks = [button.callback_data for row in kb.inline_keyboard for button in row]
-    assert "menu:why_us" in callbacks
+    assert "menu:why_us" not in callbacks
+    assert "menu:wb_questions" not in callbacks
+    assert "menu:dashboard:details" in callbacks
+    assert "review:sync" in callbacks

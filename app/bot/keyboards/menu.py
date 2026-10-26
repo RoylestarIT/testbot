@@ -12,10 +12,13 @@ def more_menu_keyboard(*, show_admin: bool = False) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="📖 Справка", callback_data="menu:help"),
         ],
         [
-            InlineKeyboardButton(text="🩺 Здоровье", callback_data="menu:service_status"),
-            InlineKeyboardButton(text="📜 Обновления", callback_data="menu:changelog"),
+            InlineKeyboardButton(text="ℹ️ Почему мы", callback_data="menu:why_us"),
+            InlineKeyboardButton(text="❓ Вопросы", callback_data="menu:wb_questions"),
         ],
-        [InlineKeyboardButton(text="📜 Документы", callback_data="menu:legal")],
+        [
+            InlineKeyboardButton(text="📜 Обновления", callback_data="menu:changelog"),
+            InlineKeyboardButton(text="📜 Документы", callback_data="menu:legal"),
+        ],
         [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
     ]
     if show_admin:
@@ -70,20 +73,16 @@ def dashboard_keyboard(
         [
             [InlineKeyboardButton(text=REVIEWS_HUB_BUTTON, callback_data="review:mp:list")],
             [
-                InlineKeyboardButton(text=SYNC_BUTTON, callback_data="review:sync"),
+                InlineKeyboardButton(text="📊 Подробнее", callback_data="menu:dashboard:details"),
                 InlineKeyboardButton(text="📚 История", callback_data="review:history"),
             ],
             [
-                InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu:settings"),
+                InlineKeyboardButton(text="🩺 Здоровье", callback_data="menu:service_status"),
                 InlineKeyboardButton(text="💎 Подписка", callback_data="menu:subscription"),
             ],
             [
-                InlineKeyboardButton(text="📊 Подробнее", callback_data="menu:dashboard:details"),
-                InlineKeyboardButton(text="🩺 Здоровье", callback_data="menu:service_status"),
-            ],
-            [
-                InlineKeyboardButton(text="ℹ️ Почему мы", callback_data="menu:why_us"),
-                InlineKeyboardButton(text="❓ Вопросы", callback_data="menu:wb_questions"),
+                InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu:settings"),
+                InlineKeyboardButton(text=SYNC_BUTTON, callback_data="review:sync"),
             ],
             [InlineKeyboardButton(text="⋯ Ещё", callback_data="menu:more")],
         ]
