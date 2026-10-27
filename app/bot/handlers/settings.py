@@ -159,7 +159,7 @@ async def settings_accounts(callback: CallbackQuery, db_user: DbUser) -> None:
 
 WB_KEY_HELP = (
     "<b>Как получить ключ WB</b>\n\n"
-    "1. seller.wildberries.ru → Настройки → Доступ к API\n"
+    "1. seller.wildberries.ru → Настройки → Доступ для разработчиков\n"
     "2. Создайте ключ с категорией «Вопросы и отзывы»\n"
     "3. Скопируйте ключ сюда одним сообщением"
 )
@@ -186,8 +186,8 @@ async def connect_wb_start(callback: CallbackQuery, state: FSMContext, db_user: 
         await safe_edit_message(
             callback.message,
             "<b>Wildberries</b>\n\n"
-            "Пришлите API-ключ категории «Вопросы и отзывы» одним сообщением.\n"
-            "Ключ будет зашифрован и сохранён в БД.",
+            "Пришлите ключ категории «Вопросы и отзывы» одним сообщением.\n"
+            "Ключ храним в зашифрованном виде.",
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=[
                     [InlineKeyboardButton(text="❓ Как получить ключ", callback_data="help:wb_key")],
@@ -238,7 +238,7 @@ async def connect_wb_finish(message: Message, state: FSMContext, db_user: DbUser
             await session.commit()
     except EncryptionError:
         await message.answer(
-            "На сервере не настроен FERNET_KEY — сохранение ключей невозможно.",
+            "Сейчас нельзя сохранить ключ — напишите в поддержку.",
             reply_markup=settings_menu_keyboard(),
         )
         await state.clear()
@@ -589,7 +589,7 @@ async def settings_account_rotate_start(callback: CallbackQuery, state: FSMConte
     await state.update_data(rotate_account_id=account_id)
     if account.marketplace == Marketplace.WB:
         await state.set_state(RotateWbKeyStates.waiting_api_key)
-        prompt = "<b>Wildberries</b>\n\nПришлите новый API-ключ (категория «Вопросы и отзывы»)."
+        prompt = "<b>Wildberries</b>\n\nПришлите новый ключ (категория «Вопросы и отзывы»)."
     else:
         await state.set_state(RotateOzonKeyStates.waiting_client_id)
         prompt = "<b>Ozon</b>\n\nПришлите новый <b>Client-Id</b>."
@@ -1206,7 +1206,7 @@ async def settings_account_sync(callback: CallbackQuery, db_user: DbUser) -> Non
         try:
             created, _, _ = await sync_account_reviews(session, account)
             await session.commit()
-            msg = f"✅ Sync готов. Новых отзывов: <b>{created}</b>."
+            msg = f"✅ Обновление готово. Новых отзывов: <b>{created}</b>."
         except MarketplaceAPIError as exc:
             await session.commit()
             msg = f"⚠️ Sync не удался:\n{exc}"

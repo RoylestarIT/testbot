@@ -48,7 +48,7 @@ def get_poller_status_line() -> str:
     ts = format_ui_time(_last_poller_ok_at)
     if _last_poller_error:
         return f"{ts} (Минск) · ⚠️ была ошибка"
-    return f"{ts} (Минск) · ✅ OK"
+    return f"{ts} (Минск) · всё в порядке"
 
 
 def get_poller_health() -> dict[str, object]:

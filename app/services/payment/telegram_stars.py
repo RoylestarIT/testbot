@@ -116,22 +116,22 @@ def invoice_description(plan: SubscriptionPlan, settings: Settings, *, for_stars
         if plan == SubscriptionPlan.PRO:
             return (
                 f"PRO на 1 месяц — {stars} Telegram Stars. "
-                "Без лимита генераций, publish в WB/Ozon, авто-ответы 4–5★."
+                "Без дневного лимита, отправка в WB/Ozon из бота, авто-ответы 4–5★."
             )
         return (
             f"Lite на 1 месяц — {stars} Telegram Stars. "
-            "Без лимита генераций; ответ в кабинет — копированием."
+            "Без дневного лимита; ответ в кабинет — копированием."
         )
     if plan == SubscriptionPlan.PRO:
         return (
             f"PRO на 1 месяц — {settings.subscription_pro_price_rub} ₽ / "
             f"{settings.subscription_pro_price_byn:g} BYN. "
-            "Без лимита генераций, publish в WB/Ozon, авто-ответы 4–5★."
+            "Без дневного лимита, отправка в WB/Ozon из бота, авто-ответы 4–5★."
         )
     return (
         f"Lite на 1 месяц — {settings.subscription_lite_price_rub} ₽ / "
         f"{settings.subscription_lite_price_byn:g} BYN. "
-        "Без лимита генераций; ответ в кабинет — копированием."
+        "Без дневного лимита; ответ в кабинет — копированием."
     )
 
 

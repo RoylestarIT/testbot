@@ -18,7 +18,7 @@ def support_screen_text() -> str:
     return (
         brand_title(
             "Поддержка",
-            tagline="API WB/Ozon, Crypto/перевод, генерация — всё из Telegram",
+            tagline="Кабинеты WB/Ozon, оплата и ответы на отзывы — в Telegram",
             icon="🆘",
         )
         + section("Контакт", icon="💬")

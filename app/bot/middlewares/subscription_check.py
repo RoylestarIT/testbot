@@ -41,7 +41,7 @@ class SubscriptionCheckMiddleware(BaseMiddleware):
             data["generations_remaining"] = remaining
 
         if not allowed:
-            await event.answer(message or "Лимит генераций исчерпан", show_alert=True)
+            await event.answer(message or "Дневной лимит бесплатных ответов исчерпан", show_alert=True)
             return None
 
         return await handler(event, data)

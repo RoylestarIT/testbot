@@ -47,7 +47,7 @@ async def can_generate(session: AsyncSession, user_id: int) -> tuple[bool, str |
     used = await generations_used_today(session, user_id)
     if used >= FREE_DAILY_GENERATIONS:
         return False, (
-            f"Лимит бесплатного режима: {FREE_DAILY_GENERATIONS} генераций в день исчерпан. "
+            f"На бесплатном тарифе — не больше {FREE_DAILY_GENERATIONS} подготовленных ответов в день. "
             "Lite 800 ₽ или PRO 1 600 ₽ в «Подписка» — или попробуйте завтра."
         )
     return True, None

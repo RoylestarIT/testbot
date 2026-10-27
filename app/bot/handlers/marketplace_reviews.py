@@ -186,7 +186,7 @@ def _pro_upsell_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="🚀 Оформить PRO", callback_data="menu:subscription")],
-            [InlineKeyboardButton(text="🎁 Trial PRO", callback_data="menu:trial_pro")],
+            [InlineKeyboardButton(text="🎁 Пробный PRO", callback_data="menu:trial_pro")],
         ]
     )
 
@@ -238,7 +238,7 @@ async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: l
             except EncryptionError:
                 logger.warning("Sync decrypt failed account_id={}", account.id)
                 errors.append(
-                    "Не удалось прочитать API-ключ кабинета (сменился FERNET_KEY или ключ повреждён). "
+                    "Не удалось прочитать сохранённый ключ кабинета — он повреждён или устарел. "
                     "⚙️ Настройки → удалите кабинет и подключите ключ заново."
                 )
         user = await UserRepository(session).get_by_id(db_user.id)
@@ -279,12 +279,12 @@ async def sync_reviews_menu(callback: CallbackQuery, db_user: DbUser) -> None:
         if callback.message:
             await safe_edit_message(
                 callback.message,
-                "⚠️ <b>Нет кабинетов</b>\n\nПодключите WB или Ozon, чтобы синхронизировать отзывы.",
+                "⚠️ <b>Нет кабинетов</b>\n\nПодключите WB или Ozon, чтобы подтягивать отзывы.",
                 reply_markup=no_cabinets_keyboard(),
             )
         return
     if len(accounts) == 1:
-        await callback.answer("Синхронизация…")
+        await callback.answer("Обновляем…")
         await _execute_sync(callback, db_user, [accounts[0].id])
         return
     await callback.answer()
@@ -294,14 +294,14 @@ async def sync_reviews_menu(callback: CallbackQuery, db_user: DbUser) -> None:
 
 @router.callback_query(F.data == "review:sync:all")
 async def sync_reviews_all(callback: CallbackQuery, db_user: DbUser) -> None:
-    await callback.answer("Синхронизация…")
+    await callback.answer("Обновляем…")
     await _execute_sync(callback, db_user, None)
 
 
 @router.callback_query(F.data.regexp(r"^review:sync:\d+$"))
 async def sync_reviews_one(callback: CallbackQuery, db_user: DbUser) -> None:
     account_id = int(callback.data.split(":")[-1])
-    await callback.answer("Синхронизация…")
+    await callback.answer("Обновляем…")
     await _execute_sync(callback, db_user, [account_id])
 
 
@@ -364,7 +364,8 @@ async def mp_bulk_preview(callback: CallbackQuery, db_user: DbUser) -> None:
     text = (
         "⚡ <b>Пакетный ответ</b>\n\n"
         f"Подходит отзывов 4–5★ с коротким текстом: <b>{len(eligible)}</b>.\n"
-        "Шаблон «Спасибо» — либо «обработан» для копирования, либо publish в API (PRO)."
+        "Шаблон «Спасибо» — отметим отзывы как обработанные для копирования "
+        "или отправим ответ в кабинет (тариф PRO)."
     )
     rows: list[list[InlineKeyboardButton]] = [
         [InlineKeyboardButton(text="✅ Обработать (копия)", callback_data="review:mp:bulk:run")],
@@ -374,7 +375,7 @@ async def mp_bulk_preview(callback: CallbackQuery, db_user: DbUser) -> None:
             0,
             [
                 InlineKeyboardButton(
-                    text="🚀 PRO: publish в API",
+                    text="🚀 PRO: отправить в кабинет",
                     callback_data="review:mp:bulk:run_api",
                 )
             ],
@@ -397,7 +398,7 @@ async def mp_bulk_run_api(callback: CallbackQuery, db_user: DbUser) -> None:
     await callback.answer("Готово")
     if callback.message:
         await callback.message.edit_text(
-            f"🚀 Publish: <b>{published}</b> · ошибок: <b>{failed}</b>.",
+            f"🚀 Отправлено в кабинет: <b>{published}</b> · не удалось: <b>{failed}</b>.",
             reply_markup=nav_home_queue(),
         )
 
@@ -697,7 +698,7 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
         allowed, _ = await can_api_publish(session, db_user.id)
         if not allowed:
             await callback.answer(
-                "Закончилась бесплатная квота на публикацию в API. Оформите PRO или Trial.",
+                "Закончилась бесплатная квота отправки из бота. Оформите PRO или пробный период.",
                 show_alert=True,
             )
             return
@@ -707,7 +708,7 @@ async def mp_publish_confirm(callback: CallbackQuery, state: FSMContext, db_user
         await callback.answer(err, show_alert=True)
         return
 
-    await callback.answer("Публикую…")
+    await callback.answer("Отправляем…")
     upsell: str | None = None
     try:
         async with session_factory() as session:

@@ -55,7 +55,7 @@ def dashboard_keyboard(
     if show_trial:
         days = get_settings().trial_pro_days
         rows.append(
-            [InlineKeyboardButton(text=f"🎁 Trial PRO · {days} дн.", callback_data="menu:trial_pro")]
+            [InlineKeyboardButton(text=f"🎁 Пробный PRO · {days} дн.", callback_data="menu:trial_pro")]
         )
     if show_trial_ended:
         rows.append(

@@ -202,7 +202,7 @@ async def activate_trial(callback: CallbackQuery, db_user: DbUser) -> None:
         await callback.answer(err, show_alert=True)
         return
     settings = get_settings()
-    await callback.answer("Trial PRO активирован!")
+    await callback.answer("Пробный PRO активирован!")
     if callback.message and user and user.trial_pro_until:
         await safe_edit_message(
             callback.message,

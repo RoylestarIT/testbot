@@ -28,8 +28,8 @@ def _kb(*rows: list[tuple[str, str]]) -> InlineKeyboardMarkup:
 def user_error_from_exception(exc: BaseException) -> UserFacingError:
     if isinstance(exc, EncryptionError):
         return UserFacingError(
-            "🔐 <b>Не удалось прочитать API-ключ</b>\n\n"
-            "Ключ сохранён в другом окружении или повреждён. "
+            "🔐 <b>Не удалось прочитать ключ кабинета</b>\n\n"
+            "Сохранённый ключ повреждён или устарел. "
             "Подключите кабинет заново в ⚙️ Настройки.",
             reply_markup=_kb(
                 [("⚙️ Настройки", "menu:settings"), ("🩺 Здоровье", "menu:service_status")],
@@ -41,7 +41,7 @@ def user_error_from_exception(exc: BaseException) -> UserFacingError:
         if code == 401:
             return UserFacingError(
                 "🔑 <b>Маркетплейс отклонил ключ</b>\n\n"
-                "Проверьте API-ключ в личном кабинете WB/Ozon и обновите его в настройках.",
+                "Проверьте ключ в личном кабинете WB/Ozon и обновите его в настройках бота.",
                 reply_markup=_kb(
                     [("⚙️ Кабинеты", "menu:settings")],
                     [(SYNC_BUTTON, "review:sync")],
@@ -49,7 +49,7 @@ def user_error_from_exception(exc: BaseException) -> UserFacingError:
             )
         if code == 429:
             return UserFacingError(
-                "⏳ <b>Слишком много запросов к API</b>\n\n"
+                "⏳ <b>Слишком много запросов к маркетплейсу</b>\n\n"
                 f"Подождите 1–2 минуты и нажмите «{SYNC_BUTTON}» снова.",
                 reply_markup=_kb([(SYNC_BUTTON, "review:sync")]),
             )
@@ -63,12 +63,12 @@ def user_error_from_exception(exc: BaseException) -> UserFacingError:
         )
     if isinstance(exc, LLMError):
         hint = (
-            "Если лимит не исчерпан — обычно это настройка ключа OpenAI на сервере."
+            "Если дневной лимит не исчерпан — попробуйте позже или напишите в поддержку."
             if "OPENAI" in str(exc) or "ключ" in str(exc).lower()
             else "Проверьте лимит тарифа или попробуйте позже."
         )
         return UserFacingError(
-            f"🤖 <b>Генерация временно недоступна</b>\n\n{exc}\n\n{hint}",
+            f"🤖 <b>Подготовка ответов временно недоступна</b>\n\n{exc}\n\n{hint}",
             reply_markup=_kb(
                 [("💎 Подписка", "menu:subscription")],
                 [("📬 Очередь", "review:mp:list")],

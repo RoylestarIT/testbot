@@ -37,7 +37,7 @@ class ProSubscriptionMiddleware(BaseMiddleware):
         if not allowed:
             await event.answer(
                 "🚀 Авто-публикация — только на PRO.\n\n"
-                "Lite: генерация и копирование.\n"
+                "Lite: без лимита ответов, копирование в кабинет.\n"
                 "Оформите PRO: 💎 Подписка → Оплатить.",
                 show_alert=True,
             )

@@ -97,7 +97,7 @@ def progress_bar(current: int, total: int, width: int = 6) -> str:
 
 
 def tier_badge_free() -> str:
-    return "🆓 Free"
+    return "🆓 Бесплатно"
 
 
 def tier_badge_lite() -> str:
@@ -109,7 +109,7 @@ def tier_badge_pro() -> str:
 
 
 def tier_badge_trial() -> str:
-    return "🎁 Trial PRO"
+    return "🎁 Пробный PRO"
 
 
 def checklist_line(done: bool, label: str) -> str:

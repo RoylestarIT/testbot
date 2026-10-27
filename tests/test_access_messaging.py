@@ -14,6 +14,6 @@ def test_trial_activated_text_explains_after_trial() -> None:
         free_api_publishes_remaining=3,
     )
     text = trial_pro_activated_text(user, Settings())
-    assert "Trial PRO" in text
-    assert "После trial" in text
-    assert "не расходуется" in text
+    assert "Пробный PRO" in text
+    assert "После окончания" in text
+    assert "не тратятся" in text

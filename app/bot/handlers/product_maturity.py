@@ -108,7 +108,7 @@ async def _render_wb_questions(
                     if exc.status_code == 404:
                         lines.append(
                             f"🔵 <b>{name}</b> — "
-                            + muted("API вопросов недоступен на этом тарифе · ответ в seller.ozon.ru")
+                            + muted("Вопросы покупателей недоступны на этом тарифе · ответ в seller.ozon.ru")
                         )
                     else:
                         err = user_error_from_exception(exc)
@@ -206,7 +206,7 @@ async def reply_feedback(callback: CallbackQuery, db_user: DbUser) -> None:
     if callback.message:
         await safe_edit_message(
             callback.message,
-            "✅ Ответ отправлен. Оценка сохранена — помогает улучшать генерацию.",
+            "✅ Ответ отправлен. Оценка сохранена — помогает улучшать подсказки.",
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=[
                     [InlineKeyboardButton(text="📬 Очередь", callback_data="review:mp:list")],

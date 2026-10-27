@@ -225,7 +225,7 @@ def format_subscription_summary(
     generations_remaining: int | None = None,
     access_tier_line: str | None = None,
 ) -> str:
-    lines = ["👤 <b>Ваш доступ</b>", f"🆔 Telegram ID: <code>{user.tg_id}</code>", ""]
+    lines = ["👤 <b>Ваш доступ</b>", f"🆔 Номер в Telegram (для поддержки): <code>{user.tg_id}</code>", ""]
     if access_tier_line:
         lines.append(access_tier_line)
         lines.append("")
@@ -234,10 +234,10 @@ def format_subscription_summary(
         lines.extend(
             [
                 "Оплаченная подписка: <b>нет</b>",
-                f"Генераций сегодня: <b>{generations_remaining if generations_remaining is not None else '—'}</b> из 5",
-                "Publish в WB/Ozon из бота: <b>только PRO</b> (или trial / бесплатная квота)",
+                f"Ответов сегодня: <b>{generations_remaining if generations_remaining is not None else '—'}</b> из 5",
+                "Отправка в WB/Ozon из бота: <b>только PRO</b> (или пробный период / бесплатная квота)",
                 "",
-                "Лимиты бесплатного тарифа: 1 кабинет WB/Ozon, 1 tone-профиль.\n"
+                "Лимиты бесплатного тарифа: 1 кабинет WB/Ozon, 1 профиль тона.\n"
                 "Оформите Lite или PRO — «Подписка → Оплатить».",
             ]
         )
@@ -259,13 +259,13 @@ def format_subscription_summary(
 
     if subscription.status == SubscriptionStatus.ACTIVE:
         if subscription.plan == SubscriptionPlan.PRO:
-            lines.append("Генерации: <b>без лимита</b>")
-            lines.append("Publish в API + авто-ответы 4–5★: <b>да</b>")
+            lines.append("Подготовка ответов: <b>без дневного лимита</b>")
+            lines.append("Отправка из бота + авто-ответы 4–5★: <b>да</b>")
         else:
-            lines.append("Генерации: <b>без лимита</b>")
-            lines.append("Publish в API: <b>нет</b> — используйте «Скопировать ответ»")
+            lines.append("Подготовка ответов: <b>без дневного лимита</b>")
+            lines.append("Отправка из бота: <b>нет</b> — используйте «Копировать ответ»")
     elif generations_remaining is not None:
-        lines.append(f"Генераций сегодня (бесплатно): <b>{generations_remaining}</b> из 5")
+        lines.append(f"Ответов сегодня (бесплатно): <b>{generations_remaining}</b> из 5")
 
     if subscription.status == SubscriptionStatus.PENDING:
         lines.append("")

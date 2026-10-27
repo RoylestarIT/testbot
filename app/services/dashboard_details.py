@@ -40,18 +40,18 @@ def _sync_line(account) -> str:
 def _plan_extra_line(user: User, subscription) -> str | None:
     if is_trial_pro_active(user):
         until = user.trial_pro_until.strftime("%d.%m.%Y") if user.trial_pro_until else "—"
-        return f"🎁 Trial PRO до {until} — ответы можно отправлять в маркетплейс из бота."
+        return f"🎁 Пробный PRO до {until} — ответы можно отправлять в маркетплейс из бота."
     if subscription and subscription.status.value == "active":
         if subscription.plan == SubscriptionPlan.PRO:
             return "💎 PRO — отправка в WB/Ozon и авто-ответы на 4–5★."
         if subscription.plan == SubscriptionPlan.LITE:
-            return "✨ Lite — без лимита генераций; в маркетплейс — копированием."
+            return "✨ Lite — без дневного лимита; в маркетплейс — копированием."
     if user.free_api_publishes_remaining > 0:
         return (
-            f"🚀 На Free осталось <b>{user.free_api_publishes_remaining}</b> пробных отправок "
+            f"🚀 На бесплатном тарифе осталось <b>{user.free_api_publishes_remaining}</b> пробных отправок "
             "в маркетплейс из бота."
         )
-    return "На Free ответы копируете в кабинет WB/Ozon; PRO — отправка из бота."
+    return "На бесплатном тарифе ответы копируете в кабинет WB/Ozon; PRO — отправка из бота."
 
 
 async def build_dashboard_details(session: AsyncSession, user: User) -> str:
@@ -105,7 +105,7 @@ async def build_dashboard_details(session: AsyncSession, user: User) -> str:
         lines.extend(
             [
                 "",
-                "<b>🔒 Лимиты Free</b>",
+                "<b>🔒 Лимиты бесплатного тарифа</b>",
                 bullet(f"Кабинеты: {acc_n} из {FREE_MAX_MARKETPLACE_ACCOUNTS}"),
                 bullet(f"Профили тона: {tone_n} из {FREE_MAX_TONE_PROFILES}"),
             ]

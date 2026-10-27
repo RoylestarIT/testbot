@@ -57,7 +57,7 @@ async def subscription_reminder_once(bot: Bot, settings: Settings | None = None)
             text = (
                 f"⏳ Подписка <b>{plan_label(subscription.plan)}</b> заканчивается через "
                 f"<b>{days_left}</b> дн. (до {subscription.expires_at.strftime('%d.%m.%Y')}).\n"
-                "Продлите сейчас — PRO publish и лимиты сохранятся без паузы.\n"
+                "Продлите сейчас — отправка из бота и лимиты сохранятся без паузы.\n"
                 "<i>Не уверены в тарифе? Откройте «Калькулятор» ниже.</i>"
             )
             try:
@@ -83,8 +83,8 @@ async def subscription_reminder_once(bot: Bot, settings: Settings | None = None)
                 await send_proactive(
                     bot,
                     user.tg_id,
-                    "📭 Подписка закончилась — вы на <b>Free</b> "
-                    "(5 генераций/день, 1 кабинет, ответы вручную в кабинете).\n"
+                    "📭 Подписка закончилась — вы на <b>бесплатном тарифе</b> "
+                    "(до 5 ответов в день, 1 кабинет, ответы копируете в кабинет).\n"
                     "<i>🧮 Калькулятор — подобрать Lite или PRO под ваш объём.</i>",
                     reply_markup=_renewal_keyboard(),
                 )

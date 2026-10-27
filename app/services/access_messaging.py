@@ -12,13 +12,13 @@ from app.services.pro_access import is_trial_pro_active
 def trial_ended_screen_text(user: User) -> str:
     reserve = user.free_api_publishes_remaining
     return (
-        "⏱ <b>Trial PRO завершён</b>\n\n"
+        "⏱ <b>Пробный PRO закончился</b>\n\n"
         "Что изменилось:\n"
-        "· Publish в WB/Ozon из бота — только с тарифом <b>PRO</b>\n"
-        "· На <b>Free</b> — до 5 генераций/день, ответ <b>копированием</b> в кабинет\n"
-        "· <b>Lite</b> — ∞ генераций, тоже копия (без publish в API)\n\n"
-        f"Пробных publish на Free (если не тратили): <b>{reserve}</b>\n\n"
-        "<i>Негатив 1–3★ по-прежнему только вы · авто 4–5★ было на PRO.</i>"
+        "· Отправка ответа из бота — снова только на тарифе <b>PRO</b>\n"
+        "· На <b>бесплатном тарифе</b> — до 5 подготовленных ответов в день, дальше копируете в кабинет\n"
+        "· На <b>Lite</b> — без дневного лимита, тоже копирование в кабинет\n\n"
+        f"Пробных отправок из бота на бесплатном тарифе (если не тратили): <b>{reserve}</b>\n\n"
+        "<i>Низкие оценки по-прежнему только вы · авто на 4–5★ было на PRO.</i>"
     )
 
 
@@ -27,14 +27,14 @@ def trial_pro_activated_text(user: User, settings: Settings | None = None) -> st
     until = user.trial_pro_until.strftime("%d.%m.%Y") if user.trial_pro_until else "—"
     reserve = user.free_api_publishes_remaining
     return (
-        f"🎁 <b>Trial PRO</b> до <b>{until}</b> ({settings.trial_pro_days} дн.)\n\n"
-        "Сейчас: <b>publish в WB/Ozon из бота</b> и авто только на <b>4–5★</b> — без лимита.\n\n"
-        "После trial без PRO/Lite:\n"
-        "· Free — до 5 генераций/день, ответ копированием;\n"
-        "· Lite — ∞ генераций, копия в кабинет;\n"
-        "· PRO — снова publish из бота.\n\n"
-        f"<i>Запас пробных publish на Free (на после trial): <b>{reserve}</b> — "
-        "не расходуется, пока trial активен.</i>"
+        f"🎁 <b>Пробный PRO</b> до <b>{until}</b> ({settings.trial_pro_days} дн.)\n\n"
+        "Сейчас можно отправлять ответы из бота в WB/Ozon и включить авто-ответы на <b>4–5★</b>.\n\n"
+        "После окончания пробного периода:\n"
+        "· Бесплатно — до 5 ответов в день, копирование в кабинет;\n"
+        "· Lite — без лимита, копирование;\n"
+        "· PRO — снова отправка из бота.\n\n"
+        f"<i>Пробные отправки на бесплатном тарифе после пробного периода: <b>{reserve}</b> "
+        "(не тратятся, пока пробный PRO активен).</i>"
     )
 
 
@@ -45,19 +45,19 @@ async def build_dashboard_publish_line(
 ) -> str | None:
     if subscription and subscription.status == SubscriptionStatus.ACTIVE:
         if subscription.plan == SubscriptionPlan.PRO:
-            return "🚀  PRO: publish в API + авто 4–5★"
-        return "✨  Lite: ∞ генераций · ответ — копированием в кабинет"
+            return "🚀  PRO: отправка из бота + авто на 4–5★"
+        return "✨  Lite: без лимита ответов · копируете в кабинет"
 
     if await is_trial_pro_active(user):
         until = user.trial_pro_until.strftime("%d.%m.%Y") if user.trial_pro_until else "—"
-        return f"🎁  Trial PRO до {until} · publish без лимита"
+        return f"🎁  Пробный PRO до {until}"
 
     if user.free_api_publishes_remaining > 0:
         return (
-            f"🚀  Пробных publish: <b>{user.free_api_publishes_remaining}</b> "
-            "(Free · или trial PRO на сводке)"
+            f"🚀  Пробных отправок из бота: <b>{user.free_api_publishes_remaining}</b> "
+            "(бесплатный тариф или кнопка пробного PRO на сводке)"
         )
-    return "📋  Publish в API — trial PRO или тариф PRO"
+    return "📋  Отправка из бота — пробный или тариф PRO"
 
 
 def build_my_access_publish_block(
@@ -71,23 +71,23 @@ def build_my_access_publish_block(
     lines: list[str] = []
     if subscription and subscription.status == SubscriptionStatus.ACTIVE:
         if subscription.plan == SubscriptionPlan.PRO:
-            lines.append(bullet("Publish в API + авто 4–5★: <b>да</b>"))
+            lines.append(bullet("Отправка из бота + авто 4–5★: <b>да</b>"))
         else:
-            lines.append(bullet("Publish в API: <b>копирование</b> в кабинет (Lite)"))
+            lines.append(bullet("Отправка из бота: <b>копирование</b> в кабинет (Lite)"))
         return lines
 
     if trial_active:
         until = user.trial_pro_until.strftime("%d.%m.%Y") if user.trial_pro_until else "—"
-        lines.append(bullet(f"Trial PRO до <b>{until}</b> — publish без лимита"))
+        lines.append(bullet(f"Пробный PRO до <b>{until}</b>"))
         lines.append(
             muted(
-                f"После trial: Lite = копия, PRO = publish. "
-                f"Запас на Free: {user.free_api_publishes_remaining} publish."
+                f"После пробного периода: Lite — копия, PRO — из бота. "
+                f"Запас на бесплатном тарифе: {user.free_api_publishes_remaining} отправок."
             )
         )
         return lines
 
-    lines.append(bullet("Publish в API: <b>PRO</b>, trial или пробная квота"))
+    lines.append(bullet("Отправка из бота: <b>PRO</b>, пробный период или пробная квота"))
     if user.free_api_publishes_remaining:
-        lines.append(bullet(f"Пробных publish осталось: <b>{user.free_api_publishes_remaining}</b>"))
+        lines.append(bullet(f"Пробных отправок осталось: <b>{user.free_api_publishes_remaining}</b>"))
     return lines

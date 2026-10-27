@@ -105,7 +105,7 @@ async def build_service_status_text(session: AsyncSession, user_id: int) -> str:
     ]
 
     if not api_accounts:
-        lines.append(muted("Пока не подключены — статус появится после добавления API-ключа."))
+        lines.append(muted("Пока не подключены — статус появится после добавления ключа кабинета."))
     else:
         for acc, issue in zip(api_accounts[:10], issues[:10], strict=False):
             mp = "🟣 WB" if acc.marketplace.value == "wb" else "🔵 Ozon"
@@ -124,7 +124,7 @@ async def build_service_status_text(session: AsyncSession, user_id: int) -> str:
                 "или нет сети на сервере."
             ),
             muted(
-                "Ошибка ключа — ⚙️ Настройки → кабинет → обновите API-ключ или подключите заново."
+                "Ошибка ключа — ⚙️ Настройки → кабинет → обновите ключ или подключите заново."
             ),
             muted("При сбоях WB/Ozon отзывы в очереди обновляются с небольшой задержкой."),
         ]

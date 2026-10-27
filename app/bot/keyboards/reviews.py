@@ -133,7 +133,7 @@ def variants_keyboard(
     if can_publish and review_id is not None:
         action_row.append(
             InlineKeyboardButton(
-                text="🚀 Publish",
+                text="🚀 В кабинет",
                 callback_data=f"review:mp:publish:{review_id}",
             )
         )
@@ -163,7 +163,7 @@ def history_filter_keyboard(
     rows: list[list[InlineKeyboardButton]] = [
         [
             _status_btn("📋 Все", "all"),
-            _status_btn("🚀 Publish", "published"),
+            _status_btn("🚀 В кабинет", "published"),
             _status_btn("📎 Копия", "copied"),
         ],
     ]

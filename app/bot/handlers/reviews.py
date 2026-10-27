@@ -121,7 +121,7 @@ async def _generate_and_persist(
     async with session_factory() as session:
         allowed, reason = await can_generate(session, user_id)
         if not allowed:
-            raise LLMError(reason or "Лимит генераций исчерпан")
+            raise LLMError(reason or "Дневной лимит бесплатных ответов исчерпан")
 
     review_id = await _ensure_review_record(
         user_id=user_id,
@@ -246,10 +246,10 @@ async def _render_history(
             [r.id for r in reviews]
         )
     if not reviews:
-        text = "📚 <b>История пуста</b>\n\n" + "<i>👇 Ответьте на отзыв — здесь появятся копии и publish.</i>"
+        text = "📚 <b>История пуста</b>\n\n" + "<i>👇 Ответьте на отзыв — здесь появятся копии и отправки в кабинет.</i>"
         kb = reviews_menu_keyboard()
     else:
-        label = {"all": "все", "published": "publish", "copied": "копия"}.get(filter_key, "все")
+        label = {"all": "все", "published": "в кабинет", "copied": "копия"}.get(filter_key, "все")
         text = f"📚 <b>История</b> ({label})\n\nНажмите на отзыв:"
         kb = _history_keyboard(reviews, reply_previews)
         filter_kb = history_filter_keyboard(
@@ -314,7 +314,7 @@ async def review_history_item(callback: CallbackQuery, db_user: DbUser) -> None:
             return
         replies = await ReplyRepository(session).list_by_review_id(review_id)
     if review.status == ReviewStatus.PUBLISHED:
-        status = "🟢 опубликован в API"
+        status = "🟢 отправлен в кабинет"
     else:
         status = "📋 скопирован (Lite)"
     lines = [
@@ -406,7 +406,7 @@ async def manual_start(callback: CallbackQuery, state: FSMContext) -> None:
         await safe_edit_message(
             callback.message,
             "✍️ <b>Ручной ответ</b>\n\n"
-            "Отзыва нет в sync — вставьте текст сами.\n"
+            "Отзыва нет в списке — вставьте текст сами.\n"
             "Пришлите <b>текст отзыва</b> одним сообщением.",
             reply_markup=manual_entry_keyboard(),
         )

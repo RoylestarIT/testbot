@@ -15,9 +15,9 @@ from app.services.onboarding_checklist import (
 router = Router(name="onboarding")
 
 _STEP_META = [
-    ("Кабинет WB/Ozon", "⚙️ Настройки → API-ключ.", "menu:settings"),
-    ("Синхронизация", "🔄 На сводке — «Обновить», подтянуть отзывы.", "review:sync"),
-    ("Тон ответа", "⚙️ Настройки → «Тон ответа» — профиль для генерации.", "settings:tone"),
+    ("Кабинет WB/Ozon", "⚙️ Настройки → подключите ключ кабинета.", "menu:settings"),
+    ("Обновление отзывов", "🔄 На сводке — «Обновить», подтянуть отзывы.", "review:sync"),
+    ("Тон ответа", "⚙️ Настройки → «Тон ответа» — как звучат ваши ответы.", "settings:tone"),
 ]
 
 
@@ -158,7 +158,7 @@ async def onboarding_done(callback: CallbackQuery, db_user: DbUser) -> None:
             return
         if not await onboarding_is_complete(session, user):
             await callback.answer(
-                "Сначала выполните 3 шага: кабинет, синхронизация и тон ответа.",
+                "Сначала выполните 3 шага: кабинет, обновление отзывов и тон ответа.",
                 show_alert=True,
             )
             return

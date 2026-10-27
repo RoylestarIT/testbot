@@ -50,7 +50,7 @@ def empty_queue_message(reason: EmptyQueueReason) -> str:
         return "Подключите кабинет WB или Ozon в ⚙️ Настройки."
     if reason == EmptyQueueReason.SYNC_ERROR:
         return (
-            "Очередь пуста, но при последнем sync была ошибка API.\n"
+            "Очередь пуста, но при последнем обновлении была ошибка.\n"
             "Проверьте ключ в ⚙️ Настройки или откройте 🛰 Статус сервиса."
         )
     if reason == EmptyQueueReason.NEEDS_SYNC:

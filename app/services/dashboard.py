@@ -129,7 +129,7 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
     meta: list[str] = [f"{tier_icon}  {tier}"]
 
     if remaining is not None:
-        meta.append(f"⚡  Генераций сегодня: <b>{remaining}</b> / 5")
+        meta.append(f"⚡  Ответов сегодня: <b>{remaining}</b> из 5")
     publish_line = await build_dashboard_publish_line(session, user, subscription)
     if publish_line:
         meta.append(publish_line)
@@ -174,7 +174,7 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
         nudge_line = None
 
     if user_should_see_trial_ended_banner(user):
-        trial_hint = muted("⏱ Trial PRO завершён — нажмите «Что изменилось» на сводке.")
+        trial_hint = muted("⏱ Пробный PRO закончился — нажмите «Что изменилось» на сводке.")
         nudge_line = f"{trial_hint}\n\n{nudge_line}" if nudge_line else trial_hint
 
     if not await has_lite_or_higher(session, user.id):
@@ -185,19 +185,19 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
                 nudge_line
                 + "\n"
                 + muted(
-                    f"🔒 Free: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} каб., "
-                    f"{tone_n}/{FREE_MAX_TONE_PROFILES} тон"
+                    f"🔒 Бесплатный тариф: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} кабинет, "
+                    f"{tone_n}/{FREE_MAX_TONE_PROFILES} профиль тона"
                 )
             )
         else:
             nudge_line = muted(
-                f"🔒 Free: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} каб., "
-                f"{tone_n}/{FREE_MAX_TONE_PROFILES} тон"
+                f"🔒 Бесплатный тариф: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} кабинет, "
+                f"{tone_n}/{FREE_MAX_TONE_PROFILES} профиль тона"
             )
 
     footer_parts: list[str] = []
     if has_cabinets:
-        footer_parts.append(f"Синхронизация каждые {poll_min} мин")
+        footer_parts.append(f"Обновление отзывов каждые {poll_min} мин")
     poller = get_poller_status_line().strip()
     if poller:
         footer_parts.append(poller)

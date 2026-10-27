@@ -187,7 +187,7 @@ async def build_period_analytics_block(session: AsyncSession, user_id: int) -> s
             f"скопировали в кабинет вручную: <b>{copy7}</b>."
         )
     if w30_gen:
-        lines.append(f"· За <b>30 дней</b> — <b>{w30_gen}</b> отзывов с генерацией.")
+        lines.append(f"· За <b>30 дней</b> — <b>{w30_gen}</b> отзывов с подготовленными ответами.")
 
     reply_speed = median_h7 if median_h7 is not None else median_h30
     if reply_speed is not None:
