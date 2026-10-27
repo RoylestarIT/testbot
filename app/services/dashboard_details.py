@@ -14,6 +14,7 @@ from app.services.plans import (
     count_user_tone_profiles,
     describe_access_tier,
     has_lite_or_higher,
+    max_marketplace_accounts,
 )
 from app.services.period_analytics import build_period_analytics_block
 from app.services.pro_access import is_trial_pro_active
@@ -99,14 +100,15 @@ async def build_dashboard_details(session: AsyncSession, user: User) -> str:
     else:
         lines.append(muted("Подключите WB или Ozon в ⚙️ Настройки."))
 
+    acc_n = await count_user_api_accounts(session, user.id)
+    cab_max = await max_marketplace_accounts(session, user.id)
+    lines.extend(["", bullet(f"Кабинеты: {acc_n} из {cab_max} на тарифе")])
     if not await has_lite_or_higher(session, user.id):
-        acc_n = await count_user_api_accounts(session, user.id)
         tone_n = await count_user_tone_profiles(session, user.id)
         lines.extend(
             [
                 "",
                 "<b>🔒 Лимиты бесплатного тарифа</b>",
-                bullet(f"Кабинеты: {acc_n} из {FREE_MAX_MARKETPLACE_ACCOUNTS}"),
                 bullet(f"Профили тона: {tone_n} из {FREE_MAX_TONE_PROFILES}"),
             ]
         )

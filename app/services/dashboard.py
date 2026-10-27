@@ -12,12 +12,12 @@ from app.db.models import Marketplace, MarketplaceAccount, Review, ReviewStatus,
 from app.db.repositories.account import AccountRepository
 from app.services.generation_limit import remaining_generations_today
 from app.services.plans import (
-    FREE_MAX_MARKETPLACE_ACCOUNTS,
     FREE_MAX_TONE_PROFILES,
     count_user_api_accounts,
     count_user_tone_profiles,
     describe_access_tier,
     has_lite_or_higher,
+    max_marketplace_accounts,
 )
 from app.services.subscription import get_effective_subscription
 from app.bot.product_news import build_product_news_banner, user_should_see_product_news
@@ -177,23 +177,17 @@ async def build_user_dashboard(session: AsyncSession, user: User) -> str:
         trial_hint = muted("⏱ Пробный PRO закончился — нажмите «Что изменилось» на сводке.")
         nudge_line = f"{trial_hint}\n\n{nudge_line}" if nudge_line else trial_hint
 
+    acc_n = await count_user_api_accounts(session, user.id)
+    cab_max = await max_marketplace_accounts(session, user.id)
+    if acc_n >= cab_max:
+        cab_hint = muted(f"🏪 Кабинеты: {acc_n}/{cab_max} — лимит тарифа.")
+        nudge_line = f"{cab_hint}\n\n{nudge_line}" if nudge_line else cab_hint
     if not await has_lite_or_higher(session, user.id):
-        acc_n = await count_user_api_accounts(session, user.id)
         tone_n = await count_user_tone_profiles(session, user.id)
-        if nudge_line:
-            nudge_line = (
-                nudge_line
-                + "\n"
-                + muted(
-                    f"🔒 Бесплатный тариф: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} кабинет, "
-                    f"{tone_n}/{FREE_MAX_TONE_PROFILES} профиль тона"
-                )
-            )
-        else:
-            nudge_line = muted(
-                f"🔒 Бесплатный тариф: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS} кабинет, "
-                f"{tone_n}/{FREE_MAX_TONE_PROFILES} профиль тона"
-            )
+        free_hint = muted(
+            f"🔒 Бесплатный тариф: {tone_n}/{FREE_MAX_TONE_PROFILES} профиль тона"
+        )
+        nudge_line = f"{free_hint}\n\n{nudge_line}" if nudge_line else free_hint
 
     footer_parts: list[str] = []
     if has_cabinets:

@@ -17,9 +17,12 @@ from app.db.repositories.account import AccountRepository
 from app.db.repositories.tone_profile import ToneProfileRepository
 from app.services.plans import (
     FREE_MAX_MARKETPLACE_ACCOUNTS,
+    LITE_MAX_MARKETPLACE_ACCOUNTS,
+    PRO_MAX_MARKETPLACE_ACCOUNTS,
     can_add_marketplace_account,
     can_add_tone_profile,
     has_unlimited_generations,
+    max_marketplace_accounts,
 )
 
 
@@ -82,6 +85,55 @@ async def test_free_user_cannot_add_second_tone(session: AsyncSession) -> None:
     allowed, msg = await can_add_tone_profile(session, user.id)
     assert allowed is False
     assert msg is not None
+
+
+async def _add_wb(session: AsyncSession, user_id: int, shop: str) -> None:
+    await AccountRepository(session).create(
+        user_id=user_id,
+        marketplace=Marketplace.WB,
+        encrypted_api_key="enc",
+        shop_name=shop,
+        is_active=True,
+    )
+
+
+@pytest.mark.asyncio
+async def test_lite_user_limited_to_two_accounts(session: AsyncSession) -> None:
+    user = await UserRepository(session).create(tg_id=8010, username="lite2")
+    await SubscriptionRepository(session).create(
+        user_id=user.id,
+        plan=SubscriptionPlan.LITE,
+        status=SubscriptionStatus.ACTIVE,
+        expires_at=datetime.now(UTC) + timedelta(days=30),
+        payment_method=PaymentMethod.STARS,
+    )
+    await _add_wb(session, user.id, "a1")
+    await _add_wb(session, user.id, "a2")
+    await session.commit()
+    assert await max_marketplace_accounts(session, user.id) == LITE_MAX_MARKETPLACE_ACCOUNTS
+    allowed, msg = await can_add_marketplace_account(session, user.id)
+    assert allowed is False
+    assert msg is not None
+    assert "Lite" in msg
+
+
+@pytest.mark.asyncio
+async def test_pro_user_limited_to_four_accounts(session: AsyncSession) -> None:
+    user = await UserRepository(session).create(tg_id=8011, username="pro4")
+    await SubscriptionRepository(session).create(
+        user_id=user.id,
+        plan=SubscriptionPlan.PRO,
+        status=SubscriptionStatus.ACTIVE,
+        expires_at=datetime.now(UTC) + timedelta(days=30),
+        payment_method=PaymentMethod.STARS,
+    )
+    for i in range(PRO_MAX_MARKETPLACE_ACCOUNTS):
+        await _add_wb(session, user.id, f"s{i}")
+    await session.commit()
+    assert await max_marketplace_accounts(session, user.id) == PRO_MAX_MARKETPLACE_ACCOUNTS
+    allowed, msg = await can_add_marketplace_account(session, user.id)
+    assert allowed is False
+    assert "PRO" in msg
 
 
 @pytest.mark.asyncio

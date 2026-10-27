@@ -11,6 +11,8 @@ from app.bot.ui import brand_title, bullet, muted, section
 from app.services.subscription import get_effective_subscription, plan_label
 
 FREE_MAX_MARKETPLACE_ACCOUNTS = 1
+LITE_MAX_MARKETPLACE_ACCOUNTS = 2
+PRO_MAX_MARKETPLACE_ACCOUNTS = 4
 FREE_MAX_TONE_PROFILES = 1
 
 PLANS_COMPARISON_TEXT = (
@@ -22,10 +24,12 @@ PLANS_COMPARISON_TEXT = (
     + bullet("ответ — копирование в кабинет")
     + section("Lite", icon="✨")
     + "\n"
-    + bullet("без дневного лимита · несколько кабинетов и профилей тона")
+    + bullet(f"без дневного лимита · до {LITE_MAX_MARKETPLACE_ACCOUNTS} кабинетов · профили тона")
     + "\n"
     + bullet("отправка только копированием в кабинет")
     + section("PRO", icon="🚀")
+    + "\n"
+    + bullet(f"до {PRO_MAX_MARKETPLACE_ACCOUNTS} кабинетов WB/Ozon")
     + "\n"
     + bullet("отправка ответа из бота в WB/Ozon")
     + "\n"
@@ -37,15 +41,24 @@ PLANS_COMPARISON_TEXT = (
 )
 
 LITE_VS_PRO_SHORT = (
-    "Lite: без лимита, копирование · PRO: отправка из бота + авто 4–5★ · всё в Telegram"
+    f"Lite: до {LITE_MAX_MARKETPLACE_ACCOUNTS} кабинетов, копирование · "
+    f"PRO: до {PRO_MAX_MARKETPLACE_ACCOUNTS} кабинетов, отправка из бота + авто 4–5★"
 )
 
 UPSELL_LITE_OR_PRO = "Оформите Lite или PRO: «Подписка» → сравнение тарифов."
 
 
 async def has_lite_or_higher(session: AsyncSession, user_id: int) -> bool:
-    """Платный Lite, PRO или активный trial — без лимитов кабинетов и tone."""
+    """Платный Lite, PRO или активный trial — без лимита ответов и профилей тона."""
     return await has_unlimited_generations(session, user_id)
+
+
+async def max_marketplace_accounts(session: AsyncSession, user_id: int) -> int:
+    if await has_pro_access(session, user_id):
+        return PRO_MAX_MARKETPLACE_ACCOUNTS
+    if await has_active_lite_subscription(session, user_id):
+        return LITE_MAX_MARKETPLACE_ACCOUNTS
+    return FREE_MAX_MARKETPLACE_ACCOUNTS
 
 
 async def count_user_api_accounts(session: AsyncSession, user_id: int) -> int:
@@ -64,16 +77,25 @@ async def count_user_tone_profiles(session: AsyncSession, user_id: int) -> int:
 
 
 async def can_add_marketplace_account(session: AsyncSession, user_id: int) -> tuple[bool, str | None]:
-    if await has_lite_or_higher(session, user_id):
-        return True, None
+    limit = await max_marketplace_accounts(session, user_id)
     count = await count_user_api_accounts(session, user_id)
-    if count >= FREE_MAX_MARKETPLACE_ACCOUNTS:
+    if count < limit:
+        return True, None
+    if limit == FREE_MAX_MARKETPLACE_ACCOUNTS:
         return (
             False,
-            f"На бесплатном тарифе — только {FREE_MAX_MARKETPLACE_ACCOUNTS} кабинет WB/Ozon. "
-            + UPSELL_LITE_OR_PRO,
+            f"На бесплатном тарифе — только {limit} кабинет WB/Ozon. " + UPSELL_LITE_OR_PRO,
         )
-    return True, None
+    if limit == LITE_MAX_MARKETPLACE_ACCOUNTS:
+        return (
+            False,
+            f"На тарифе Lite — до {limit} кабинетов WB/Ozon. "
+            "Оформите PRO — до 4 кабинетов: «Подписка» → сравнение тарифов.",
+        )
+    return (
+        False,
+        f"На тарифе PRO — до {PRO_MAX_MARKETPLACE_ACCOUNTS} кабинетов WB/Ozon.",
+    )
 
 
 async def can_add_tone_profile(session: AsyncSession, user_id: int) -> tuple[bool, str | None]:

@@ -58,6 +58,7 @@ from app.services.plans import (
     FREE_MAX_MARKETPLACE_ACCOUNTS,
     FREE_MAX_TONE_PROFILES,
     can_add_marketplace_account,
+    max_marketplace_accounts,
     can_add_tone_profile,
     count_user_api_accounts,
     count_user_tone_profiles,
@@ -141,16 +142,10 @@ async def settings_accounts(callback: CallbackQuery, db_user: DbUser) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
         accounts = await AccountRepository(session).list_by_user_id(db_user.id)
-        lite_plus = await has_lite_or_higher(session, db_user.id)
         api_count = await count_user_api_accounts(session, db_user.id)
+        cab_limit = await max_marketplace_accounts(session, db_user.id)
     await callback.answer()
-    if lite_plus:
-        limit_line = "Можно подключить несколько аккаунтов WB/Ozon."
-    else:
-        limit_line = (
-            f"Бесплатно: <b>{api_count}/{FREE_MAX_MARKETPLACE_ACCOUNTS}</b> кабинет WB/Ozon. "
-            "Lite/PRO — без лимита."
-        )
+    limit_line = f"Кабинеты WB/Ozon: <b>{api_count}/{cab_limit}</b> на вашем тарифе."
     text = f"<b>Кабинеты маркетплейсов</b>\n\n{limit_line}"
     if callback.message:
         await safe_edit_message(
