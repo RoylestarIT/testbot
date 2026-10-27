@@ -170,7 +170,7 @@ SYNC_DONE = brand_title("Готово", icon="✅") + "\n" + "📬 Новых о
 MP_LIST_EMPTY = (
     brand_title("Нет новых отзывов", icon="📭")
     + "\n"
-    + muted("👇 Синхронизировать или ✍️ ручной ответ на этом экране")
+    + muted("👇 Обновить отзывы или ✍️ ручной ответ на этом экране")
 )
 
 MP_LIST_HEADER = brand_title("Ответы на отзывы", tagline="WB/Ozon · ручной ввод", icon="📬")

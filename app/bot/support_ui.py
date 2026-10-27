@@ -3,6 +3,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.bot.keyboards.legal import legal_open_from_terms_row
+from app.bot.keyboards.nav import nav_back_more
 from app.bot.ui import brand_title, muted, section
 from app.core.config import get_settings
 
@@ -36,5 +37,5 @@ def support_keyboard() -> InlineKeyboardMarkup:
         )
     rows.append([InlineKeyboardButton(text="✉️ Написать из бота", callback_data="support:write")])
     rows.append(legal_open_from_terms_row(back="s"))
-    rows.append([InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")])
+    rows.extend(nav_back_more().inline_keyboard)
     return InlineKeyboardMarkup(inline_keyboard=rows)

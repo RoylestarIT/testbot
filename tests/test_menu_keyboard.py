@@ -26,6 +26,7 @@ def test_more_menu_only_help_support() -> None:
     assert "menu:wb_questions" in callbacks
     assert "menu:service_status" not in callbacks
     assert "menu:changelog" in callbacks
+    assert "🆕 Новое" in texts
 
 
 def test_more_menu_shows_admin_for_admins() -> None:

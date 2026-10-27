@@ -97,8 +97,8 @@ async def build_publish_activity_line(session: AsyncSession, user_id: int, *, da
     if published + copied == 0:
         return None
     return (
-        f"📤  За {days} дн.: publish в API <b>{published}</b> · "
-        f"вручную/копия <b>{copied}</b>"
+        f"📤  За {days} дн.: отправлено в маркетплейс <b>{published}</b> · "
+        f"скопировано вручную <b>{copied}</b>"
     )
 
 
@@ -172,27 +172,40 @@ async def build_period_analytics_block(session: AsyncSession, user_id: int) -> s
     median_h30 = await median_hours_to_first_reply(session, user_id, days=30)
     median_h7 = await median_hours_to_first_reply(session, user_id, days=7)
 
-    lines = ["<b>📈 Активность</b>"]
-    lines.append(
-        f"· 7 дней: генерации по <b>{w7_gen}</b> отзывам · закрыто <b>{w7_closed}</b>"
-    )
+    lines = ["<b>📈 Как идут дела</b>"]
+
+    if w7_gen == 0 and w7_closed == 0:
+        lines.append("· За последнюю неделю ответов на отзывы пока не было.")
+    else:
+        lines.append(
+            f"· За <b>7 дней</b>: сгенерировали ответы для <b>{w7_gen}</b> отзывов, "
+            f"закрыли <b>{w7_closed}</b>."
+        )
     if pub7 or copy7:
-        lines.append(f"· Publish в API: <b>{pub7}</b> · копия/ручная отправка: <b>{copy7}</b>")
-    lines.append(f"· 30 дней: генерации по <b>{w30_gen}</b> отзывам")
-    if median_h7 is not None:
-        lines.append(f"· ⏱ До 1-го ответа (7 дн.): <b>{median_h7:g}</b> ч (медиана)")
-    if median_h30 is not None:
-        lines.append(f"· ⏱ До 1-го ответа (30 дн.): <b>{median_h30:g}</b> ч (медиана)")
+        lines.append(
+            f"· Из них отправили в WB/Ozon из бота: <b>{pub7}</b>, "
+            f"скопировали в кабинет вручную: <b>{copy7}</b>."
+        )
+    if w30_gen:
+        lines.append(f"· За <b>30 дней</b> — <b>{w30_gen}</b> отзывов с генерацией.")
+
+    reply_speed = median_h7 if median_h7 is not None else median_h30
+    if reply_speed is not None:
+        period = "неделю" if median_h7 is not None else "месяц"
+        lines.append(f"· Обычно до первого ответа — около <b>{reply_speed:g} ч</b> (за {period}).")
+
     if queue:
         pct = round(100 * low / queue) if queue else 0
-        avg_s = f" · средняя ⭐ <b>{avg}</b>" if avg is not None else ""
-        lines.append(f"· Очередь: <b>{queue}</b> · негатив ≤3★: <b>{low}</b> ({pct}%){avg_s}")
+        lines.append(f"· Сейчас в очереди: <b>{queue}</b> отзыв(ов).")
+        if low:
+            avg_s = f", средняя оценка <b>{avg}</b>" if avg is not None else ""
+            lines.append(f"· Негативных (1–3★): <b>{low}</b> ({pct}%){avg_s}.")
     else:
-        lines.append("· Очередь пуста")
+        lines.append("· Очередь пуста — все новые отзывы разобраны.")
+
     trend = await weekly_avg_rating_trend(session, user_id, weeks=4)
-    if any(v is not None for _, v in trend):
-        parts = []
-        for label, val in trend:
-            parts.append(f"{label}: <b>{val:g}</b>⭐" if val is not None else f"{label}: —")
-        lines.append("· Тренд ⭐ (4 нед., новые отзывы): " + " · ".join(parts))
+    rated_weeks = [(label, val) for label, val in trend if val is not None]
+    if rated_weeks:
+        parts = [f"{label}: {val:g}★" for label, val in rated_weeks[-3:]]
+        lines.append("· Средняя оценка новых отзывов: " + ", ".join(parts) + ".")
     return "\n".join(lines)

@@ -16,7 +16,7 @@ def more_menu_keyboard(*, show_admin: bool = False) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="❓ Вопросы", callback_data="menu:wb_questions"),
         ],
         [
-            InlineKeyboardButton(text="📜 Обновления", callback_data="menu:changelog"),
+            InlineKeyboardButton(text="🆕 Новое", callback_data="menu:changelog"),
             InlineKeyboardButton(text="📜 Документы", callback_data="menu:legal"),
         ],
         [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],

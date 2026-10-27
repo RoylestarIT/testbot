@@ -23,8 +23,8 @@ async def session() -> AsyncSession:
 async def test_period_analytics_empty_user(session: AsyncSession) -> None:
     user = await UserRepository(session).create(tg_id=99001122, username="a")
     block = await build_period_analytics_block(session, user.id)
-    assert "7 дней" in block
-    assert "Очередь пуста" in block
+    assert "7 дней" in block or "недел" in block.lower()
+    assert "очеред" in block.lower()
     low, total = await queue_negative_share(session, user.id)
     assert low == 0 and total == 0
 

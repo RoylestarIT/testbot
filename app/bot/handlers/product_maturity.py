@@ -23,7 +23,8 @@ from app.services.wb_questions_queue import (
     question_id_from_item,
     snooze_question,
 )
-from app.bot.handlers.wb_questions_ui import wb_questions_keyboard
+from app.bot.handlers.wb_questions_ui import QuestionsBack, wb_questions_keyboard
+from app.bot.keyboards.nav import nav_back_dashboard, nav_back_details, nav_back_more
 from app.bot.user_errors import user_error_from_exception
 
 router = Router(name="product_maturity")
@@ -33,26 +34,17 @@ WB_QUESTIONS_PAGE_SIZE = 5
 WB_SELLER_URL = "https://seller.wildberries.ru/"
 
 
-def _back_more() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="◀️ Ещё", callback_data="menu:more")],
-            [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
-        ]
-    )
-
-
 @router.callback_query(F.data.in_({"menu:service_status", "menu:account_health"}))
 async def menu_service_status(callback: CallbackQuery, db_user: DbUser) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
         text = await build_service_status_text(session, db_user.id)
-    await answer_and_edit(callback, text, reply_markup=_back_more())
+    await answer_and_edit(callback, text, reply_markup=nav_back_dashboard())
 
 
 @router.callback_query(F.data == "menu:changelog")
 async def menu_changelog(callback: CallbackQuery) -> None:
-    await answer_and_edit(callback, build_release_history_text(), reply_markup=_back_more())
+    await answer_and_edit(callback, build_release_history_text(), reply_markup=nav_back_more())
 
 
 @router.callback_query(F.data == "menu:monthly_report")
@@ -60,10 +52,12 @@ async def menu_monthly_report(callback: CallbackQuery, db_user: DbUser) -> None:
     session_factory = get_session_factory()
     async with session_factory() as session:
         text = await build_monthly_report_text(session, db_user.id)
-    await answer_and_edit(callback, text, reply_markup=_back_more())
+    await answer_and_edit(callback, text, reply_markup=nav_back_details())
 
 
-async def _render_wb_questions(callback: CallbackQuery, db_user: DbUser, page: int) -> None:
+async def _render_wb_questions(
+    callback: CallbackQuery, db_user: DbUser, page: int, *, back: QuestionsBack = "more"
+) -> None:
     session_factory = get_session_factory()
     page = max(0, page)
     lines = [
@@ -82,7 +76,7 @@ async def _render_wb_questions(callback: CallbackQuery, db_user: DbUser, page: i
         oz_accounts = [a for a in accounts if a.marketplace == Marketplace.OZON]
         if not wb_accounts and not oz_accounts:
             lines.append("Подключите 🟣 WB или 🔵 Ozon в ⚙️ Настройки.")
-            await answer_and_edit(callback, "\n".join(lines), reply_markup=_back_more())
+            await answer_and_edit(callback, "\n".join(lines), reply_markup=nav_back_more())
             return
 
         wb_client = WildberriesClient()
@@ -147,19 +141,30 @@ async def _render_wb_questions(callback: CallbackQuery, db_user: DbUser, page: i
             preview = format_question_preview(item)
             lines.append(f"· {preview}")
 
-    kb = wb_questions_keyboard(items=chunk, page=page, has_more=has_more)
+    kb = wb_questions_keyboard(items=chunk, page=page, has_more=has_more, back=back)
     await answer_and_edit(callback, "\n".join(lines), reply_markup=kb)
 
 
 @router.callback_query(F.data == "menu:wb_questions")
 async def menu_wb_questions(callback: CallbackQuery, db_user: DbUser) -> None:
-    await _render_wb_questions(callback, db_user, page=0)
+    await _render_wb_questions(callback, db_user, page=0, back="more")
+
+
+@router.callback_query(F.data == "menu:wb_questions:details")
+async def menu_wb_questions_from_details(callback: CallbackQuery, db_user: DbUser) -> None:
+    await _render_wb_questions(callback, db_user, page=0, back="details")
+
+
+@router.callback_query(F.data.regexp(r"^mp:questions:d:\d+$"))
+async def wb_questions_page_details(callback: CallbackQuery, db_user: DbUser) -> None:
+    page = int(callback.data.split(":")[-1])
+    await _render_wb_questions(callback, db_user, page=page, back="details")
 
 
 @router.callback_query(F.data.regexp(r"^(wb:questions|mp:questions):\d+$"))
 async def wb_questions_page(callback: CallbackQuery, db_user: DbUser) -> None:
     page = int(callback.data.split(":")[-1])
-    await _render_wb_questions(callback, db_user, page=page)
+    await _render_wb_questions(callback, db_user, page=page, back="more")
 
 
 @router.callback_query(F.data.regexp(r"^(wb:q:snooze|mp:q:snooze):\d+:.+$"))

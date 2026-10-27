@@ -11,6 +11,7 @@ from app.bot.marketing import (
 from app.bot.keyboards.menu import dashboard_keyboard, main_menu_keyboard
 from app.bot.keyboards.positioning import positioning_keyboard
 from app.bot.utils.callbacks import safe_edit_message
+from app.bot.keyboards.nav import nav_back_dashboard
 from app.bot.product_news import product_news_version, user_should_see_product_news
 from app.core.config import get_settings
 from app.db.models import User as DbUser
@@ -100,7 +101,7 @@ async def menu_why_us(callback: CallbackQuery) -> None:
     await callback.answer()
     text = why_us_hub_text()
     if callback.message:
-        await safe_edit_message(callback.message, text, reply_markup=positioning_keyboard())
+        await safe_edit_message(callback.message, text, reply_markup=positioning_keyboard(back="menu:more"))
 
 
 @router.callback_query(F.data == "menu:market_compare")
@@ -150,9 +151,9 @@ async def menu_dashboard_details(callback: CallbackQuery, db_user: DbUser) -> No
         inline_keyboard=[
             [
                 InlineKeyboardButton(text="📆 Отчёт 30 дн.", callback_data="menu:monthly_report"),
-                InlineKeyboardButton(text="❓ Вопросы WB", callback_data="menu:wb_questions"),
+                InlineKeyboardButton(text="❓ Вопросы WB", callback_data="menu:wb_questions:details"),
             ],
-            [InlineKeyboardButton(text="🏠  Сводка", callback_data="menu:dashboard")],
+            *nav_back_dashboard().inline_keyboard,
         ]
     )
     if callback.message:

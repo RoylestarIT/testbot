@@ -15,8 +15,8 @@ from app.services.plans import (
     describe_access_tier,
     has_lite_or_higher,
 )
-from app.services.access_messaging import build_dashboard_publish_line
 from app.services.period_analytics import build_period_analytics_block
+from app.services.pro_access import is_trial_pro_active
 from app.services.subscription import get_effective_subscription
 
 
@@ -24,17 +24,34 @@ def _sync_line(account) -> str:
     mp = "🟣 WB" if account.marketplace == Marketplace.WB else "🔵 Ozon"
     name = account.shop_name or f"#{account.id}"
     if not account.is_active:
-        status = "⚠️ ключ не принят / отключён"
+        status = "нужен новый ключ"
     elif account.last_sync_error:
-        status = f"⚠️ {account.last_sync_error[:80]}"
+        status = account.last_sync_error[:60]
     else:
-        status = "✅ OK"
+        status = "всё ок"
     sync_at = (
-        f"{format_ui_time(account.last_sync_at)} (Минск)"
+        f"обновлено {format_ui_time(account.last_sync_at)} (Минск)"
         if account.last_sync_at
-        else "ещё не было"
+        else "ещё не обновляли"
     )
-    return f"{mp} <b>{name}</b> — sync {sync_at} · {status}"
+    return f"{mp} <b>{name}</b> — {sync_at} · {status}"
+
+
+def _plan_extra_line(user: User, subscription) -> str | None:
+    if is_trial_pro_active(user):
+        until = user.trial_pro_until.strftime("%d.%m.%Y") if user.trial_pro_until else "—"
+        return f"🎁 Trial PRO до {until} — ответы можно отправлять в маркетплейс из бота."
+    if subscription and subscription.status.value == "active":
+        if subscription.plan == SubscriptionPlan.PRO:
+            return "💎 PRO — отправка в WB/Ozon и авто-ответы на 4–5★."
+        if subscription.plan == SubscriptionPlan.LITE:
+            return "✨ Lite — без лимита генераций; в маркетплейс — копированием."
+    if user.free_api_publishes_remaining > 0:
+        return (
+            f"🚀 На Free осталось <b>{user.free_api_publishes_remaining}</b> пробных отправок "
+            "в маркетплейс из бота."
+        )
+    return "На Free ответы копируете в кабинет WB/Ozon; PRO — отправка из бота."
 
 
 async def build_dashboard_details(session: AsyncSession, user: User) -> str:
@@ -44,20 +61,23 @@ async def build_dashboard_details(session: AsyncSession, user: User) -> str:
     accounts_all = await AccountRepository(session).list_by_user_id(user.id, active_only=True)
     q_sum = sum(a.cached_unanswered_questions for a in accounts_all if a.marketplace.value == "wb")
     questions_line = (
-        f"❓  Вопросы WB без ответа: <b>{q_sum}</b>" if q_sum else "❓  Новых вопросов WB нет"
+        f"❓  Без ответа в WB: <b>{q_sum}</b> вопрос(ов) покупателей"
+        if q_sum
+        else "❓  Новых вопросов покупателей на WB нет"
     )
     lines = [
-        brand_title("Подробнее", tagline="Тариф, аналитика, кабинеты", icon="📊"),
-        bullet(f"💎 Тариф: <b>{tier}</b>"),
+        brand_title("Подробнее", tagline="Тариф, очередь и кабинеты", icon="📊"),
         "",
+        f"💎  Тариф: <b>{tier}</b>",
     ]
-    publish = await build_dashboard_publish_line(session, user, subscription)
-    if publish:
-        lines.append(bullet(publish.replace("  ", " ", 1).strip()))
+    extra = _plan_extra_line(user, subscription)
+    if extra:
+        lines.append(muted(extra))
     lines.extend(
         [
             "",
             analytics,
+            "",
             questions_line,
             "",
             "<b>🏪 Кабинеты</b>",
@@ -77,7 +97,7 @@ async def build_dashboard_details(session: AsyncSession, user: User) -> str:
         if len(accounts) > 8:
             lines.append(muted(f"… и ещё {len(accounts) - 8}"))
     else:
-        lines.append(muted("Кабинеты не подключены — ⚙️ Настройки"))
+        lines.append(muted("Подключите WB или Ozon в ⚙️ Настройки."))
 
     if not await has_lite_or_higher(session, user.id):
         acc_n = await count_user_api_accounts(session, user.id)
@@ -86,18 +106,8 @@ async def build_dashboard_details(session: AsyncSession, user: User) -> str:
             [
                 "",
                 "<b>🔒 Лимиты Free</b>",
-                bullet(f"Кабинеты: {acc_n}/{FREE_MAX_MARKETPLACE_ACCOUNTS}"),
-                bullet(f"Тон ответа: {tone_n}/{FREE_MAX_TONE_PROFILES}"),
+                bullet(f"Кабинеты: {acc_n} из {FREE_MAX_MARKETPLACE_ACCOUNTS}"),
+                bullet(f"Профили тона: {tone_n} из {FREE_MAX_TONE_PROFILES}"),
             ]
         )
-    elif subscription and subscription.status.value == "active":
-        if subscription.plan == SubscriptionPlan.LITE:
-            lines.append("")
-            lines.append(muted("✨ Lite — генерации без лимита, publish только копированием."))
-        elif subscription.plan == SubscriptionPlan.PRO:
-            lines.append("")
-            lines.append(
-                muted("💎 PRO — publish в API; авто только 4–5★, негатив — вручную.")
-            )
-
     return "\n".join(lines)

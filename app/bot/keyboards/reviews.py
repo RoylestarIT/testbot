@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.db.models import ToneProfile
-from app.bot.keyboards.nav import nav_home_queue
+from app.bot.keyboards.nav import nav_back_dashboard, nav_home_queue
 from app.bot.ui import REVIEWS_HUB_BUTTON, SYNC_BUTTON
 
 
@@ -185,5 +185,5 @@ def history_filter_keyboard(
             )
         rows.append(acc_row)
     rows.append([InlineKeyboardButton(text="📥 CSV отчёт", callback_data="review:history:export")])
-    rows.extend(nav_home_queue().inline_keyboard)
+    rows.extend(nav_back_dashboard().inline_keyboard)
     return InlineKeyboardMarkup(inline_keyboard=rows)

@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from app.bot.keyboards.nav import nav_back_details, nav_back_more
 from app.db.models import MarketplaceAccount
 from app.services.wb_questions_queue import format_question_preview, question_id_from_item
+
+QuestionsBack = Literal["more", "details"]
 
 
 def wb_questions_keyboard(
@@ -13,6 +18,7 @@ def wb_questions_keyboard(
     items: list[tuple[MarketplaceAccount, dict]],
     page: int,
     has_more: bool,
+    back: QuestionsBack = "more",
 ) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     for acc, item in items:
@@ -30,9 +36,13 @@ def wb_questions_keyboard(
         )
     nav: list[InlineKeyboardButton] = []
     if page > 0:
-        nav.append(InlineKeyboardButton(text="◀️", callback_data=f"mp:questions:{page - 1}"))
+        prev = page - 1
+        prev_cb = f"mp:questions:d:{prev}" if back == "details" else f"mp:questions:{prev}"
+        nav.append(InlineKeyboardButton(text="◀️", callback_data=prev_cb))
     if has_more:
-        nav.append(InlineKeyboardButton(text="▶️", callback_data=f"mp:questions:{page + 1}"))
+        nxt = page + 1
+        nxt_cb = f"mp:questions:d:{nxt}" if back == "details" else f"mp:questions:{nxt}"
+        nav.append(InlineKeyboardButton(text="▶️", callback_data=nxt_cb))
     if nav:
         rows.append(nav)
     rows.append(
@@ -41,10 +51,6 @@ def wb_questions_keyboard(
             InlineKeyboardButton(text="🔵 Ozon", url="https://seller.ozon.ru/"),
         ]
     )
-    rows.append(
-        [
-            InlineKeyboardButton(text="◀️ Ещё", callback_data="menu:more"),
-            InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard"),
-        ]
-    )
+    back_kb = nav_back_details() if back == "details" else nav_back_more()
+    rows.extend(back_kb.inline_keyboard)
     return InlineKeyboardMarkup(inline_keyboard=rows)

@@ -1,6 +1,6 @@
 from aiogram import F, Router
 from aiogram.filters import Command, CommandStart
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
 from app.services.start_sources import increment_start_source, normalize_start_payload
 
@@ -9,6 +9,7 @@ from app.bot.keyboards.terms import terms_acceptance_keyboard
 from app.bot.ui import BRAND, ICON
 from app.bot.handlers.dashboard import _edit_dashboard, _send_dashboard
 from app.bot.keyboards.menu import main_menu_keyboard, more_menu_keyboard
+from app.bot.keyboards.nav import nav_back_more
 from app.core.config import get_settings
 from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
@@ -104,4 +105,8 @@ async def menu_help(callback: CallbackQuery) -> None:
 
     await callback.answer()
     if callback.message:
-        await safe_edit_message(callback.message, HELP_TEXT, reply_markup=main_menu_keyboard())
+        await safe_edit_message(
+            callback.message,
+            HELP_TEXT,
+            reply_markup=nav_back_more(),
+        )

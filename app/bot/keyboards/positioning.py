@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def positioning_keyboard(*, back: str = "menu:dashboard") -> InlineKeyboardMarkup:
+def positioning_keyboard(*, back: str = "menu:more") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -15,7 +15,10 @@ def positioning_keyboard(*, back: str = "menu:dashboard") -> InlineKeyboardMarku
             ],
             [
                 InlineKeyboardButton(text="💎 Подписка", callback_data="menu:subscription"),
-                InlineKeyboardButton(text="◀️ Сводка", callback_data=back),
+                InlineKeyboardButton(
+                    text="◀️ Ещё" if back == "menu:more" else "◀️ Сводка",
+                    callback_data=back,
+                ),
             ],
         ]
     )
