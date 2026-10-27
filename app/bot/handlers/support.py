@@ -9,6 +9,7 @@ from app.db.models import User as DbUser
 from app.db.repositories.user import UserRepository
 from app.db.session import get_session_factory
 from app.services.support_context import build_support_user_card
+from app.services.user_rate_limit import check_and_record
 
 router = Router(name="support")
 
@@ -87,6 +88,11 @@ async def support_message_received(message: Message, state: FSMContext, db_user:
         await message.answer("Слишком коротко — опишите проблему подробнее.")
         return
 
+    allowed, limit_msg = await check_and_record(db_user.id, "support")
+    if not allowed:
+        await message.answer(limit_msg or "Слишком часто.")
+        return
+
     session_factory = get_session_factory()
     async with session_factory() as session:
         user = await UserRepository(session).get_by_id(db_user.id)
@@ -122,6 +128,11 @@ async def support_idea_received(message: Message, state: FSMContext, db_user: Db
     text = (message.text or "").strip()
     if len(text) < 5:
         await message.answer("Слишком коротко — опишите идею чуть подробнее.")
+        return
+
+    allowed, limit_msg = await check_and_record(db_user.id, "support")
+    if not allowed:
+        await message.answer(limit_msg or "Слишком часто.")
         return
 
     session_factory = get_session_factory()

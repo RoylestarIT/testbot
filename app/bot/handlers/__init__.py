@@ -29,7 +29,9 @@ main_router.include_router(settings.router)
 main_router.include_router(marketplace_reviews.router)
 main_router.include_router(reviews.router)
 
-reviews.router.callback_query.middleware(SubscriptionCheckMiddleware())
+_generation_guard = SubscriptionCheckMiddleware()
+reviews.router.callback_query.middleware(_generation_guard)
+marketplace_reviews.router.callback_query.middleware(_generation_guard)
 settings.router.callback_query.middleware(ProSubscriptionMiddleware())
 
 __all__ = ["main_router"]

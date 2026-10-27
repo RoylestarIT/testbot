@@ -5,17 +5,13 @@ from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, TelegramObject
 
 from app.db.models import User as DbUser
-from app.services.generation_limit import can_generate, remaining_generations_today
 from app.db.session import get_session_factory
-
-GENERATION_CALLBACK_PREFIXES = (
-    "review:tone:",
-    "review:more",
-)
+from app.services.generation_guard import can_start_generation, is_generation_callback
+from app.services.generation_limit import remaining_generations_today
 
 
-class SubscriptionCheckMiddleware(BaseMiddleware):
-    """Blocks LLM generation callbacks when Lite daily limit is exceeded."""
+class GenerationGuardMiddleware(BaseMiddleware):
+    """Блокирует LLM-генерацию: дневной лимит Free + почасовой лимит для всех."""
 
     async def __call__(
         self,
@@ -26,7 +22,7 @@ class SubscriptionCheckMiddleware(BaseMiddleware):
         if not isinstance(event, CallbackQuery) or not event.data:
             return await handler(event, data)
 
-        if not any(event.data.startswith(prefix) for prefix in GENERATION_CALLBACK_PREFIXES):
+        if not is_generation_callback(event.data):
             return await handler(event, data)
 
         db_user: DbUser | None = data.get("db_user")
@@ -35,13 +31,17 @@ class SubscriptionCheckMiddleware(BaseMiddleware):
 
         session_factory = get_session_factory()
         async with session_factory() as session:
-            allowed, message = await can_generate(session, db_user.id)
+            allowed, message = await can_start_generation(session, db_user.id)
             remaining = await remaining_generations_today(session, db_user.id)
             data["generation_allowed"] = allowed
             data["generations_remaining"] = remaining
 
         if not allowed:
-            await event.answer(message or "Дневной лимит бесплатных ответов исчерпан", show_alert=True)
+            await event.answer(message or "Лимит подготовки ответов исчерпан", show_alert=True)
             return None
 
         return await handler(event, data)
+
+
+# Backward-compatible alias
+SubscriptionCheckMiddleware = GenerationGuardMiddleware

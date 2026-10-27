@@ -78,6 +78,26 @@ class Settings(BaseSettings):
     llm_queue_workers: int = Field(default=2, validation_alias="LLM_QUEUE_WORKERS")
     trial_pro_days: int = Field(default=3, validation_alias="TRIAL_PRO_DAYS")
     free_api_publishes: int = Field(default=3, validation_alias="FREE_API_PUBLISHES")
+    rate_limit_generations_per_hour_free: int = Field(
+        default=8,
+        validation_alias="RATE_LIMIT_GENERATIONS_PER_HOUR_FREE",
+        description="Подготовка ответов (LLM) в час на бесплатном тарифе",
+    )
+    rate_limit_generations_per_hour_paid: int = Field(
+        default=60,
+        validation_alias="RATE_LIMIT_GENERATIONS_PER_HOUR_PAID",
+        description="Подготовка ответов в час на Lite/PRO/trial",
+    )
+    rate_limit_sync_per_hour: int = Field(
+        default=15,
+        validation_alias="RATE_LIMIT_SYNC_PER_HOUR",
+        description="Ручное «Обновить» отзывы — раз в час на пользователя",
+    )
+    rate_limit_support_per_hour: int = Field(
+        default=8,
+        validation_alias="RATE_LIMIT_SUPPORT_PER_HOUR",
+        description="Сообщения в поддержку и предложения — в час",
+    )
     support_username: str = Field(default="", validation_alias="SUPPORT_USERNAME")
     legal_operator_name: str = Field(
         default="",

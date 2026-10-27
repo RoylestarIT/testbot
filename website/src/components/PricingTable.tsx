@@ -18,8 +18,8 @@ const rows: Row[] = [
   {
     label: "Кабинеты WB/Ozon",
     free: "1",
-    lite: "несколько",
-    pro: "несколько",
+    lite: "2",
+    pro: "4",
   },
   {
     label: "Tone of voice",

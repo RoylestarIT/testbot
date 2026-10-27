@@ -199,6 +199,13 @@ async def _mp_accounts(db_user: DbUser) -> list:
 
 
 async def _execute_sync(callback: CallbackQuery, db_user: DbUser, account_ids: list[int] | None) -> None:
+    from app.services.user_rate_limit import check_and_record
+
+    allowed, limit_msg = await check_and_record(db_user.id, "sync")
+    if not allowed:
+        await callback.answer(limit_msg or "Слишком часто", show_alert=True)
+        return
+
     session_factory = get_session_factory()
     total_new = 0
     errors: list[str] = []
