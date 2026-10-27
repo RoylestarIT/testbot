@@ -1,14 +1,7 @@
+import { TelegramIcon } from "./TelegramIcon";
+
 export function IconTelegram({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M21 5L4 12l6 2 2 6 3-8 6-7z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+  return <TelegramIcon className={className} />;
 }
 
 export function IconShield({ className = "h-5 w-5" }: { className?: string }) {
