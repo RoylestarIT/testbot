@@ -80,5 +80,4 @@ def build_release_history_text() -> str:
         for item in entry.get("items", []):
             lines.append(f"· {item}")
         lines.append("")
-    lines.append(muted("Текущая версия баннера задаётся PRODUCT_NEWS_VERSION на сервере."))
     return "\n".join(lines).strip()
