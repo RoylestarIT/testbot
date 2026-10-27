@@ -48,7 +48,7 @@ async def can_generate(session: AsyncSession, user_id: int) -> tuple[bool, str |
     if used >= FREE_DAILY_GENERATIONS:
         return False, (
             f"На бесплатном тарифе — не больше {FREE_DAILY_GENERATIONS} подготовленных ответов в день. "
-            "Lite 800 ₽ или PRO 1 600 ₽ в «Подписка» — или попробуйте завтра."
+            "Lite 990 ₽ или PRO 1 990 ₽ в «Подписка» — или попробуйте завтра."
         )
     return True, None
 

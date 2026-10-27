@@ -6,7 +6,7 @@ def test_why_us_hub_mentions_time_and_salary_savings() -> None:
     assert len(text) <= 4096
     assert "время" in text.lower() or "⏱" in text
     assert "30" in text or "сотрудник" in text.lower()
-    assert "800" in text
+    assert "990" in text
     assert "лояль" in text.lower() or "❤️" in text
 
 

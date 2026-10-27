@@ -27,6 +27,7 @@ def test_provider_token_enables_fiat_invoices() -> None:
         PAYMENT_CURRENCY="RUB",
         SUBSCRIPTION_LITE_PRICE_MINOR=10000,
         SUBSCRIPTION_PRO_PRICE_MINOR=30000,
+        SUBSCRIPTION_LITE_PRICE_RUB=800,
         PAYMENT_ENABLE_STARS=True,
     )
     assert uses_telegram_stars(settings) is False

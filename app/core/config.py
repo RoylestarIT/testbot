@@ -41,16 +41,16 @@ class Settings(BaseSettings):
     crypto_pro_amount_usd: str = Field(default="20", validation_alias="CRYPTO_PRO_AMOUNT_USD")
     crypto_pay_webhook_path: str = Field(default="/cryptopay/webhook", validation_alias="CRYPTO_PAY_WEBHOOK_PATH")
     payment_currency: str = Field(default="RUB", validation_alias="PAYMENT_CURRENCY")
-    subscription_lite_price_rub: int = Field(default=800, validation_alias="SUBSCRIPTION_LITE_PRICE_RUB")
-    subscription_pro_price_rub: int = Field(default=1600, validation_alias="SUBSCRIPTION_PRO_PRICE_RUB")
-    subscription_lite_price_byn: float = Field(default=30.0, validation_alias="SUBSCRIPTION_LITE_PRICE_BYN")
-    subscription_pro_price_byn: float = Field(default=60.0, validation_alias="SUBSCRIPTION_PRO_PRICE_BYN")
+    subscription_lite_price_rub: int = Field(default=990, validation_alias="SUBSCRIPTION_LITE_PRICE_RUB")
+    subscription_pro_price_rub: int = Field(default=1990, validation_alias="SUBSCRIPTION_PRO_PRICE_RUB")
+    subscription_lite_price_byn: float = Field(default=35.0, validation_alias="SUBSCRIPTION_LITE_PRICE_BYN")
+    subscription_pro_price_byn: float = Field(default=70.0, validation_alias="SUBSCRIPTION_PRO_PRICE_BYN")
     subscription_lite_price_minor: int = Field(
-        default=80000,
+        default=99000,
         validation_alias="SUBSCRIPTION_LITE_PRICE_MINOR",
     )
     subscription_pro_price_minor: int = Field(
-        default=160000,
+        default=199000,
         validation_alias="SUBSCRIPTION_PRO_PRICE_MINOR",
     )
     subscription_stars_markup_percent: float = Field(

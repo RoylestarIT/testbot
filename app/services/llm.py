@@ -50,7 +50,7 @@ def _rating_guidance(rating: int | None) -> str:
 
 def _format_tone_profile(tone_profile: ToneProfileInput | None) -> str:
     if tone_profile is None:
-        return "Тон: дружелюбный, профессиональный, лаконичный (по умолчанию)."
+        return "Тон: дружелюбный, простой, короткие фразы (по умолчанию)."
     parts: list[str] = []
     if tone_profile.description:
         parts.append(f"Описание тона: {tone_profile.description.strip()}")
@@ -58,7 +58,7 @@ def _format_tone_profile(tone_profile: ToneProfileInput | None) -> str:
         examples = "\n".join(f"- {item}" for item in tone_profile.example_replies[:5])
         parts.append(f"Примеры ответов магазина:\n{examples}")
     if not parts:
-        return "Тон: дружелюбный, профессиональный, лаконичный (по умолчанию)."
+        return "Тон: дружелюбный, простой, короткие фразы (по умолчанию)."
     return "\n".join(parts)
 
 
@@ -72,11 +72,13 @@ def build_prompt(
     soft_product_recommend: bool = False,
 ) -> tuple[str, str]:
     system = (
-        "Ты — опытный менеджер маркетплейса (Wildberries/Ozon). "
-        "Пишешь ответы продавца на отзывы покупателей от имени магазина. "
-        "Строго запрещено: URL, email, телефоны, мессенджеры, призывы писать в личку, реклама сторонних сервисов. "
-        "Не обещай рост рейтинга и нереалистичные компенсации. "
-        f"Верни ровно JSON без markdown: {{\"replies\": [\"...\", ...]}} — {count} различных варианта на русском."
+        "Ты — менеджер магазина на Wildberries/Ozon. Пишешь ответы на отзывы от имени продавца. "
+        "Стиль: живой разговорный русский, как в переписке с покупателем — коротко и по делу. "
+        "Каждый вариант: 2–4 предложения, без «уважаемый покупатель», без канцелярита и длинных списков. "
+        "Не повторяй дословно текст отзыва. "
+        "Запрещено: URL, email, телефоны, мессенджеры, «пишите в личку», реклама сторонних сервисов. "
+        "Не обещай нереалистичные компенсации и рост рейтинга. "
+        f"Верни только JSON без markdown: {{\"replies\": [\"...\", ...]}} — ровно {count} разных варианта."
     )
     product_block = ""
     if product_context and product_context.strip():
@@ -207,7 +209,8 @@ async def generate_replies(
                 {"role": "user", "content": user},
             ],
             response_format={"type": "json_object"},
-            temperature=0.7,
+            temperature=0.65,
+            max_tokens=900,
         )
     except (AuthenticationError, PermissionDeniedError):
         raise LLMError(

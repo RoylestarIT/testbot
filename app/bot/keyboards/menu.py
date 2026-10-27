@@ -19,6 +19,7 @@ def more_menu_keyboard(*, show_admin: bool = False) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🆕 Новое", callback_data="menu:changelog"),
             InlineKeyboardButton(text="📜 Документы", callback_data="menu:legal"),
         ],
+        [InlineKeyboardButton(text="💡 Предложить улучшение", callback_data="support:idea")],
         [InlineKeyboardButton(text="🏠 Сводка", callback_data="menu:dashboard")],
     ]
     if show_admin:
@@ -59,7 +60,7 @@ def dashboard_keyboard(
         )
     if show_trial_ended:
         rows.append(
-            [InlineKeyboardButton(text="⏱ Что изменилось после trial", callback_data="menu:trial_ended")]
+            [InlineKeyboardButton(text="⏱ Что изменилось после пробного PRO", callback_data="menu:trial_ended")]
         )
     if show_product_news:
         rows.append(

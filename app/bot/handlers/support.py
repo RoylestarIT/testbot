@@ -37,24 +37,39 @@ async def support_write_start(callback: CallbackQuery, state: FSMContext) -> Non
         )
 
 
-@router.message(SupportContactStates.waiting_message, F.text)
-async def support_message_received(message: Message, state: FSMContext, db_user: DbUser, bot: Bot) -> None:
-    text = (message.text or "").strip()
-    if len(text) < 5:
-        await message.answer("Слишком коротко — опишите проблему подробнее.")
-        return
+@router.callback_query(F.data == "support:idea")
+async def support_idea_start(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(SupportContactStates.waiting_idea)
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            support_screen_text()
+            + "\n\n<b>💡 Предложение по улучшению</b>\n"
+            "Напишите одним сообщением, что добавить или улучшить в боте — перешлём в поддержку.",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="◀️ Отмена", callback_data="menu:support")],
+                ]
+            ),
+        )
 
+
+async def _deliver_support_text(
+    *,
+    bot: Bot,
+    db_user: DbUser,
+    text: str,
+    admin_heading: str,
+) -> bool:
     settings = get_settings()
     session_factory = get_session_factory()
     async with session_factory() as session:
         user = await UserRepository(session).get_by_id(db_user.id)
         if user is None:
-            await message.answer("Ошибка профиля.")
-            await state.clear()
-            return
+            return False
         card = await build_support_user_card(session, user)
 
-    admin_text = f"{card}\n\n<b>Сообщение:</b>\n{text}"
+    admin_text = f"{admin_heading}\n\n{card}\n\n<b>Текст:</b>\n{text}"
     delivered = False
     for admin_id in settings.admin_ids:
         try:
@@ -62,6 +77,30 @@ async def support_message_received(message: Message, state: FSMContext, db_user:
             delivered = True
         except Exception:
             continue
+    return delivered
+
+
+@router.message(SupportContactStates.waiting_message, F.text)
+async def support_message_received(message: Message, state: FSMContext, db_user: DbUser, bot: Bot) -> None:
+    text = (message.text or "").strip()
+    if len(text) < 5:
+        await message.answer("Слишком коротко — опишите проблему подробнее.")
+        return
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            await message.answer("Ошибка профиля.")
+            await state.clear()
+            return
+
+    delivered = await _deliver_support_text(
+        bot=bot,
+        db_user=db_user,
+        text=text,
+        admin_heading="<b>🆘 Обращение в поддержку</b>",
+    )
 
     await state.clear()
     if delivered:
@@ -74,5 +113,40 @@ async def support_message_received(message: Message, state: FSMContext, db_user:
         await message.answer(
             "Не удалось доставить сообщение администратору. "
             "Напишите напрямую через кнопку «Написать в поддержку».",
+            reply_markup=support_keyboard(),
+        )
+
+
+@router.message(SupportContactStates.waiting_idea, F.text)
+async def support_idea_received(message: Message, state: FSMContext, db_user: DbUser, bot: Bot) -> None:
+    text = (message.text or "").strip()
+    if len(text) < 5:
+        await message.answer("Слишком коротко — опишите идею чуть подробнее.")
+        return
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        user = await UserRepository(session).get_by_id(db_user.id)
+        if user is None:
+            await message.answer("Ошибка профиля.")
+            await state.clear()
+            return
+
+    delivered = await _deliver_support_text(
+        bot=bot,
+        db_user=db_user,
+        text=text,
+        admin_heading="<b>💡 Предложение по улучшению</b>",
+    )
+
+    await state.clear()
+    if delivered:
+        await message.answer(
+            "✅ Спасибо! Предложение отправлено в поддержку.",
+            reply_markup=support_keyboard(),
+        )
+    else:
+        await message.answer(
+            "Не удалось доставить сообщение. Попробуйте «Написать в поддержку» или напишите в личку.",
             reply_markup=support_keyboard(),
         )

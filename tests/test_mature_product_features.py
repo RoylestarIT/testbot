@@ -12,7 +12,7 @@ def test_release_history_contains_versions() -> None:
 
 def test_user_error_encryption() -> None:
     err = user_error_from_exception(EncryptionError("x"))
-    assert "API-ключ" in err.html
+    assert "ключ кабинета" in err.html
     assert err.reply_markup is not None
 
 
