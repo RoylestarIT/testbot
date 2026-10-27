@@ -36,7 +36,7 @@ export function BotScreensShowcase() {
                   width={900}
                   height={1600}
                   loading={active === 0 ? "eager" : "lazy"}
-                  className="w-full rounded-[1.35rem] object-cover object-[center_top] transition-opacity duration-300"
+                  className="w-full rounded-[1.35rem] transition-opacity duration-300"
                 />
               </div>
               <p className="mt-5 text-center text-small text-ink-muted">{shot.caption}</p>
@@ -68,7 +68,7 @@ export function BotScreensShowcase() {
                           src={item.src}
                           alt=""
                           loading="lazy"
-                          className="h-full w-full object-cover object-[center_top]"
+                          className="h-full w-full object-cover object-top"
                         />
                       </span>
                       <span>
