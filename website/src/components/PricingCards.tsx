@@ -1,5 +1,6 @@
 import { PRICES } from "@/content/constants";
 import { IconCheck } from "./icons";
+import { LegalDisclaimer } from "./LegalDisclaimer";
 import { TelegramButton } from "./TelegramButton";
 import { Reveal } from "./Reveal";
 
@@ -41,8 +42,9 @@ const plans = [
   },
 ];
 
-export function PricingCards() {
+export function PricingCards({ showDisclaimer = false }: { showDisclaimer?: boolean }) {
   return (
+    <div>
     <div className="grid gap-6 lg:grid-cols-3">
       {plans.map((plan, i) => (
         <Reveal key={plan.name} delay={i * 80} className="h-full">
@@ -102,6 +104,10 @@ export function PricingCards() {
           </div>
         </Reveal>
       ))}
+    </div>
+    {showDisclaimer && (
+      <LegalDisclaimer className="mx-auto mt-10 max-w-3xl text-center" />
+    )}
     </div>
   );
 }

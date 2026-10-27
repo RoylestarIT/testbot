@@ -3,6 +3,8 @@ import { SectionHeading } from "@/components/SectionHeading";
 import { TelegramButton } from "@/components/TelegramButton";
 import { Button } from "@/components/Button";
 import { TelegramMockup } from "@/components/TelegramMockup";
+import { BotScreensShowcase } from "@/components/BotScreensShowcase";
+import { TestimonialsSection } from "@/components/TestimonialsSection";
 import { PricingCards } from "@/components/PricingCards";
 import { FAQAccordion } from "@/components/FAQAccordion";
 import { FAQ_ITEMS } from "@/content/faq";
@@ -152,19 +154,12 @@ export default function HomePage() {
                 Отзыв → три черновика → ваша правка → публикация. Автоответы — только на
                 4–5★. Негативные отзывы без вашего решения не уходят никогда.
               </p>
-              <figure className="mt-8 border-l-2 border-clay-300 pl-5">
-                <blockquote className="text-body-lg text-ink">
-                  «Раньше отзывы копились к вечеру. Теперь отвечаю между созвонами — прямо из
-                  Telegram».
-                </blockquote>
-                <figcaption className="mt-3 text-small text-ink-subtle">
-                  Селлер на WB и Ozon
-                </figcaption>
-              </figure>
             </div>
           </Reveal>
         </div>
       </section>
+
+      <BotScreensShowcase />
 
       {/* Benefits */}
       <section className="section-y bg-surface-muted">
@@ -187,6 +182,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <TestimonialsSection />
 
       {/* How it works */}
       <section className="section-y">
@@ -277,7 +274,7 @@ export default function HomePage() {
             />
           </Reveal>
           <div className="mt-16 lg:mt-20">
-            <PricingCards />
+            <PricingCards showDisclaimer />
           </div>
           <p className="mt-10 text-center">
             <Button href="/pricing" variant="ghost" trailing={<IconArrowRight />}>

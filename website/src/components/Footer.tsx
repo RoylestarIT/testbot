@@ -7,6 +7,7 @@ import {
   SUPPORT_EMAIL,
 } from "@/content/constants";
 import { Logo } from "./Logo";
+import { LegalDisclaimerFooter } from "./LegalDisclaimer";
 import { TelegramButton } from "./TelegramButton";
 
 export function Footer() {
@@ -89,7 +90,8 @@ export function Footer() {
             Цены актуальны в боте · на лендинге {PRICING_UPDATED}. Оплата Stars — сумма в
             боте.
           </p>
-          <p>
+          <LegalDisclaimerFooter className="max-w-3xl" />
+          <p className="pt-2">
             © {new Date().getFullYear()} {BRAND}. Техническое имя: {BRAND_TECH}.
           </p>
         </div>

@@ -14,7 +14,7 @@ import { PRICING_UPDATED } from "@/content/constants";
 export const metadata: Metadata = {
   title: "Тарифы Free, Lite и PRO",
   description:
-    "Сравнение тарифов «Голос бренда»: генерации, кабинеты, publish в API, авто 4–5★. Lite 800 ₽, PRO 1600 ₽ в месяц.",
+    "Сравнение тарифов «Голос бренда»: генерации, кабинеты, publish в API, авто 4–5★. Lite 990 ₽ / 35 BYN, PRO 1990 ₽ / 70 BYN в месяц.",
 };
 
 const payments = [
@@ -57,7 +57,7 @@ export default function PricingPage() {
 
       <section className="pb-20 sm:pb-24">
         <div className="container-page">
-          <PricingCards />
+          <PricingCards showDisclaimer />
           <p className="mt-8 text-center text-small text-ink-subtle">
             Цены на {PRICING_UPDATED}. Актуальная сумма всегда показывается в боте перед оплатой.
           </p>

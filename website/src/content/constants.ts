@@ -35,11 +35,11 @@ export const LEGAL_OPERATOR =
   "[ИП/ООО — полное наименование и реквизиты уточняются у оператора сервиса]";
 
 /** Дата актуализации цен на лендинге (обновляйте при изменении тарифов в боте). */
-export const PRICING_UPDATED = "24.10.2025";
+export const PRICING_UPDATED = "27.10.2026";
 
 export const PRICES = {
-  lite: { rub: 800, byn: 30 },
-  pro: { rub: 1600, byn: 60 },
+  lite: { rub: 990, byn: 35 },
+  pro: { rub: 1990, byn: 70 },
 } as const;
 
 export const SEO = {

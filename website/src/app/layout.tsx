@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geologica, Golos_Text } from "next/font/google";
 import "./globals.css";
 import { BRAND, SEO, SITE_URL } from "@/content/constants";
+import { Analytics } from "@/components/Analytics";
 import { JsonLd, organizationSchema } from "@/components/JsonLd";
 
 const OG_IMAGE = `${SITE_URL}/og.png`;
@@ -69,6 +70,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <JsonLd data={organizationSchema()} />
+        <Analytics />
         {children}
       </body>
     </html>
