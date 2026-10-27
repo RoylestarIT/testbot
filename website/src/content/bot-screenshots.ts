@@ -10,6 +10,13 @@ export type BotScreenshot = {
 
 export const BOT_SCREENSHOTS: BotScreenshot[] = [
   {
+    id: "description",
+    src: asset("/bot-screenshots/description.png"),
+    alt: "Карточка бота в Telegram до нажатия «Старт»",
+    title: "Первое знакомство",
+    caption: "Так бот выглядит, когда вы открываете его впервые.",
+  },
+  {
     id: "dashboard",
     src: asset("/bot-screenshots/dashboard.png"),
     alt: "Главный экран бота: сводка по отзывам и кнопки действий",
@@ -36,12 +43,5 @@ export const BOT_SCREENSHOTS: BotScreenshot[] = [
     alt: "Раздел поддержки в боте",
     title: "Поддержка",
     caption: "Пишете — отвечает живой человек. Документы тоже здесь.",
-  },
-  {
-    id: "description",
-    src: asset("/bot-screenshots/description.png"),
-    alt: "Карточка бота в Telegram до нажатия «Старт»",
-    title: "Первое знакомство",
-    caption: "Так бот выглядит, когда вы открываете его впервые.",
   },
 ];
