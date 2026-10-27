@@ -27,6 +27,9 @@ export function asset(path: string): string {
 
 export const BOT_AVATAR = asset("/bot-avatar.png");
 
+export const SUPPORT_TG = "brend_voice_support";
+export const SUPPORT_TG_URL = `https://t.me/${SUPPORT_TG}`;
+
 export const SUPPORT_EMAIL =
   process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "support@example.com";
 

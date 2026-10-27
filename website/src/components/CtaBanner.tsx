@@ -5,7 +5,7 @@ import { IconArrowRight } from "./icons";
 
 export function CtaBanner({
   title = "Первый ответ — уже сегодня",
-  description = "Подключите кабинет за пару минут. Бесплатно и без карты.",
+  description = "Подключение занимает пару минут. Бесплатно, без карты и без обязательств.",
   cta = "Открыть бота в Telegram",
   showCalculatorLink = false,
 }: {

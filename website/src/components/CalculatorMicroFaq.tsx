@@ -4,8 +4,8 @@ import { CALCULATOR_MICRO_FAQ } from "@/content/calculator-micro-faq";
 export function CalculatorMicroFaq() {
   return (
     <div className="mt-8 rounded-3xl border border-line bg-surface-muted/70 p-6 sm:p-8">
-      <p className="eyebrow">Перед решением</p>
-      <h4 className="mt-3 font-display text-title text-ink">Частые вопросы</h4>
+      <p className="eyebrow">Если сомневаетесь</p>
+      <h4 className="mt-3 font-display text-title text-ink">Коротко о главном</h4>
       <div className="mt-6 divide-y divide-line">
         {CALCULATOR_MICRO_FAQ.map((item) => (
           <details key={item.question} className="group py-4 first:pt-0 last:pb-0">

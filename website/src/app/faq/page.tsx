@@ -10,7 +10,7 @@ import { JsonLd, faqSchema } from "@/components/JsonLd";
 export const metadata: Metadata = {
   title: "FAQ",
   description:
-    "Безопасность API-ключей, ИИ и человек в ответах, негатив, trial PRO, оплата и отмена подписки.",
+    "Ответы на частые вопросы: безопасность ключей, кто пишет ответы, плохие отзывы, пробный PRO, оплата и отмена.",
 };
 
 export default function FaqPage() {
@@ -20,7 +20,7 @@ export default function FaqPage() {
       <InnerPageHero
         eyebrow="FAQ"
         title="Частые вопросы"
-        description="Безопасность, работа ИИ, тарифы и оплата — коротко и по делу."
+        description="Собрали то, о чём нас чаще всего спрашивают селлеры. Коротко и честно."
       />
       <section className="pb-20 sm:pb-24 lg:pb-32">
         <div className="container-page grid gap-12 lg:grid-cols-[1.4fr_0.6fr] lg:gap-16">
@@ -31,7 +31,7 @@ export default function FaqPage() {
             <aside className="rounded-3xl bg-brand-900 p-8 text-white">
               <h2 className="text-title text-white">Не нашли ответ?</h2>
               <p className="mt-3 text-body text-brand-100">
-                Напишите в поддержку прямо в боте — контекст вашего аккаунта подтянется сам.
+                Напишите нам в бота — ответит живой человек, обычно в течение рабочего дня.
               </p>
               <TelegramButton variant="white" className="mt-8 w-full">
                 Написать в поддержку

@@ -5,9 +5,11 @@ import { Button } from "@/components/Button";
 import { TelegramMockup } from "@/components/TelegramMockup";
 import { BotScreensShowcase } from "@/components/BotScreensShowcase";
 import { TestimonialsSection } from "@/components/TestimonialsSection";
+import { TrustSection } from "@/components/TrustSection";
 import { PricingCards } from "@/components/PricingCards";
 import { FAQAccordion } from "@/components/FAQAccordion";
 import { FAQ_ITEMS } from "@/content/faq";
+import { TESTIMONIALS } from "@/content/testimonials";
 import { MarketplaceStrip } from "@/components/MarketplaceStrip";
 import { FeatureCard } from "@/components/FeatureCard";
 import { Reveal } from "@/components/Reveal";
@@ -25,48 +27,48 @@ import {
 
 const stats = [
   { value: "3", label: "варианта ответа на каждый отзыв" },
-  { value: "2", label: "маркетплейса в одном чате" },
-  { value: "4–5★", label: "можно отвечать автоматически" },
-  { value: "1–3★", label: "только после вашего одобрения" },
+  { value: "2", label: "площадки в одном чате — WB и Ozon" },
+  { value: "~30 сек", label: "чтобы выбрать и отправить ответ" },
+  { value: "0", label: "автоответов на плохие отзывы" },
 ];
 
 const benefits = [
   {
     icon: <IconTelegram />,
-    title: "Всё в Telegram",
-    text: "Новый отзыв приходит сообщением — отвечаете там же, между делами. Без лишних вкладок и кабинетов.",
+    title: "Отвечаете там, где и так сидите",
+    text: "Новый отзыв приходит в Telegram. Ответили между делами — и забыли. Не нужно держать открытыми два кабинета.",
   },
   {
     icon: <IconSpark />,
-    title: "WB и Ozon вместе",
-    text: "Отзывы с обеих площадок в одной ленте. Отложить, получить дайджест, посмотреть историю.",
+    title: "WB и Ozon в одном месте",
+    text: "Все отзывы с обеих площадок в одной ленте. Можно отложить на потом или получать сводку раз в день.",
   },
   {
     icon: <IconShield />,
-    title: "ИИ под контролем",
-    text: "Тон бренда, стоп-слова и шаблоны — ваши. Негатив никогда не уходит без вашего решения.",
+    title: "Звучит как вы, а не как робот",
+    text: "Один раз расскажите боту, как вы общаетесь с покупателями, — и ответы будут в вашем стиле. Запретные слова тоже можно задать.",
   },
   {
     icon: <IconWallet />,
-    title: "Цена без сюрпризов",
-    text: "Фиксированная подписка вместо оплаты за каждый ответ. Бюджет известен заранее.",
+    title: "Понятная цена",
+    text: "Фиксированная сумма в месяц. Не нужно считать, сколько стоил каждый ответ.",
   },
 ];
 
 const steps = [
-  { title: "Подключите кабинет", text: "Добавьте API-ключ WB или Ozon в боте. Ключи шифруются." },
-  { title: "Получайте отзывы", text: "Бот присылает каждый новый отзыв — или дайджест раз в день." },
-  { title: "Выберите ответ", text: "Три черновика в тоне бренда. Возьмите любой или поправьте." },
-  { title: "Опубликуйте", text: "На PRO — прямо из бота. На Lite — скопируйте в кабинет." },
+  { title: "Подключите кабинет", text: "Вставьте ключ WB или Ozon в бота. Это пара минут." },
+  { title: "Получайте отзывы", text: "Бот пришлёт каждый новый отзыв или сводку утром — как удобнее." },
+  { title: "Выберите ответ", text: "Три варианта на выбор. Берёте любой или правите под себя." },
+  { title: "Отправьте", text: "На PRO — одной кнопкой из бота. На Lite — копируете в кабинет." },
 ];
 
 const nowFeatures = [
-  "Синхронизация отзывов WB и Ozon",
-  "Три варианта ответа от ИИ",
-  "Шаблоны и автоответы на 4\u2060–\u20605★ (PRO)",
-  "История, экспорт в CSV, аналитика",
-  "Уведомления о вопросах WB",
-  "Калькулятор «подписка или оплата за ответ»",
+  "Отзывы с WB и Ozon в одном чате",
+  "Три варианта ответа на выбор",
+  "Свои фразы и автоответы на 4\u2060–\u20605★ (PRO)",
+  "История ответов и выгрузка в Excel",
+  "Уведомления о вопросах покупателей на WB",
+  "Сводка: сколько отвечено за неделю",
 ];
 
 export default function HomePage() {
@@ -74,6 +76,7 @@ export default function HomePage() {
     <PageShell>
       <JsonLd data={softwareSchema()} />
       <JsonLd data={faqSchema(FAQ_ITEMS.slice(0, 5))} />
+
       {/* Hero */}
       <section className="relative -mt-16 overflow-hidden pt-16 sm:-mt-[4.5rem] sm:pt-[4.5rem]">
         <div className="absolute inset-0 bg-hero-mesh" aria-hidden />
@@ -85,33 +88,56 @@ export default function HomePage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-500" />
               </span>
-              Для селлеров Wildberries и Ozon
+              Для продавцов на Wildberries и Ozon
             </p>
             <h1 className="mt-7 text-display sm:text-display-lg lg:text-display-xl">
-              Ответы на&nbsp;отзывы за&nbsp;минуты.{" "}
+              Отвечайте на&nbsp;отзывы за&nbsp;минуты.{" "}
               <span className="text-brand-700">Прямо в&nbsp;Telegram.</span>
             </h1>
             <p className="prose-muted mt-7 max-w-prose">
-              Бот собирает отзывы с WB и Ozon и предлагает три ответа в тоне вашего бренда.
-              Вы выбираете — покупатель получает живой ответ.
+              Бот присылает новые отзывы и сразу предлагает три варианта ответа в вашем
+              стиле. Вы выбираете лучший — покупатель получает живой, человеческий ответ.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <TelegramButton trackSite size="lg">
-                Начать бесплатно
+                Попробовать бесплатно
               </TelegramButton>
-              <Button
-                href="/how-it-works"
-                variant="secondary"
-                size="lg"
-                trailing={<IconArrowRight />}
-              >
-                Как это работает
+              <Button href="/#calculator" variant="secondary" size="lg" trailing={<IconArrowRight />}>
+                Посчитать экономию
               </Button>
             </div>
             <p className="mt-5 text-small text-ink-subtle">
-              Без карты · 5 ответов в день бесплатно · Негатив — только с вашего одобрения
+              Без карты · 5 ответов в день бесплатно · Плохие отзывы — только через вас
             </p>
-            <div className="mt-12 border-t border-line pt-6">
+
+            <div className="mt-10 flex flex-wrap items-center gap-4">
+              <div className="flex -space-x-2.5" aria-hidden>
+                {TESTIMONIALS.slice(0, 5).map((t, i) => (
+                  <span
+                    key={t.name}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full font-display text-caption font-semibold ring-2 ring-[var(--background)] ${
+                      ["bg-brand-100 text-brand-800", "bg-clay-100 text-clay-600", "bg-[#e4ecf5] text-[#2d5b8a]", "bg-[#efe7f3] text-[#6b4483]", "bg-brand-200 text-brand-900"][i]
+                    }`}
+                  >
+                    {t.name.slice(0, 1)}
+                  </span>
+                ))}
+              </div>
+              <div>
+                <div className="flex gap-0.5 text-clay-500" aria-hidden>
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <svg key={j} viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="currentColor">
+                      <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L10 14.9l-5.2 2.7 1-5.8L1.5 7.7l5.9-.9z" />
+                    </svg>
+                  ))}
+                </div>
+                <p className="mt-1 text-small text-ink-muted">
+                  Селлеры уже отвечают на отзывы через бота
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-10 border-t border-line pt-6">
               <MarketplaceStrip />
             </div>
           </div>
@@ -142,18 +168,31 @@ export default function HomePage() {
             <SectionHeading
               align="left"
               eyebrow="Знакомо?"
-              title="Отзывов всё больше, а времени — нет"
-              description="Сотни отзывов в месяц, два кабинета и бесконечный копипаст. Отвечать важно — но не ценой всего рабочего дня."
+              title="Отзывов всё больше, а времени на них — нет"
+              description="Вечером открываете кабинет, а там сорок новых отзывов. Каждому хочется ответить по-человечески, но на это уходит час, а то и два."
             />
           </Reveal>
           <Reveal delay={100}>
             <div className="card p-8 sm:p-10">
-              <p className="eyebrow">Наш подход</p>
-              <h3 className="mt-4 text-headline">Бот готовит — решаете вы</h3>
+              <p className="eyebrow">Как мы это решаем</p>
+              <h3 className="mt-4 text-headline">Бот пишет черновики — вы решаете</h3>
               <p className="mt-4 text-body text-ink-muted">
-                Отзыв → три черновика → ваша правка → публикация. Автоответы — только на
-                4–5★. Негативные отзывы без вашего решения не уходят никогда.
+                Пришёл отзыв — бот уже подготовил три варианта ответа. Вы выбираете, при
+                желании правите и отправляете. На пятёрки можно отвечать автоматически, а
+                плохие отзывы бот всегда оставляет вам.
               </p>
+              <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+                {["Без копипаста", "Без двух открытых кабинетов", "Без шаблонных отписок", "Без риска нагрубить"].map(
+                  (item) => (
+                    <li key={item} className="list-check">
+                      <span className="list-check-icon" aria-hidden>
+                        <IconCheck className="h-3 w-3" />
+                      </span>
+                      <span className="text-ink">{item}</span>
+                    </li>
+                  ),
+                )}
+              </ul>
             </div>
           </Reveal>
         </div>
@@ -161,14 +200,16 @@ export default function HomePage() {
 
       <BotScreensShowcase />
 
+      <TrustSection />
+
       {/* Benefits */}
       <section className="section-y bg-surface-muted">
         <div className="container-page">
           <Reveal>
             <SectionHeading
-              eyebrow="Преимущества"
-              title="Всё для ответов. Ничего лишнего"
-              description="Экономим ваше время, а не обещаем магию ИИ и стопроцентный автопилот."
+              eyebrow="Что вы получаете"
+              title="Простой инструмент, который просто работает"
+              description="Без сложных настроек, обучения и отдельного сайта. Только то, что реально экономит время."
             />
           </Reveal>
           <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:mt-20">
@@ -190,9 +231,9 @@ export default function HomePage() {
         <div className="container-page">
           <Reveal>
             <SectionHeading
-              eyebrow="Как это работает"
+              eyebrow="Как начать"
               title="Четыре шага до первого ответа"
-              description="Никаких внедрений и обучений — всё происходит в @FeedBackReview_bot."
+              description="Ничего устанавливать не нужно — всё происходит в Telegram."
             />
           </Reveal>
           <ol className="mt-16 grid gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-2 lg:mt-20 lg:grid-cols-4">
@@ -211,7 +252,7 @@ export default function HomePage() {
           </ol>
           <p className="mt-10 text-center">
             <Button href="/how-it-works" variant="ghost" trailing={<IconArrowRight />}>
-              Подробнее о процессе
+              Подробнее, как всё устроено
             </Button>
           </p>
         </div>
@@ -224,15 +265,15 @@ export default function HomePage() {
             <SectionHeading
               align="left"
               eyebrow="Возможности"
-              title="Что уже умеет бот"
-              description="Работает сегодня. Новые функции добавляем по запросам селлеров."
+              title="Что бот умеет уже сейчас"
+              description="И мы продолжаем добавлять то, о чём просят селлеры."
             />
             <div className="mt-10 rounded-2xl border border-dashed border-brand-200 bg-brand-50/50 p-6">
               <p className="eyebrow">Скоро</p>
               <ul className="mt-3 space-y-1.5 text-body text-ink-muted">
-                <li>Рекомендация товара в ответе</li>
-                <li>Очередь вопросов Ozon</li>
-                <li>Расширенная аналитика</li>
+                <li>Подсказка «посмотрите ещё этот товар» в ответе</li>
+                <li>Вопросы покупателей с Ozon</li>
+                <li>Больше статистики по отзывам</li>
               </ul>
             </div>
           </Reveal>
@@ -248,7 +289,7 @@ export default function HomePage() {
               ))}
             </ul>
             <p className="mt-6 text-small text-ink-subtle">
-              Пока не планируем: Яндекс Маркет, автоответы на 1–3★, отдельный веб-кабинет.
+              Чего не будет: автоответов на плохие отзывы. Это наш принцип.
             </p>
           </Reveal>
         </div>
@@ -269,8 +310,8 @@ export default function HomePage() {
           <Reveal>
             <SectionHeading
               eyebrow="Тарифы"
-              title="Платите за подписку, а не за каждый ответ"
-              description="Начните бесплатно и переходите на платный тариф, когда отзывов станет больше."
+              title="Платите за месяц, а не за каждый ответ"
+              description="Начните бесплатно. Перейдёте на платный тариф, когда поймёте, что без бота уже не хочется."
             />
           </Reveal>
           <div className="mt-16 lg:mt-20">
@@ -290,9 +331,9 @@ export default function HomePage() {
           <Reveal>
             <SectionHeading
               align="left"
-              eyebrow="FAQ"
-              title="Частые вопросы"
-              description="Не нашли ответ? Напишите в поддержку прямо в боте."
+              eyebrow="Вопросы"
+              title="Отвечаем честно"
+              description="Не нашли свой вопрос? Напишите нам — ответит живой человек."
             />
             <div className="mt-8">
               <Button href="/faq" variant="secondary" trailing={<IconArrowRight />}>

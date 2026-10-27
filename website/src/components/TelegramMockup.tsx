@@ -41,7 +41,7 @@ export function TelegramMockup({ variant = "review" }: { variant?: "review" | "p
                 Вариант 2: Благодарим! Если понадобится другой размер — напишите…
               </Bubble>
               <div className="flex flex-wrap gap-2 px-0.5 pt-1">
-                {["✏️ Править", "📤 Publish", "📋 Копия"].map((label) => (
+                {["✏️ Изменить", "📤 Отправить", "📋 Скопировать"].map((label) => (
                   <span
                     key={label}
                     className="rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-medium text-sky-100 ring-1 ring-white/10"
@@ -54,10 +54,10 @@ export function TelegramMockup({ variant = "review" }: { variant?: "review" | "p
           ) : (
             <>
               <Bubble align="left" muted>
-                📊 Сравнение тарифов · Lite vs PRO
+                📊 Какой тариф выбрать?
               </Bubble>
               <Bubble align="left" accent>
-                Lite: ∞ генераций · PRO: publish + авто 4–5★
+                Lite — сколько угодно ответов. PRO — ещё и отправка из бота.
               </Bubble>
               <div className="flex flex-wrap gap-2 px-0.5 pt-1">
                 {["⭐ Stars", "💳 Карта", "🪙 USDT"].map((label) => (

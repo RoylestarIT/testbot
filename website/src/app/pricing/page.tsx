@@ -14,34 +14,34 @@ import { PRICING_UPDATED } from "@/content/constants";
 export const metadata: Metadata = {
   title: "Тарифы Free, Lite и PRO",
   description:
-    "Сравнение тарифов «Голос бренда»: генерации, кабинеты, publish в API, авто 4–5★. Lite 990 ₽ / 35 BYN, PRO 1990 ₽ / 70 BYN в месяц.",
+    "Тарифы «Голос бренда»: бесплатный, Lite за 990 ₽ / 35 BYN и PRO за 1990 ₽ / 70 BYN в месяц. Без оплаты за каждый ответ.",
 };
 
 const payments = [
-  { title: "Telegram Stars", text: "Мгновенно, прямо в чате" },
-  { title: "Crypto Bot", text: "USDT и другие монеты" },
-  { title: "Карта РФ / РБ", text: "Через платёжную форму" },
-  { title: "СБП или перевод", text: "Активация до 24 часов" },
+  { title: "Telegram Stars", text: "Сразу, прямо в чате" },
+  { title: "Crypto Bot", text: "USDT и другая криптовалюта" },
+  { title: "Карта РФ / РБ", text: "Обычная оплата картой" },
+  { title: "СБП или перевод", text: "Проверим и включим в течение суток" },
 ];
 
 const alternatives = [
   {
     title: "Оплата за ответ",
-    text: "~1–3 ₽ за каждый ответ. Чем больше отзывов, тем сложнее прогнозировать бюджет.",
+    text: "1–3 ₽ за каждый ответ. Чем больше отзывов, тем непредсказуемее счёт.",
   },
   {
     title: "Сотрудник на отзывы",
-    text: "Часто 30–80 тыс. ₽ в месяц, плюс зависимость от графика и отпусков.",
+    text: "30–80 тыс. ₽ в месяц. А ещё больничные, отпуска и выходные.",
   },
   {
     title: "Голос бренда",
-    text: "Фиксированная подписка. Бот снимает рутину, а стратегия и финальное слово — у вас.",
+    text: "Одна сумма в месяц. Бот делает рутину, а последнее слово всегда за вами.",
     highlight: true,
   },
 ];
 
 const pricingFaq = FAQ_ITEMS.filter((f) =>
-  ["Что такое Trial PRO?", "Как оплатить и когда активируется подписка?", "Как отменить подписку?"].includes(
+  ["Как попробовать PRO перед оплатой?", "Как оплатить и когда всё заработает?", "А если передумаю — как отменить?"].includes(
     f.question,
   ),
 );
@@ -51,15 +51,15 @@ export default function PricingPage() {
     <PageShell>
       <InnerPageHero
         eyebrow="Тарифы"
-        title="Простые тарифы без оплаты за ответ"
-        description="Начните бесплатно. Переходите на Lite или PRO, когда отзывов станет больше."
+        title="Простые тарифы. Без оплаты за каждый ответ"
+        description="Начните бесплатно. На Lite или PRO перейдёте, когда отзывов станет больше."
       />
 
       <section className="pb-20 sm:pb-24">
         <div className="container-page">
           <PricingCards showDisclaimer />
           <p className="mt-8 text-center text-small text-ink-subtle">
-            Цены на {PRICING_UPDATED}. Актуальная сумма всегда показывается в боте перед оплатой.
+            Цены на {PRICING_UPDATED}. Точную сумму бот всегда покажет перед оплатой.
           </p>
         </div>
       </section>
@@ -99,7 +99,7 @@ export default function PricingPage() {
           <Reveal>
             <SectionHeading
               eyebrow="Сколько это стоит иначе"
-              title="Сравните с альтернативами"
+              title="Сравните с тем, как обычно"
             />
           </Reveal>
           <div className="mt-14 grid gap-5 md:grid-cols-3">

@@ -2,9 +2,10 @@ import Link from "next/link";
 import {
   BOT_USERNAME,
   BRAND,
-  BRAND_TECH,
   PRICING_UPDATED,
   SUPPORT_EMAIL,
+  SUPPORT_TG,
+  SUPPORT_TG_URL,
 } from "@/content/constants";
 import { Logo } from "./Logo";
 import { LegalDisclaimerFooter } from "./LegalDisclaimer";
@@ -18,8 +19,7 @@ export function Footer() {
           <div className="max-w-sm">
             <Logo inverted />
             <p className="mt-5 text-body text-footer-text">
-              Помощник для ответов на отзывы WB и Ozon в Telegram. Текст решаете вы —
-              рутину берёт бот.
+              Помогаем селлерам WB и Ozon отвечать на отзывы быстро и по-человечески. Прямо в Telegram.
             </p>
             <div className="mt-7">
               <TelegramButton variant="white" trackSite>
@@ -81,18 +81,21 @@ export function Footer() {
 
         <div className="mt-16 flex flex-col gap-2 border-t border-footer-border pt-8 text-caption text-footer-muted">
           <p>
-            Бот: @{BOT_USERNAME} · Поддержка: бот → «Поддержка» ·{" "}
+            Бот: @{BOT_USERNAME} · Поддержка:{" "}
+            <a href={SUPPORT_TG_URL} className="underline hover:text-footer-text">
+              @{SUPPORT_TG}
+            </a>{" "}
+            ·{" "}
             <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-footer-text">
               {SUPPORT_EMAIL}
             </a>
           </p>
           <p>
-            Цены актуальны в боте · на лендинге {PRICING_UPDATED}. Оплата Stars — сумма в
-            боте.
+            Цены указаны на {PRICING_UPDATED}. Точную сумму бот покажет перед оплатой.
           </p>
           <LegalDisclaimerFooter className="max-w-3xl" />
           <p className="pt-2">
-            © {new Date().getFullYear()} {BRAND}. Техническое имя: {BRAND_TECH}.
+            © {new Date().getFullYear()} {BRAND}. Сделано для селлеров WB и Ozon.
           </p>
         </div>
       </div>

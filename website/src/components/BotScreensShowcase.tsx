@@ -14,9 +14,9 @@ export function BotScreensShowcase() {
       <div className="container-page">
         <Reveal>
           <SectionHeading
-            eyebrow="Интерфейс"
+            eyebrow="Как это выглядит"
             title="Так выглядит бот в Telegram"
-            description="Реальные экраны @FeedBackReview_bot — не макет. Вся работа с отзывами здесь."
+            description="Настоящие экраны @FeedBackReview_bot, а не картинки для красоты. Всё просто и понятно с первого раза."
           />
         </Reveal>
 

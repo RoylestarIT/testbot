@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { InnerPageHero } from "@/components/InnerPageHero";
-import { BOT_AVATAR, BOT_USERNAME, SUPPORT_EMAIL } from "@/content/constants";
+import { BOT_AVATAR, BOT_USERNAME, SUPPORT_EMAIL, SUPPORT_TG, SUPPORT_TG_URL } from "@/content/constants";
 import { TelegramButton } from "@/components/TelegramButton";
 import { Button } from "@/components/Button";
 import { Reveal } from "@/components/Reveal";
@@ -9,7 +9,7 @@ import { IconArrowRight } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Контакты и поддержка",
-  description: "Поддержка «Голос бренда» через Telegram-бот и email.",
+  description: "Как связаться с командой «Голос бренда»: Telegram и почта.",
 };
 
 export default function ContactsPage() {
@@ -18,7 +18,7 @@ export default function ContactsPage() {
       <InnerPageHero
         eyebrow="Контакты"
         title="Мы на связи"
-        description="Быстрее всего ответим в боте — там сразу видно ваш аккаунт и тариф."
+        description="Пишите как удобно. Быстрее всего — в Telegram: отвечают живые люди, без роботов и очередей."
       />
       <section className="pb-20 sm:pb-24 lg:pb-32">
         <div className="container-page grid max-w-4xl gap-5 md:grid-cols-2">
@@ -39,7 +39,16 @@ export default function ContactsPage() {
               </div>
               <h2 className="mt-4 text-headline text-white">Telegram</h2>
               <p className="mt-3 flex-1 text-body text-brand-100">
-                @{BOT_USERNAME} → меню «Поддержка». Обычно отвечаем в течение рабочего дня.
+                В боте @{BOT_USERNAME} откройте «Поддержка» или напишите нам напрямую —{" "}
+                <a
+                  href={SUPPORT_TG_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-white underline decoration-white/30 underline-offset-4 hover:decoration-white"
+                >
+                  @{SUPPORT_TG}
+                </a>
+                . Обычно отвечаем в течение рабочего дня.
               </p>
               <TelegramButton variant="white" className="mt-8 w-fit">
                 Написать в бота
@@ -51,7 +60,7 @@ export default function ContactsPage() {
               <p className="eyebrow">Для документов</p>
               <h2 className="mt-4 text-headline">Email</h2>
               <p className="mt-3 flex-1 text-body text-ink-muted">
-                Счета, договоры и вопросы, которые удобнее решать письмом.
+                Счета, договоры и всё, что удобнее обсудить письмом.
               </p>
               <Button
                 href={`mailto:${SUPPORT_EMAIL}`}

@@ -27,7 +27,7 @@ export function MobileCtaBar() {
     >
       <div className="flex items-center gap-3">
         <p className="flex-1 text-caption leading-snug text-ink-muted">
-          Free без карты
+          Бесплатно, без карты
           <br />
           <span className="font-medium text-ink">5 ответов в день</span>
         </p>

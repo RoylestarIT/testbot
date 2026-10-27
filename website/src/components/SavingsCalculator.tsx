@@ -19,13 +19,13 @@ function formatHours(h: number) {
 
 function recommend(reviews: number) {
   if (reviews <= FREE_MONTHLY_LIMIT)
-    return { plan: "Free", price: 0, why: "До ~5 ответов в день хватит бесплатного тарифа." };
+    return { plan: "Free", price: 0, why: "При таком потоке хватит бесплатного тарифа." };
   if (reviews <= 500)
-    return { plan: "Lite", price: PRICES.lite.rub, why: "Безлимит ответов по фиксированной цене." };
+    return { plan: "Lite", price: PRICES.lite.rub, why: "Сколько угодно ответов за одну цену." };
   return {
     plan: "PRO",
     price: PRICES.pro.rub,
-    why: "Публикация из бота и автоответы на 4–5★ снимут основной поток.",
+    why: "Ответы уходят из бота, а пятёрки закрываются сами — это и есть основной поток.",
   };
 }
 
@@ -89,7 +89,7 @@ export function SavingsCalculator() {
         <p className="eyebrow">Калькулятор</p>
         <h3 className="mt-4 text-headline">Сколько времени вы вернёте</h3>
         <p className="mt-3 text-body text-ink-muted">
-          Подвиньте ползунки под свой магазин — посчитаем экономию.
+          Подвиньте ползунки под свой магазин — и увидите, сколько часов освободится.
         </p>
         <div className="mt-10 space-y-9">
           <Slider
@@ -112,8 +112,8 @@ export function SavingsCalculator() {
           />
         </div>
         <p className="mt-10 text-caption text-ink-subtle">
-          Оценка: с ботом ≈{BOT_SECONDS_PER_REVIEW} секунд на выбор и правку черновика, оплата
-          за ответ на рынке ≈{PAY_PER_ANSWER_RUB} ₽. Не является гарантией результата.
+          Считаем так: с ботом на ответ уходит около {BOT_SECONDS_PER_REVIEW} секунд, а в сервисах с оплатой
+          за ответ — около {PAY_PER_ANSWER_RUB} ₽ за штуку. Это оценка, а не обещание.
         </p>
       </div>
 
