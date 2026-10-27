@@ -113,7 +113,7 @@ export default function WhyUsPage() {
         </div>
       </section>
 
-      <CtaBanner title="Проверьте разницу сами" cta="Попробовать в боте" />
+      <CtaBanner title="Проверьте разницу сами" cta="Попробовать в боте" showCalculatorLink />
     </PageShell>
   );
 }

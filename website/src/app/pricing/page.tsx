@@ -7,7 +7,7 @@ import { Reveal } from "@/components/Reveal";
 import { SectionHeading } from "@/components/SectionHeading";
 import { FAQAccordion } from "@/components/FAQAccordion";
 import { CtaBanner } from "@/components/CtaBanner";
-import { SavingsCalculator } from "@/components/SavingsCalculator";
+import { CalculatorBlock } from "@/components/CalculatorBlock";
 import { FAQ_ITEMS } from "@/content/faq";
 import { PRICING_UPDATED } from "@/content/constants";
 
@@ -67,7 +67,7 @@ export default function PricingPage() {
       <section className="pb-20 sm:pb-24 lg:pb-32">
         <div className="container-page">
           <Reveal>
-            <SavingsCalculator />
+            <CalculatorBlock />
           </Reveal>
         </div>
       </section>
@@ -134,7 +134,11 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <CtaBanner title="Начните с бесплатного тарифа" cta="Начать бесплатно" />
+      <CtaBanner
+        title="Начните с бесплатного тарифа"
+        cta="Начать бесплатно"
+        showCalculatorLink
+      />
     </PageShell>
   );
 }

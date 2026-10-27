@@ -12,7 +12,7 @@ import { MarketplaceStrip } from "@/components/MarketplaceStrip";
 import { FeatureCard } from "@/components/FeatureCard";
 import { Reveal } from "@/components/Reveal";
 import { CtaBanner } from "@/components/CtaBanner";
-import { SavingsCalculator } from "@/components/SavingsCalculator";
+import { CalculatorBlock } from "@/components/CalculatorBlock";
 import { JsonLd, faqSchema, softwareSchema } from "@/components/JsonLd";
 import {
   IconArrowRight,
@@ -258,7 +258,7 @@ export default function HomePage() {
       <section className="section-y">
         <div className="container-page">
           <Reveal>
-            <SavingsCalculator />
+            <CalculatorBlock />
           </Reveal>
         </div>
       </section>

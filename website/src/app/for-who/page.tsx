@@ -120,7 +120,12 @@ export default function ForWhoPage() {
         </div>
       </section>
 
-      <CtaBanner title="Узнали себя?" description="Проверьте на своих отзывах — Free без карты." cta="Начать бесплатно" />
+      <CtaBanner
+        title="Узнали себя?"
+        description="Проверьте на своих отзывах — Free без карты."
+        cta="Начать бесплатно"
+        showCalculatorLink
+      />
     </PageShell>
   );
 }

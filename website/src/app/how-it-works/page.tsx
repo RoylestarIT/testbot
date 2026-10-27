@@ -134,7 +134,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      <CtaBanner title="Попробуйте на своих отзывах" />
+      <CtaBanner title="Попробуйте на своих отзывах" showCalculatorLink />
     </PageShell>
   );
 }
