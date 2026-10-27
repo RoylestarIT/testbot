@@ -37,6 +37,8 @@ npm run build
 | `NEXT_PUBLIC_BOT_URL` | Deep link бота. По умолчанию `https://t.me/FeedBackReview_bot` |
 | `NEXT_PUBLIC_SUPPORT_EMAIL` | Email на странице контактов (placeholder до продакшена) |
 | `NEXT_PUBLIC_LEGAL_OPERATOR_NAME` | Полное наименование ИП/ООО для `/privacy` и `/terms` |
+| `NEXT_PUBLIC_YM_ID` | ID счётчика Яндекс.Метрики (число) |
+| `NEXT_PUBLIC_GA_ID` | ID Google Analytics 4 (`G-…`) |
 
 Для бота (отдельный сервис) те же смыслы:
 
