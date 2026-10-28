@@ -1,11 +1,18 @@
-export type FaqItem = { id?: string; question: string; answer: string };
+export type FaqItem = {
+  id?: string;
+  question: string;
+  answer: string;
+  /** Расширенная вёрстка под ответом (FAQAccordion). */
+  guide?: "wb-api-key";
+};
 
 export const FAQ_ITEMS: FaqItem[] = [
   {
     id: "api-key",
     question: "Где взять API-ключ и куда его вводить?",
     answer:
-      "Ключ создаётся в личном кабинете Wildberries или Ozon (раздел API для продавцов). Вводите только в боте: «Настройки» → «Кабинеты WB/Ozon». На этом сайте ключ нигде не спрашиваем.",
+      "Ключ создаётся в личном кабинете Wildberries или Ozon. Ниже — пошаговая инструкция для WB; для Ozon кратко в конце блока. Вводите ключ только в боте: «Настройки» → «Кабинеты WB/Ozon».",
+    guide: "wb-api-key",
   },
   {
     id: "cabinet",
