@@ -1,4 +1,4 @@
-import { PRICES } from "@/content/constants";
+import { PRICES, PRO_TRIAL_DAYS } from "@/content/constants";
 import { IconCheck } from "./icons";
 import { LegalDisclaimer } from "./LegalDisclaimer";
 import { TelegramButton } from "./TelegramButton";
@@ -43,7 +43,7 @@ const plans = [
       "4 кабинета WB и Ozon",
       "Ответ уходит прямо из бота",
       "Пятёрки и четвёрки — автоматически",
-      "Можно попробовать бесплатно",
+      `${PRO_TRIAL_DAYS} дня PRO бесплатно — один раз`,
     ],
   },
 ];
@@ -70,6 +70,11 @@ export function PricingCards({ showDisclaimer = false }: { showDisclaimer?: bool
             <p className={`mt-2 text-small ${plan.featured ? "text-brand-200" : "text-ink-muted"}`}>
               {plan.lead}
             </p>
+            {plan.featured ? (
+              <p className="mt-3 text-caption font-medium text-brand-100">
+                Пробный период: {PRO_TRIAL_DAYS} дня · в боте «Подписка» → «Попробовать PRO»
+              </p>
+            ) : null}
             <p className="mt-8 flex items-baseline gap-2">
               <span
                 className={`font-display text-display font-semibold ${

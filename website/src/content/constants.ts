@@ -30,12 +30,29 @@ export const BOT_AVATAR = asset("/bot-avatar.png");
 export const SUPPORT_TG = "brend_voice_support";
 export const SUPPORT_TG_URL = `https://t.me/${SUPPORT_TG}`;
 
-export const SUPPORT_EMAIL =
-  process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "support@example.com";
+const supportEmailFromEnv = process.env.NEXT_PUBLIC_SUPPORT_EMAIL?.trim() ?? "";
+
+/** Пусто или placeholder — на сайте показываем Telegram вместо почты. */
+export const SUPPORT_EMAIL = supportEmailFromEnv.includes("example.com")
+  ? ""
+  : supportEmailFromEnv;
+
+export const HAS_SUPPORT_EMAIL = SUPPORT_EMAIL.length > 0;
+
+export const LEGAL_NAME = "Быстров Егор Максимович";
+export const LEGAL_STATUS = "Самозанятый";
+export const LEGAL_UNP = "EE5854155";
+/** Адрес по данным регистрации в МНС (аг. Прибытково, Гомельский р-н). */
+export const LEGAL_ADDRESS =
+  "Республика Беларусь, Гомельская обл., Гомельский р-н, аг. Прибытково";
 
 export const LEGAL_OPERATOR =
-  process.env.NEXT_PUBLIC_LEGAL_OPERATOR_NAME ??
-  "[ИП/ООО — полное наименование и реквизиты уточняются у оператора сервиса]";
+  process.env.NEXT_PUBLIC_LEGAL_OPERATOR_NAME?.trim() ||
+  `${LEGAL_STATUS} ${LEGAL_NAME}, УНП ${LEGAL_UNP}, ${LEGAL_ADDRESS}`;
+
+/** Пробный PRO — текст для hero и тарифов (срок как в FAQ бота). */
+export const PRO_TRIAL_DAYS = 3;
+export const PRO_TRIAL_HINT = `${PRO_TRIAL_DAYS} дня PRO бесплатно — один раз, в боте: «Подписка» → «Попробовать PRO»`;
 
 /** Дата актуализации цен на лендинге (обновляйте при изменении тарифов в боте). */
 export const PRICING_UPDATED = "27.10.2026";
