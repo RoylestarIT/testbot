@@ -42,13 +42,10 @@ export const HAS_SUPPORT_EMAIL = SUPPORT_EMAIL.length > 0;
 export const LEGAL_NAME = "Быстров Егор Максимович";
 export const LEGAL_STATUS = "Самозанятый";
 export const LEGAL_UNP = "EE5854155";
-/** Адрес по данным регистрации в МНС (аг. Прибытково, Гомельский р-н). */
-export const LEGAL_ADDRESS =
-  "Республика Беларусь, Гомельская обл., Гомельский р-н, аг. Прибытково";
 
 export const LEGAL_OPERATOR =
   process.env.NEXT_PUBLIC_LEGAL_OPERATOR_NAME?.trim() ||
-  `${LEGAL_STATUS} ${LEGAL_NAME}, УНП ${LEGAL_UNP}, ${LEGAL_ADDRESS}`;
+  `${LEGAL_STATUS} ${LEGAL_NAME}, УНП ${LEGAL_UNP}`;
 
 /** Пробный PRO — текст для hero и тарифов (срок как в FAQ бота). */
 export const PRO_TRIAL_DAYS = 3;
