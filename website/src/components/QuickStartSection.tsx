@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
 import { TelegramButton } from "./TelegramButton";
