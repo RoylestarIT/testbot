@@ -9,7 +9,7 @@ import { FAQAccordion } from "@/components/FAQAccordion";
 import { CtaBanner } from "@/components/CtaBanner";
 import { CalculatorBlock } from "@/components/CalculatorBlock";
 import { FAQ_ITEMS } from "@/content/faq";
-import { PRICING_UPDATED } from "@/content/constants";
+import { PAYMENT_METHODS, PRICING_UPDATED } from "@/content/constants";
 
 export const metadata: Metadata = {
   title: "Тарифы Free, Lite и PRO",
@@ -17,12 +17,7 @@ export const metadata: Metadata = {
     "Тарифы «Голос бренда»: бесплатный, Lite за 990 ₽ / 35 BYN и PRO за 1990 ₽ / 70 BYN в месяц. Без оплаты за каждый ответ.",
 };
 
-const payments = [
-  { title: "Telegram Stars", text: "Сразу, прямо в чате" },
-  { title: "Crypto Bot", text: "USDT и другая криптовалюта" },
-  { title: "Карта РФ / РБ", text: "Обычная оплата картой" },
-  { title: "СБП или перевод", text: "Проверим и включим в течение суток" },
-];
+const payments = [...PAYMENT_METHODS];
 
 const alternatives = [
   {
@@ -81,7 +76,7 @@ export default function PricingPage() {
             <PricingTable compact />
           </Reveal>
 
-          <div className="mt-20 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-20 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {payments.map((p, i) => (
               <Reveal key={p.title} delay={i * 60}>
                 <div className="h-full rounded-2xl border border-line bg-surface-muted p-6 transition duration-300 ease-smooth hover:-translate-y-0.5 hover:bg-surface hover:shadow-card">

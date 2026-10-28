@@ -51,6 +51,25 @@ export const LEGAL_OPERATOR =
 export const PRO_TRIAL_DAYS = 3;
 export const PRO_TRIAL_HINT = `${PRO_TRIAL_DAYS} дня PRO бесплатно — один раз, в боте: «Подписка» → «Попробовать PRO»`;
 
+/** Способы оплаты подписки в боте (единый источник для лендинга). */
+export const PAYMENT_METHODS = [
+  {
+    title: "Карты РФ и РБ",
+    text: "Visa, Mastercard, «Мир» и карты белорусских банков",
+  },
+  {
+    title: "ЮKassa",
+    text: "Эквайринг для оплат из России — прямо в боте",
+  },
+  {
+    title: "bePaid",
+    text: "Эквайринг для оплат из Беларуси — прямо в боте",
+  },
+] as const;
+
+export const PAYMENT_METHODS_LINE =
+  "карты РФ и РБ через ЮKassa (РФ) и bePaid (РБ)";
+
 /** Дата актуализации цен на лендинге (обновляйте при изменении тарифов в боте). */
 export const PRICING_UPDATED = "27.10.2026";
 

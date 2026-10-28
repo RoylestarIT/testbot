@@ -1,10 +1,13 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
+  BOT_URL,
   BOT_USERNAME,
   BRAND,
-  PRICING_UPDATED,
   HAS_SUPPORT_EMAIL,
   LEGAL_OPERATOR,
+  PAYMENT_METHODS_LINE,
+  PRICING_UPDATED,
   SUPPORT_EMAIL,
   SUPPORT_TG,
   SUPPORT_TG_URL,
@@ -12,6 +15,21 @@ import {
 import { Logo } from "./Logo";
 import { LegalDisclaimerFooter } from "./LegalDisclaimer";
 import { TelegramButton } from "./TelegramButton";
+
+function FooterMetaCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-footer-border bg-white/[0.04] p-5 sm:p-6">
+      <p className="text-caption font-semibold uppercase tracking-[0.12em] text-footer-text">{title}</p>
+      <div className="mt-3 space-y-2 text-small leading-relaxed text-footer-muted">{children}</div>
+    </div>
+  );
+}
 
 export function Footer() {
   return (
@@ -81,30 +99,64 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-16 flex flex-col gap-2 border-t border-footer-border pt-8 text-caption text-footer-muted">
-          <p>
-            Бот: @{BOT_USERNAME} · Поддержка:{" "}
-            <a href={SUPPORT_TG_URL} className="underline hover:text-footer-text">
-              @{SUPPORT_TG}
-            </a>
+        <div className="mt-16 grid gap-4 border-t border-footer-border pt-10 sm:grid-cols-2 lg:grid-cols-3">
+          <FooterMetaCard title="Связь">
+            <p>
+              Бот{" "}
+              <a href={BOT_URL} className="font-medium text-footer-text underline-offset-2 hover:text-white hover:underline">
+                @{BOT_USERNAME}
+              </a>
+            </p>
+            <p>
+              Поддержка{" "}
+              <a
+                href={SUPPORT_TG_URL}
+                className="font-medium text-footer-text underline-offset-2 hover:text-white hover:underline"
+              >
+                @{SUPPORT_TG}
+              </a>
+            </p>
             {HAS_SUPPORT_EMAIL ? (
-              <>
-                {" "}
-                ·{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-footer-text">
+              <p>
+                Email{" "}
+                <a
+                  href={`mailto:${SUPPORT_EMAIL}`}
+                  className="font-medium text-footer-text underline-offset-2 hover:text-white hover:underline"
+                >
                   {SUPPORT_EMAIL}
                 </a>
-              </>
+              </p>
             ) : (
-              <> · почта для документов подключается</>
+              <p className="text-footer-muted">Почта для документов подключается</p>
             )}
-          </p>
-          <p className="max-w-3xl leading-relaxed">Оператор: {LEGAL_OPERATOR}</p>
-          <p>
-            Цены указаны на {PRICING_UPDATED}. Точную сумму бот покажет перед оплатой.
-          </p>
-          <LegalDisclaimerFooter className="max-w-3xl" />
-          <p className="pt-2">
+          </FooterMetaCard>
+
+          <FooterMetaCard title="Оператор и тарифы">
+            <p>{LEGAL_OPERATOR}</p>
+            <p className="text-caption">
+              Цены на {PRICING_UPDATED}. Точную сумму бот покажет перед оплатой.
+            </p>
+            <p className="text-caption">Оплата: {PAYMENT_METHODS_LINE}.</p>
+          </FooterMetaCard>
+
+          <FooterMetaCard title="Документы">
+            <p>
+              <Link href="/terms" className="text-footer-text underline-offset-2 hover:text-white hover:underline">
+                Публичная оферта
+              </Link>
+            </p>
+            <p>
+              <Link href="/privacy" className="text-footer-text underline-offset-2 hover:text-white hover:underline">
+                Политика конфиденциальности
+              </Link>
+            </p>
+            <p className="text-caption pt-1">Услуга — доступ к функционалу Telegram-бота.</p>
+          </FooterMetaCard>
+        </div>
+
+        <div className="mt-8 space-y-4 border-t border-footer-border pt-8">
+          <LegalDisclaimerFooter className="max-w-3xl text-caption" />
+          <p className="text-caption text-footer-muted">
             © {new Date().getFullYear()} {BRAND}. Сделано для селлеров WB и Ozon.
           </p>
         </div>

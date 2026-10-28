@@ -104,9 +104,8 @@ export function PricingTable({ compact = false }: { compact?: boolean }) {
       {!compact && (
         <div className="flex flex-col items-start justify-between gap-4 border-t border-line px-4 py-5 sm:flex-row sm:items-center">
           <p className="max-w-xl text-body text-ink-muted">
-            Оплата в боте: Telegram Stars, Crypto Bot (USDT и др.), карта РФ/РБ,
-            СБП/перевод (ручная активация до 24 ч). Trial PRO — в боте, один раз на
-            аккаунт.
+            Оплата в боте: карты РФ и РБ через ЮKassa (РФ) и bePaid (РБ). Trial PRO — в
+            боте, один раз на аккаунт.
           </p>
           <div className="flex flex-wrap gap-2">
             <TelegramButton variant="primary">Оплатить в боте</TelegramButton>
