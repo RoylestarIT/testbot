@@ -1,6 +1,7 @@
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { MobileCtaBar } from "./MobileCtaBar";
+import { BackToTopButton } from "./BackToTopButton";
 
 export function PageShell({
   children,
@@ -23,6 +24,7 @@ export function PageShell({
       </main>
       <Footer />
       <MobileCtaBar />
+      <BackToTopButton />
     </div>
   );
 }
