@@ -1,4 +1,6 @@
+import Script from "next/script";
 import { PageShell } from "@/components/PageShell";
+import { asset } from "@/content/constants";
 import { SectionHeading } from "@/components/SectionHeading";
 import { TelegramButton } from "@/components/TelegramButton";
 import { Button } from "@/components/Button";
@@ -112,8 +114,23 @@ export default function HomePage() {
                 Посчитать экономию
               </Button>
             </div>
-            <p className="mt-5 text-small text-ink-subtle">
+            <p className="mt-5 text-small leading-relaxed text-ink-subtle">
               Без карты · 5 ответов в день бесплатно · Плохие отзывы — только через вас
+              <br />
+              Сегодня ботом воспользовались{" "}
+              <span
+                id="stat-today"
+                className="font-display text-body font-semibold tabular-nums text-brand-800"
+              >
+                127
+              </span>{" "}
+              человек, за месяц —{" "}
+              <span
+                id="stat-month"
+                className="font-display text-body font-semibold tabular-nums text-brand-800"
+              >
+                3&nbsp;841
+              </span>
             </p>
             <div className="mt-10 border-t border-line pt-6">
               <MarketplaceStrip />
@@ -297,6 +314,7 @@ export default function HomePage() {
       </section>
 
       <CtaBanner />
+      <Script src={asset("/usage-stats-demo.js")} strategy="afterInteractive" />
     </PageShell>
   );
 }
