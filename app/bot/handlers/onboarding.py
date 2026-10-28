@@ -15,7 +15,11 @@ from app.services.onboarding_checklist import (
 router = Router(name="onboarding")
 
 _STEP_META = [
-    ("Кабинет WB/Ozon", "⚙️ Настройки → подключите ключ кабинета.", "menu:settings"),
+    (
+        "Кабинет WB/Ozon",
+        "🟣 WB: «Инструкция (7 шагов)» ниже · Ozon: ⚙️ Настройки → Ozon.",
+        "menu:settings",
+    ),
     ("Обновление отзывов", "🔄 На сводке — «Обновить», подтянуть отзывы.", "review:sync"),
     ("Тон ответа", "⚙️ Настройки → «Тон ответа» — как звучат ваши ответы.", "settings:tone"),
 ]
@@ -51,6 +55,20 @@ def _step_keyboard(step: int, states: list[tuple[str, bool]]) -> InlineKeyboardM
     rows: list[list[InlineKeyboardButton]] = [
         [InlineKeyboardButton(text="▶️ Перейти к шагу", callback_data=action_cb)],
     ]
+    if step == 0:
+        rows.insert(
+            1,
+            [
+                InlineKeyboardButton(
+                    text="📖 Ключ WB — инструкция",
+                    callback_data="help:wb_key:onboard",
+                ),
+                InlineKeyboardButton(
+                    text="🖼 Карточки",
+                    callback_data="help:wb_key:album:onboard",
+                ),
+            ],
+        )
     nav: list[InlineKeyboardButton] = []
     if step > 0:
         nav.append(InlineKeyboardButton(text="◀️ Назад", callback_data=f"onboarding:step:{step - 1}"))
