@@ -4,12 +4,17 @@ import { TelegramButton } from "@/components/TelegramButton";
 import { Button } from "@/components/Button";
 import { TelegramMockup } from "@/components/TelegramMockup";
 import { BotScreensShowcase } from "@/components/BotScreensShowcase";
-import { TestimonialsSection } from "@/components/TestimonialsSection";
 import { TrustSection } from "@/components/TrustSection";
+import { DualMarketplaceSection } from "@/components/DualMarketplaceSection";
+import { QuickStartSection } from "@/components/QuickStartSection";
+import { AutopilotGuardrailsSection } from "@/components/AutopilotGuardrailsSection";
+import { MarketCompareSection } from "@/components/MarketCompareSection";
+import { FeatureMapSection } from "@/components/FeatureMapSection";
+import { ReviewHealthSection } from "@/components/ReviewHealthSection";
+import { SellerScenariosSection } from "@/components/SellerScenariosSection";
 import { PricingCards } from "@/components/PricingCards";
 import { FAQAccordion } from "@/components/FAQAccordion";
 import { FAQ_ITEMS } from "@/content/faq";
-import { TESTIMONIALS } from "@/content/testimonials";
 import { MarketplaceStrip } from "@/components/MarketplaceStrip";
 import { FeatureCard } from "@/components/FeatureCard";
 import { Reveal } from "@/components/Reveal";
@@ -28,7 +33,7 @@ import {
 const stats = [
   { value: "3", label: "варианта ответа на каждый отзыв" },
   { value: "2", label: "площадки в одном чате — WB и Ozon" },
-  { value: "~30 сек", label: "чтобы выбрать и отправить ответ" },
+  { value: "WB + Ozon", label: "не нужно два разных сервиса" },
   { value: "0", label: "автоответов на плохие отзывы" },
 ];
 
@@ -56,26 +61,27 @@ const benefits = [
 ];
 
 const steps = [
-  { title: "Подключите кабинет", text: "Вставьте ключ WB или Ozon в бота. Это пара минут." },
+  { title: "Подключите кабинет", text: "Вставьте ключ WB или Ozon в бота. Это пара минут — подскажем, где его взять." },
   { title: "Получайте отзывы", text: "Бот пришлёт каждый новый отзыв или сводку утром — как удобнее." },
   { title: "Выберите ответ", text: "Три варианта на выбор. Берёте любой или правите под себя." },
   { title: "Отправьте", text: "На PRO — одной кнопкой из бота. На Lite — копируете в кабинет." },
 ];
 
-const nowFeatures = [
-  "Отзывы с WB и Ozon в одном чате",
-  "Три варианта ответа на выбор",
-  "Свои фразы и автоответы на 4\u2060–\u20605★ (PRO)",
-  "История ответов и выгрузка в Excel",
-  "Уведомления о вопросах покупателей на WB",
-  "Сводка: сколько отвечено за неделю",
-];
+const homeFaq = FAQ_ITEMS.filter((f) =>
+  [
+    "Где взять API-ключ и куда его вводить?",
+    "Можно вообще не заходить в кабинет маркетплейса?",
+    "Бот сам ответит на плохой отзыв?",
+    "Только Wildberries или Ozon тоже?",
+    "Это безопасно — отдавать боту ключ от кабинета?",
+  ].includes(f.question),
+);
 
 export default function HomePage() {
   return (
     <PageShell>
       <JsonLd data={softwareSchema()} />
-      <JsonLd data={faqSchema(FAQ_ITEMS.slice(0, 5))} />
+      <JsonLd data={faqSchema(FAQ_ITEMS.slice(0, 8))} />
 
       {/* Hero */}
       <section className="relative -mt-16 overflow-hidden pt-16 sm:-mt-[4.5rem] sm:pt-[4.5rem]">
@@ -88,15 +94,15 @@ export default function HomePage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-500" />
               </span>
-              Для продавцов на Wildberries и Ozon
+              Wildberries и Ozon · прямо в Telegram
             </p>
             <h1 className="mt-7 text-display sm:text-display-lg lg:text-display-xl">
               Отвечайте на&nbsp;отзывы за&nbsp;минуты.{" "}
-              <span className="text-brand-700">Прямо в&nbsp;Telegram.</span>
+              <span className="text-brand-700">Без двух кабинетов.</span>
             </h1>
             <p className="prose-muted mt-7 max-w-prose">
-              Бот присылает новые отзывы и сразу предлагает три варианта ответа в вашем
-              стиле. Вы выбираете лучший — покупатель получает живой, человеческий ответ.
+              Бот присылает новые отзывы с WB и Ozon и сразу предлагает три варианта ответа в вашем
+              стиле. Вы выбираете — покупатель видит живой ответ, а не шаблонную отписку.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <TelegramButton trackSite size="lg">
@@ -109,34 +115,6 @@ export default function HomePage() {
             <p className="mt-5 text-small text-ink-subtle">
               Без карты · 5 ответов в день бесплатно · Плохие отзывы — только через вас
             </p>
-
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <div className="flex -space-x-2.5" aria-hidden>
-                {TESTIMONIALS.slice(0, 5).map((t, i) => (
-                  <span
-                    key={t.name}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full font-display text-caption font-semibold ring-2 ring-[var(--background)] ${
-                      ["bg-brand-100 text-brand-800", "bg-clay-100 text-clay-600", "bg-[#e4ecf5] text-[#2d5b8a]", "bg-[#efe7f3] text-[#6b4483]", "bg-brand-200 text-brand-900"][i]
-                    }`}
-                  >
-                    {t.name.slice(0, 1)}
-                  </span>
-                ))}
-              </div>
-              <div>
-                <div className="flex gap-0.5 text-clay-500" aria-hidden>
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <svg key={j} viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="currentColor">
-                      <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L10 14.9l-5.2 2.7 1-5.8L1.5 7.7l5.9-.9z" />
-                    </svg>
-                  ))}
-                </div>
-                <p className="mt-1 text-small text-ink-muted">
-                  Селлеры уже отвечают на отзывы через бота
-                </p>
-              </div>
-            </div>
-
             <div className="mt-10 border-t border-line pt-6">
               <MarketplaceStrip />
             </div>
@@ -152,14 +130,14 @@ export default function HomePage() {
         <div className="container-page grid grid-cols-2 divide-line lg:grid-cols-4 lg:divide-x">
           {stats.map((s, i) => (
             <Reveal key={s.label} delay={i * 70} className="px-2 py-10 sm:py-12 lg:px-8 lg:first:pl-0">
-              <p className="font-display text-headline font-semibold text-ink sm:text-display">
-                {s.value}
-              </p>
+              <p className="font-display text-headline font-semibold text-ink sm:text-display">{s.value}</p>
               <p className="mt-2 max-w-[14rem] text-small text-ink-muted">{s.label}</p>
             </Reveal>
           ))}
         </div>
       </section>
+
+      <DualMarketplaceSection />
 
       {/* Problem / approach */}
       <section className="section-y">
@@ -177,9 +155,9 @@ export default function HomePage() {
               <p className="eyebrow">Как мы это решаем</p>
               <h3 className="mt-4 text-headline">Бот пишет черновики — вы решаете</h3>
               <p className="mt-4 text-body text-ink-muted">
-                Пришёл отзыв — бот уже подготовил три варианта ответа. Вы выбираете, при
-                желании правите и отправляете. На пятёрки можно отвечать автоматически, а
-                плохие отзывы бот всегда оставляет вам.
+                Пришёл отзыв — бот уже подготовил три варианта. Вы выбираете, при желании правите и
+                отправляете. На пятёрки можно отвечать автоматически, а плохие отзывы бот всегда
+                оставляет вам.
               </p>
               <ul className="mt-8 grid gap-3 sm:grid-cols-2">
                 {["Без копипаста", "Без двух открытых кабинетов", "Без шаблонных отписок", "Без риска нагрубить"].map(
@@ -198,18 +176,28 @@ export default function HomePage() {
         </div>
       </section>
 
+      <QuickStartSection />
+
       <BotScreensShowcase />
 
       <TrustSection />
 
+      <AutopilotGuardrailsSection />
+
+      <MarketCompareSection />
+
+      <FeatureMapSection />
+
+      <ReviewHealthSection />
+
       {/* Benefits */}
-      <section className="section-y bg-surface-muted">
+      <section className="section-y">
         <div className="container-page">
           <Reveal>
             <SectionHeading
-              eyebrow="Что вы получаете"
-              title="Простой инструмент, который просто работает"
-              description="Без сложных настроек, обучения и отдельного сайта. Только то, что реально экономит время."
+              eyebrow="Зачем это селлеру"
+              title="Меньше рутины — больше контроля"
+              description="Не заменяем вас перед покупателем. Убираем то, что можно убрать без риска."
             />
           </Reveal>
           <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:mt-20">
@@ -224,25 +212,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      <TestimonialsSection />
+      <SellerScenariosSection />
 
       {/* How it works */}
-      <section className="section-y">
+      <section className="section-y bg-surface-muted">
         <div className="container-page">
           <Reveal>
             <SectionHeading
-              eyebrow="Как начать"
-              title="Четыре шага до первого ответа"
-              description="Ничего устанавливать не нужно — всё происходит в Telegram."
+              eyebrow="Как это устроено"
+              title="Четыре шага в работе"
+              description="После подключения кабинета — так каждый день."
             />
           </Reveal>
           <ol className="mt-16 grid gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-2 lg:mt-20 lg:grid-cols-4">
             {steps.map((s, i) => (
               <li key={s.title} className="group bg-surface p-8 transition-colors duration-300 hover:bg-surface-elevated">
                 <Reveal delay={i * 90}>
-                  <span className="font-display text-small font-semibold text-brand-600">
-                    0{i + 1}
-                  </span>
+                  <span className="font-display text-small font-semibold text-brand-600">0{i + 1}</span>
                   <div className="mt-8 h-px w-10 bg-brand-300 transition-all duration-500 ease-smooth group-hover:w-20 group-hover:bg-brand-600" />
                   <h3 className="mt-8 text-title">{s.title}</h3>
                   <p className="mt-3 text-body text-ink-muted">{s.text}</p>
@@ -255,43 +241,6 @@ export default function HomePage() {
               Подробнее, как всё устроено
             </Button>
           </p>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="section-y border-y border-line bg-surface">
-        <div className="container-page grid gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
-          <Reveal>
-            <SectionHeading
-              align="left"
-              eyebrow="Возможности"
-              title="Что бот умеет уже сейчас"
-              description="И мы продолжаем добавлять то, о чём просят селлеры."
-            />
-            <div className="mt-10 rounded-2xl border border-dashed border-brand-200 bg-brand-50/50 p-6">
-              <p className="eyebrow">Скоро</p>
-              <ul className="mt-3 space-y-1.5 text-body text-ink-muted">
-                <li>Подсказка «посмотрите ещё этот товар» в ответе</li>
-                <li>Вопросы покупателей с Ozon</li>
-                <li>Больше статистики по отзывам</li>
-              </ul>
-            </div>
-          </Reveal>
-          <Reveal delay={100}>
-            <ul className="grid gap-x-8 sm:grid-cols-2">
-              {nowFeatures.map((item) => (
-                <li key={item} className="list-check border-b border-line py-5">
-                  <span className="list-check-icon" aria-hidden>
-                    <IconCheck className="h-3 w-3" />
-                  </span>
-                  <span className="text-ink">{item}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-6 text-small text-ink-subtle">
-              Чего не будет: автоответов на плохие отзывы. Это наш принцип.
-            </p>
-          </Reveal>
         </div>
       </section>
 
@@ -311,7 +260,7 @@ export default function HomePage() {
             <SectionHeading
               eyebrow="Тарифы"
               title="Платите за месяц, а не за каждый ответ"
-              description="Начните бесплатно. Перейдёте на платный тариф, когда поймёте, что без бота уже не хочется."
+              description="Начните бесплатно: 5 ответов в день, без карты. Lite — 2 кабинета, PRO — 4 и отправка из бота."
             />
           </Reveal>
           <div className="mt-16 lg:mt-20">
@@ -333,7 +282,7 @@ export default function HomePage() {
               align="left"
               eyebrow="Вопросы"
               title="Отвечаем честно"
-              description="Не нашли свой вопрос? Напишите нам — ответит живой человек."
+              description="Не нашли свой вопрос? Напишите в поддержку — ответит живой человек."
             />
             <div className="mt-8">
               <Button href="/faq" variant="secondary" trailing={<IconArrowRight />}>
@@ -342,7 +291,7 @@ export default function HomePage() {
             </div>
           </Reveal>
           <Reveal delay={100}>
-            <FAQAccordion items={FAQ_ITEMS.slice(0, 5)} />
+            <FAQAccordion items={homeFaq} />
           </Reveal>
         </div>
       </section>

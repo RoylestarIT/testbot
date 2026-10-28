@@ -31,7 +31,7 @@ export function MobileCtaBar() {
           <br />
           <span className="font-medium text-ink">5 ответов в день</span>
         </p>
-        <TelegramButton trackSite>Начать бесплатно</TelegramButton>
+        <TelegramButton trackSite>Попробовать бесплатно</TelegramButton>
       </div>
     </div>
   );

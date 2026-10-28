@@ -46,16 +46,15 @@ export const PRICES = {
 } as const;
 
 export const SEO = {
-  title:
-    "Голос бренда — ответы на отзывы WB и Ozon в Telegram | ИИ-черновики и publish",
+  title: "Голос бренда — ответы на отзывы WB и Ozon в Telegram",
   description:
-    "Telegram-бот для селлеров Wildberries и Ozon: синхронизация отзывов, 3 варианта ответа ИИ, тон бренда, publish в API (PRO) и авто только на 4–5★. Негатив — только с вашего подтверждения.",
+    "Telegram-бот для селлеров Wildberries и Ozon: три варианта ответа, один чат на две площадки, отправка из бота на PRO. Плохие отзывы — только с вашего решения. Бесплатный старт без карты.",
   keywords: [
     "бот для отзывов wildberries",
     "ответы на отзывы ozon telegram",
-    "автоответы на отзывы 5 звезд",
-    "отзывы wb ozon telegram",
-    "publish ответов wildberries api",
+    "отзывы wb ozon один бот",
+    "автоответы на отзывы 4 5 звезд",
+    "telegram бот селлер wildberries ozon",
   ],
 } as const;
 

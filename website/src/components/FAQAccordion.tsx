@@ -14,7 +14,7 @@ export function FAQAccordion({ items }: { items: FaqItem[] }) {
         const panelId = `${baseId}-panel-${index}`;
         const buttonId = `${baseId}-btn-${index}`;
         return (
-          <div key={item.question}>
+          <div key={item.question} id={item.id} className={item.id ? "scroll-mt-28" : undefined}>
             <h3>
               <button
                 id={buttonId}
