@@ -60,12 +60,8 @@ def _step_keyboard(step: int, states: list[tuple[str, bool]]) -> InlineKeyboardM
             1,
             [
                 InlineKeyboardButton(
-                    text="📖 Ключ WB — инструкция",
+                    text="📖 Ключ WB — 7 шагов",
                     callback_data="help:wb_key:onboard",
-                ),
-                InlineKeyboardButton(
-                    text="🖼 Карточки",
-                    callback_data="help:wb_key:album:onboard",
                 ),
             ],
         )

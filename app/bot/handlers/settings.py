@@ -12,12 +12,7 @@ from app.services.notification_previews import (
     preview_stale_reviews,
 )
 from app.bot.utils.callbacks import safe_edit_message
-from app.bot.wb_key_guide import (
-    parse_wb_help_context,
-    send_wb_key_album,
-    wb_key_guide_keyboard,
-    wb_key_guide_text,
-)
+from app.bot.wb_key_guide import deliver_wb_key_instruction, deliver_wb_key_instruction_callback, parse_wb_help_context
 from app.bot.handlers.onboarding import onboarding_finished_screen
 from app.bot.utils.ui_message import bind_ui_message, edit_bound_ui_message
 from app.services.onboarding_checklist import try_complete_onboarding
@@ -160,22 +155,9 @@ async def settings_accounts(callback: CallbackQuery, db_user: DbUser) -> None:
 
 @router.callback_query(F.data.startswith("help:wb_key"))
 async def help_wb_key(callback: CallbackQuery) -> None:
-    action, ctx = parse_wb_help_context(callback.data or "")
+    ctx = parse_wb_help_context(callback.data or "")
     await callback.answer()
-    if callback.message is None:
-        return
-    if action == "album":
-        await send_wb_key_album(callback.bot, callback.message.chat.id)
-        await callback.message.answer(
-            wb_key_guide_text(),
-            reply_markup=wb_key_guide_keyboard(context=ctx),
-        )
-        return
-    await safe_edit_message(
-        callback.message,
-        wb_key_guide_text(),
-        reply_markup=wb_key_guide_keyboard(context=ctx),
-    )
+    await deliver_wb_key_instruction_callback(callback, context=ctx)
 
 
 @router.callback_query(F.data == "settings:connect:wb")
@@ -189,20 +171,11 @@ async def connect_wb_start(callback: CallbackQuery, state: FSMContext, db_user: 
     await state.set_state(ConnectWbStates.waiting_api_key)
     await callback.answer()
     if callback.message:
-        await safe_edit_message(
-            callback.message,
-            "<b>Wildberries</b>\n\n"
-            "Нужен API-ключ с доступом «Вопросы и отзывы». "
-            "Ниже — пошаговая инструкция с карточками.\n\n"
-            "Когда ключ готов — пришлите его <b>одним сообщением</b>.\n"
-            "Ключ храним в зашифрованном виде.",
-            reply_markup=InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [InlineKeyboardButton(text="📖 Инструкция (7 шагов)", callback_data="help:wb_key:connect")],
-                    [InlineKeyboardButton(text="🖼 Карточки", callback_data="help:wb_key:album:connect")],
-                    [InlineKeyboardButton(text="◀️ Назад", callback_data="settings:accounts")],
-                ]
-            ),
+        await deliver_wb_key_instruction(
+            bot=callback.bot,
+            chat_id=callback.message.chat.id,
+            message=callback.message,
+            context="connect",
         )
 
 

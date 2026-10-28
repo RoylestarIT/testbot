@@ -6,6 +6,7 @@ from pathlib import Path
 
 from aiogram import Bot
 from aiogram.types import (
+    CallbackQuery,
     FSInputFile,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -14,11 +15,12 @@ from aiogram.types import (
 )
 
 from app.bot.ui import brand_title, bullet, muted, section
+from app.bot.utils.callbacks import safe_edit_message
 
 _ASSETS_DIR = Path(__file__).resolve().parent / "assets" / "wb_api_guide"
 
 _BACK_CALLBACKS = {
-    "connect": "settings:connect:wb",
+    "connect": "settings:accounts",
     "onboard": "onboarding:step:0",
     "acc": "settings:accounts",
 }
@@ -43,14 +45,12 @@ def wb_key_guide_text() -> str:
         + "\n"
         + bullet("6. Сразу нажмите <b>«Скопировать»</b> — токен показывают один раз")
         + "\n"
-        + bullet("7. Вставьте ключ сюда в бот одним сообщением")
+        + bullet("7. Вставьте ключ в этот чат <b>одним сообщением</b>")
         + "\n\n"
         + muted(
-            "Нужны только «Вопросы и отзывы». "
-            "«Тестовый контур» включайте только для проверки, не для боевого магазина."
+            "Достаточно доступа «Вопросы и отзывы». "
+            "«Тестовый контур» — только для проверки, не для боевого магазина."
         )
-        + "\n"
-        + muted(f"Кабинет: {WB_SELLER_URL}")
     )
 
 
@@ -59,39 +59,27 @@ def _image_paths() -> list[Path]:
     return [_ASSETS_DIR / name for name in names]
 
 
-def wb_key_guide_keyboard(*, context: str = "acc") -> InlineKeyboardMarkup:
+def wb_key_back_keyboard(*, context: str = "acc") -> InlineKeyboardMarkup:
     ctx = context if context in _BACK_CALLBACKS else "acc"
-    back_cb = _BACK_CALLBACKS[ctx]
-    rows: list[list[InlineKeyboardButton]] = [
-        [InlineKeyboardButton(text="🖼 Показать карточки", callback_data=f"help:wb_key:album:{ctx}")],
-        [InlineKeyboardButton(text="🌐 Открыть кабинет WB", url=WB_SELLER_URL)],
-    ]
-    if ctx == "connect":
-        rows.insert(0, [InlineKeyboardButton(text="✅ Готов — ввести ключ", callback_data="settings:connect:wb")])
-    elif ctx == "onboard":
-        rows.insert(
-            0,
-            [InlineKeyboardButton(text="⚙️ Открыть настройки", callback_data="menu:settings")],
-        )
-    rows.append([InlineKeyboardButton(text="◀️ Назад", callback_data=back_cb)])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🌐 Открыть кабинет WB", url=WB_SELLER_URL)],
+            [InlineKeyboardButton(text="◀️ Назад", callback_data=_BACK_CALLBACKS[ctx])],
+        ]
+    )
 
 
 _ALBUM_CAPTIONS = (
-    "🟣 <b>Шаг 1</b> — в меню профиля выберите «Настройки».",
-    "🟣 <b>Шаги 2–5</b> — вкладка «Доступ к API», имя, «Вопросы и отзывы», «Создать токен».",
-    "🟣 <b>Шаги 6–7</b> — «Скопировать» и вставить ключ в этот бот.",
+    "🟣 <b>Шаг 1</b> — «Ваш магазин» → «Настройки».",
+    "🟣 <b>Шаги 2–5</b> — «Доступ к API», имя, «Вопросы и отзывы», «Создать токен».",
+    "🟣 <b>Шаги 6–7</b> — «Скопировать» и отправить ключ в бот.",
 )
 
 
 async def send_wb_key_album(bot: Bot, chat_id: int) -> None:
     paths = _image_paths()
-    missing = [p for p in paths if not p.is_file()]
-    if missing:
-        await bot.send_message(
-            chat_id,
-            muted("Карточки инструкции временно недоступны — пользуйтесь текстом выше."),
-        )
+    if not all(p.is_file() for p in paths):
+        await bot.send_message(chat_id, muted("Карточки временно недоступны — ориентируйтесь на текст выше."))
         return
     media: list[InputMediaPhoto] = []
     for path, caption in zip(paths, _ALBUM_CAPTIONS, strict=True):
@@ -99,16 +87,41 @@ async def send_wb_key_album(bot: Bot, chat_id: int) -> None:
     await bot.send_media_group(chat_id, media)
 
 
-def parse_wb_help_context(callback_data: str) -> tuple[str, str]:
-    """Returns (action, context_key) — action: text|album, context: connect|onboard|acc."""
+def parse_wb_help_context(callback_data: str) -> str:
     parts = callback_data.split(":")
-    if len(parts) >= 4 and parts[2] == "album":
-        ctx = parts[3]
-        return "album", ctx if ctx in _BACK_CALLBACKS else "acc"
     if len(parts) >= 3 and parts[2] in _BACK_CALLBACKS:
-        return "text", parts[2]
-    return "text", "acc"
+        return parts[2]
+    return "acc"
 
 
-async def send_wb_key_guide_message(message: Message, *, context: str = "acc") -> None:
-    await message.answer(wb_key_guide_text(), reply_markup=wb_key_guide_keyboard(context=context))
+async def deliver_wb_key_instruction(
+    *,
+    bot: Bot,
+    chat_id: int,
+    message: Message | None = None,
+    context: str = "connect",
+) -> None:
+    """Текст 7 шагов + карточки подряд, без отдельных кнопок «картинки»."""
+    body = (
+        wb_key_guide_text()
+        + "\n\n"
+        + "👇 Ниже — три подсказки по экранам кабинета. "
+        "Когда ключ скопирован — просто <b>отправьте его сюда</b>."
+    )
+    kb = wb_key_back_keyboard(context=context)
+    if message is not None:
+        await safe_edit_message(message, body, reply_markup=kb)
+    else:
+        await bot.send_message(chat_id, body, reply_markup=kb)
+    await send_wb_key_album(bot, chat_id)
+
+
+async def deliver_wb_key_instruction_callback(callback: CallbackQuery, *, context: str) -> None:
+    if callback.message is None:
+        return
+    await deliver_wb_key_instruction(
+        bot=callback.bot,
+        chat_id=callback.message.chat.id,
+        message=callback.message,
+        context=context,
+    )
