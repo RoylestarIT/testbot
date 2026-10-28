@@ -1,11 +1,19 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { FaqItem } from "@/content/faq";
+import { WbApiKeyGuide } from "./WbApiKeyGuide";
 
 export function FAQAccordion({ items }: { items: FaqItem[] }) {
   const baseId = useId();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  useEffect(() => {
+    const hash = typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
+    if (!hash) return;
+    const idx = items.findIndex((item) => item.id === hash);
+    if (idx >= 0) setOpenIndex(idx);
+  }, [items]);
 
   return (
     <div className="divide-y divide-line border-y border-line">
@@ -48,7 +56,9 @@ export function FAQAccordion({ items }: { items: FaqItem[] }) {
               }`}
             >
               <div className="overflow-hidden">
-                <p className="max-w-prose pb-7 pr-14 text-body text-ink-muted">{item.answer}</p>
+                <p className="max-w-prose pr-14 text-body text-ink-muted">{item.answer}</p>
+                {item.guide === "wb-api-key" ? <WbApiKeyGuide /> : null}
+                <div className="pb-7" />
               </div>
             </div>
           </div>
