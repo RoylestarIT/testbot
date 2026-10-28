@@ -6,4 +6,4 @@
 :HL["/testbot/bot-avatar.png","image"]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"contacts","h":64,"c":"$Q2"}]]
-0:{"b":"OXKOdJjuOewD-mWFifE2H","t":{"t":{"s":"","h":16,"c":"$Q1"}}}
+0:{"b":"XwMqkmb363a3cQAjW_OQk","t":{"t":{"s":"","h":16,"c":"$Q1"}}}
