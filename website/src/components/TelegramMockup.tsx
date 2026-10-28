@@ -60,7 +60,7 @@ export function TelegramMockup({ variant = "review" }: { variant?: "review" | "p
                 Lite — сколько угодно ответов. PRO — ещё и отправка из бота.
               </Bubble>
               <div className="flex flex-wrap gap-2 px-0.5 pt-1">
-                {["⭐ Stars", "💳 Карта", "🪙 USDT"].map((label) => (
+                {["💳 Карты РФ/РБ", "ЮKassa", "bePaid"].map((label) => (
                   <span
                     key={label}
                     className="rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-medium text-sky-100"
