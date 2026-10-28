@@ -21,6 +21,7 @@ import { MarketplaceStrip } from "@/components/MarketplaceStrip";
 import { FeatureCard } from "@/components/FeatureCard";
 import { Reveal } from "@/components/Reveal";
 import { CtaBanner } from "@/components/CtaBanner";
+import { HomeStatsStrip } from "@/components/HomeStatsStrip";
 import { CalculatorBlock } from "@/components/CalculatorBlock";
 import { JsonLd, faqSchema, softwareSchema } from "@/components/JsonLd";
 import {
@@ -31,13 +32,6 @@ import {
   IconTelegram,
   IconWallet,
 } from "@/components/icons";
-
-const stats = [
-  { value: "3", label: "варианта ответа на каждый отзыв" },
-  { value: "2", label: "площадки в одном чате — WB и Ozon" },
-  { value: "WB + Ozon", label: "не нужно два разных сервиса" },
-  { value: "0", label: "автоответов на плохие отзывы" },
-];
 
 const benefits = [
   {
@@ -114,23 +108,8 @@ export default function HomePage() {
                 Посчитать экономию
               </Button>
             </div>
-            <p className="mt-5 text-small leading-relaxed text-ink-subtle">
+            <p className="mt-5 text-small text-ink-subtle">
               Без карты · 5 ответов в день бесплатно · Плохие отзывы — только через вас
-              <br />
-              Сегодня ботом воспользовались{" "}
-              <span
-                id="stat-today"
-                className="font-display text-body font-semibold tabular-nums text-brand-800"
-              >
-                127
-              </span>{" "}
-              человек, за месяц —{" "}
-              <span
-                id="stat-month"
-                className="font-display text-body font-semibold tabular-nums text-brand-800"
-              >
-                3&nbsp;841
-              </span>
             </p>
             <div className="mt-10 border-t border-line pt-6">
               <MarketplaceStrip />
@@ -142,17 +121,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="border-y border-line bg-surface">
-        <div className="container-page grid grid-cols-2 divide-line lg:grid-cols-4 lg:divide-x">
-          {stats.map((s, i) => (
-            <Reveal key={s.label} delay={i * 70} className="px-2 py-10 sm:py-12 lg:px-8 lg:first:pl-0">
-              <p className="font-display text-headline font-semibold text-ink sm:text-display">{s.value}</p>
-              <p className="mt-2 max-w-[14rem] text-small text-ink-muted">{s.label}</p>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+      <HomeStatsStrip />
 
       <DualMarketplaceSection />
 
