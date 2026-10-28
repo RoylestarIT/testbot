@@ -3,15 +3,15 @@
  */
 (function () {
   var CONFIG = {
-    storageKey: "gb_usage_stats_demo_v1",
-    initialToday: 127,
-    initialMonth: 3841,
-    tickMinMs: 15000,
-    tickMaxMs: 60000,
-    bumpMin: 1,
-    bumpMax: 5,
-    todayResetMin: 90,
-    todayResetMax: 160,
+    storageKey: "gb_usage_stats_demo_v2",
+    initialToday: 28,
+    initialMonth: 916,
+    tickMinMs: 45000,
+    tickMaxMs: 120000,
+    bumpMin: 0,
+    bumpMax: 1,
+    todayResetMin: 22,
+    todayResetMax: 38,
   };
 
   function dayKey(d) {
@@ -71,8 +71,10 @@
 
   function bump(state) {
     var inc = randInt(CONFIG.bumpMin, CONFIG.bumpMax);
-    state.today += inc;
-    state.month += inc;
+    if (inc > 0) {
+      state.today += inc;
+      state.month += inc;
+    }
   }
 
   function scheduleTick(state) {
