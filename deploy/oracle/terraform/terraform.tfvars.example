@@ -1,0 +1,9 @@
+region             = "eu-frankfurt-1"
+tenancy_ocid       = "ocid1.tenancy.oc1..aaaa..."
+user_ocid          = "ocid1.user.oc1..aaaa..."
+fingerprint        = "aa:bb:cc:..."
+private_key_path   = "/home/ubuntu/.oci/oci_api_key.pem"
+compartment_id     = "ocid1.tenancy.oc1..aaaa..." # root compartment = tenancy OCID
+ssh_public_key     = "ssh-ed25519 AAAA... reviewpilot-oracle"
+ocpus              = 2
+memory_in_gbs      = 12

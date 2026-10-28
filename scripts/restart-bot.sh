@@ -27,6 +27,12 @@ async def main() -> None:
 asyncio.run(main())
 PY
 
+if systemctl is-enabled reviewpilot.service >/dev/null 2>&1; then
+  sudo systemctl restart reviewpilot.service
+  echo "ReviewPilot restarted via systemd (journalctl -u reviewpilot -f)"
+  exit 0
+fi
+
 pkill -f "python3 -m app.main" 2>/dev/null || true
 sleep 1
 
