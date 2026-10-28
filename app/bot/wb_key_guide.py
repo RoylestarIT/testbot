@@ -2,22 +2,11 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from aiogram import Bot
-from aiogram.types import (
-    CallbackQuery,
-    FSInputFile,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    InputMediaPhoto,
-    Message,
-)
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.bot.ui import brand_title, bullet, muted, section
 from app.bot.utils.callbacks import safe_edit_message
-
-_ASSETS_DIR = Path(__file__).resolve().parent / "assets" / "wb_api_guide"
 
 _BACK_CALLBACKS = {
     "connect": "settings:accounts",
@@ -54,11 +43,6 @@ def wb_key_guide_text() -> str:
     )
 
 
-def _image_paths() -> list[Path]:
-    names = ("wb_guide_step1.jpg", "wb_guide_step2.jpg", "wb_guide_step3.jpg")
-    return [_ASSETS_DIR / name for name in names]
-
-
 def wb_key_back_keyboard(*, context: str = "acc") -> InlineKeyboardMarkup:
     ctx = context if context in _BACK_CALLBACKS else "acc"
     return InlineKeyboardMarkup(
@@ -67,24 +51,6 @@ def wb_key_back_keyboard(*, context: str = "acc") -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="◀️ Назад", callback_data=_BACK_CALLBACKS[ctx])],
         ]
     )
-
-
-_ALBUM_CAPTIONS = (
-    "🟣 <b>Шаг 1</b> — «Ваш магазин» → «Настройки».",
-    "🟣 <b>Шаги 2–5</b> — «Доступ к API», имя, «Вопросы и отзывы», «Создать токен».",
-    "🟣 <b>Шаги 6–7</b> — «Скопировать» и отправить ключ в бот.",
-)
-
-
-async def send_wb_key_album(bot: Bot, chat_id: int) -> None:
-    paths = _image_paths()
-    if not all(p.is_file() for p in paths):
-        await bot.send_message(chat_id, muted("Карточки временно недоступны — ориентируйтесь на текст выше."))
-        return
-    media: list[InputMediaPhoto] = []
-    for path, caption in zip(paths, _ALBUM_CAPTIONS, strict=True):
-        media.append(InputMediaPhoto(media=FSInputFile(path), caption=caption, parse_mode="HTML"))
-    await bot.send_media_group(chat_id, media)
 
 
 def parse_wb_help_context(callback_data: str) -> str:
@@ -101,19 +67,12 @@ async def deliver_wb_key_instruction(
     message: Message | None = None,
     context: str = "connect",
 ) -> None:
-    """Текст 7 шагов + карточки подряд, без отдельных кнопок «картинки»."""
-    body = (
-        wb_key_guide_text()
-        + "\n\n"
-        + "👇 Ниже — три подсказки по экранам кабинета. "
-        "Когда ключ скопирован — просто <b>отправьте его сюда</b>."
-    )
+    body = wb_key_guide_text() + "\n\n" + "Когда ключ скопирован — <b>отправьте его сюда</b> одним сообщением."
     kb = wb_key_back_keyboard(context=context)
     if message is not None:
         await safe_edit_message(message, body, reply_markup=kb)
     else:
         await bot.send_message(chat_id, body, reply_markup=kb)
-    await send_wb_key_album(bot, chat_id)
 
 
 async def deliver_wb_key_instruction_callback(callback: CallbackQuery, *, context: str) -> None:
