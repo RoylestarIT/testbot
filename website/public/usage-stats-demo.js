@@ -3,15 +3,15 @@
  */
 (function () {
   var CONFIG = {
-    storageKey: "gb_usage_stats_demo_v2",
-    initialToday: 28,
-    initialMonth: 916,
+    storageKey: "gb_usage_stats_demo_v3",
+    initialToday: 56,
+    initialMonth: 1832,
     tickMinMs: 45000,
     tickMaxMs: 120000,
     bumpMin: 0,
     bumpMax: 1,
-    todayResetMin: 22,
-    todayResetMax: 38,
+    todayResetMin: 44,
+    todayResetMax: 76,
   };
 
   function dayKey(d) {

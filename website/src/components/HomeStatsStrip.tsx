@@ -18,7 +18,7 @@ function StatValue({ item }: { item: StatItem }) {
         id="stat-today"
         className="font-display text-display font-semibold tabular-nums tracking-tight text-brand-700 sm:text-display-lg"
       >
-        28
+        56
       </span>
     );
   }
@@ -49,7 +49,7 @@ export function HomeStatsStrip() {
                       id="stat-month"
                       className="font-display font-semibold tabular-nums text-brand-700"
                     >
-                      916
+                      1&nbsp;832
                     </span>
                   </p>
                 ) : null}
