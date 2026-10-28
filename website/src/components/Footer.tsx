@@ -3,6 +3,8 @@ import {
   BOT_USERNAME,
   BRAND,
   PRICING_UPDATED,
+  HAS_SUPPORT_EMAIL,
+  LEGAL_OPERATOR,
   SUPPORT_EMAIL,
   SUPPORT_TG,
   SUPPORT_TG_URL,
@@ -84,12 +86,20 @@ export function Footer() {
             Бот: @{BOT_USERNAME} · Поддержка:{" "}
             <a href={SUPPORT_TG_URL} className="underline hover:text-footer-text">
               @{SUPPORT_TG}
-            </a>{" "}
-            ·{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-footer-text">
-              {SUPPORT_EMAIL}
             </a>
+            {HAS_SUPPORT_EMAIL ? (
+              <>
+                {" "}
+                ·{" "}
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-footer-text">
+                  {SUPPORT_EMAIL}
+                </a>
+              </>
+            ) : (
+              <> · почта для документов подключается</>
+            )}
           </p>
+          <p className="max-w-3xl leading-relaxed">Оператор: {LEGAL_OPERATOR}</p>
           <p>
             Цены указаны на {PRICING_UPDATED}. Точную сумму бот покажет перед оплатой.
           </p>

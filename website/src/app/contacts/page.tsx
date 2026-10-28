@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { InnerPageHero } from "@/components/InnerPageHero";
-import { BOT_AVATAR, BOT_USERNAME, SUPPORT_EMAIL, SUPPORT_TG, SUPPORT_TG_URL } from "@/content/constants";
+import {
+  BOT_AVATAR,
+  BOT_USERNAME,
+  HAS_SUPPORT_EMAIL,
+  LEGAL_OPERATOR,
+  SUPPORT_EMAIL,
+  SUPPORT_TG,
+  SUPPORT_TG_URL,
+} from "@/content/constants";
 import { TelegramButton } from "@/components/TelegramButton";
 import { Button } from "@/components/Button";
 import { Reveal } from "@/components/Reveal";
@@ -57,20 +65,36 @@ export default function ContactsPage() {
           </Reveal>
           <Reveal delay={100}>
             <div className="card flex h-full flex-col p-8 sm:p-10">
-              <p className="eyebrow">Для документов</p>
-              <h2 className="mt-4 text-headline">Email</h2>
-              <p className="mt-3 flex-1 text-body text-ink-muted">
-                Счета, договоры и всё, что удобнее обсудить письмом.
-              </p>
-              <Button
-                href={`mailto:${SUPPORT_EMAIL}`}
-                external
-                variant="secondary"
-                className="mt-8 w-fit"
-                trailing={<IconArrowRight />}
-              >
-                {SUPPORT_EMAIL}
-              </Button>
+              <p className="eyebrow">Реквизиты</p>
+              <h2 className="mt-4 text-headline">Оператор сервиса</h2>
+              <p className="mt-3 flex-1 text-body leading-relaxed text-ink-muted">{LEGAL_OPERATOR}</p>
+              {HAS_SUPPORT_EMAIL ? (
+                <Button
+                  href={`mailto:${SUPPORT_EMAIL}`}
+                  external
+                  variant="secondary"
+                  className="mt-8 w-fit"
+                  trailing={<IconArrowRight />}
+                >
+                  {SUPPORT_EMAIL}
+                </Button>
+              ) : (
+                <>
+                  <p className="mt-6 text-small text-ink-muted">
+                    Корпоративная почта для счетов и договоров подключается. Пока пишите в Telegram — ответим
+                    там же.
+                  </p>
+                  <Button
+                    href={SUPPORT_TG_URL}
+                    external
+                    variant="secondary"
+                    className="mt-6 w-fit"
+                    trailing={<IconArrowRight />}
+                  >
+                    @{SUPPORT_TG}
+                  </Button>
+                </>
+              )}
             </div>
           </Reveal>
         </div>

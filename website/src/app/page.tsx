@@ -1,6 +1,7 @@
 import Script from "next/script";
 import { PageShell } from "@/components/PageShell";
-import { asset } from "@/content/constants";
+import { PRO_TRIAL_HINT, asset } from "@/content/constants";
+import { SafeConnectStrip } from "@/components/SafeConnectStrip";
 import { SectionHeading } from "@/components/SectionHeading";
 import { TelegramButton } from "@/components/TelegramButton";
 import { Button } from "@/components/Button";
@@ -111,6 +112,9 @@ export default function HomePage() {
             <p className="mt-5 text-small text-ink-subtle">
               Без карты · 5 ответов в день бесплатно · Плохие отзывы — только через вас
             </p>
+            <p className="mt-2 max-w-prose text-small text-ink-muted">
+              <span className="font-medium text-brand-800">{PRO_TRIAL_HINT}</span>
+            </p>
             <div className="mt-10 border-t border-line pt-6">
               <MarketplaceStrip />
             </div>
@@ -120,6 +124,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <SafeConnectStrip />
 
       <HomeStatsStrip />
 
