@@ -101,6 +101,11 @@ class Settings(BaseSettings):
     webhook_host: str = Field(default="0.0.0.0", validation_alias="WEBHOOK_HOST")
     webhook_port: int = Field(default=8080, validation_alias="WEBHOOK_PORT")
     health_port: int = Field(default=8081, validation_alias="HEALTH_PORT")
+    public_metrics_enabled: bool = Field(default=False, validation_alias="PUBLIC_METRICS_ENABLED")
+    public_metrics_cors_origins: str = Field(
+        default="https://roylestarit.github.io",
+        validation_alias="PUBLIC_METRICS_CORS_ORIGINS",
+    )
     fsm_redis_url: str = Field(default="", validation_alias="FSM_REDIS_URL")
     sentry_dsn: str = Field(default="", validation_alias="SENTRY_DSN")
     qr_payment_instructions: str = Field(

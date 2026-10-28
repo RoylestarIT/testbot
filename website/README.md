@@ -35,6 +35,7 @@ npm run build
 |------------|----------|
 | `NEXT_PUBLIC_SITE_URL` | Канонический URL сайта (Open Graph, sitemap). Пример: `https://golos-brenda.ru` |
 | `NEXT_PUBLIC_BOT_URL` | Deep link бота. По умолчанию `https://t.me/FeedBackReview_bot` |
+| `NEXT_PUBLIC_LIVE_METRICS_URL` | (Опционально) `https://ваш-домен/public/metrics` — живой счётчик селлеров на главной |
 | `NEXT_PUBLIC_SUPPORT_EMAIL` | Email на странице контактов (placeholder до продакшена) |
 | `NEXT_PUBLIC_LEGAL_OPERATOR_NAME` | Полное наименование ИП/ООО для `/privacy` и `/terms` |
 | `NEXT_PUBLIC_YM_ID` | ID счётчика Яндекс.Метрики (число) |
@@ -93,6 +94,8 @@ CI на каждый push в `main` (путь `website/**`) пушит сбор�
 Публичный URL: **https://roylestarit.github.io/testbot/**
 
 Локально: `npm run deploy:gh-pages` (нужны `git user.name` / `user.email`).
+
+**Счётчик селлеров на главной:** workflow `sync-public-metrics.yml` раз в час тянет JSON с бота. В GitHub → Settings → Secrets добавьте `BOT_PUBLIC_METRICS_URL` (например `https://ваш-домен/public/metrics`). На сервере бота: `PUBLIC_METRICS_ENABLED=true`, прокси на `HEALTH_PORT`. Опционально при сборке сайта: `NEXT_PUBLIC_LIVE_METRICS_URL` — тот же URL для обновления в браузере каждые 10 минут.
 
 ### Cloudflare Pages
 

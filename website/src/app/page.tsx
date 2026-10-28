@@ -16,6 +16,7 @@ import { PricingCards } from "@/components/PricingCards";
 import { FAQAccordion } from "@/components/FAQAccordion";
 import { FAQ_ITEMS } from "@/content/faq";
 import { MarketplaceStrip } from "@/components/MarketplaceStrip";
+import { LiveSellerCount } from "@/components/LiveSellerCount";
 import { FeatureCard } from "@/components/FeatureCard";
 import { Reveal } from "@/components/Reveal";
 import { CtaBanner } from "@/components/CtaBanner";
@@ -115,6 +116,7 @@ export default function HomePage() {
             <p className="mt-5 text-small text-ink-subtle">
               Без карты · 5 ответов в день бесплатно · Плохие отзывы — только через вас
             </p>
+            <LiveSellerCount className="mt-4" />
             <div className="mt-10 border-t border-line pt-6">
               <MarketplaceStrip />
             </div>
